@@ -1,0 +1,1398 @@
+/* Medidas, antecedentes y realojos
+   Global styles for TeamMeasuresWorkflow. The component inherits the active
+   team palette while keeping sensible fallbacks when rendered in isolation. */
+
+.teamMeasuresWorkflow {
+  --measure-accent: var(--team, #07835a);
+  --measure-deep: var(--team-deep, #056543);
+  --measure-soft: var(--team-soft, #e9faf1);
+  --measure-glow: var(--team-glow, #bcebd1);
+  --measure-ink: var(--team-ink, #07583e);
+  --measure-line: color-mix(
+    in srgb,
+    var(--measure-accent) 15%,
+    var(--line, #d9e2ec)
+  );
+  display: grid;
+  gap: clamp(24px, 3.2vw, 38px);
+  min-width: 0;
+  color: var(--text, #17202a);
+}
+
+.teamMeasuresWorkflow *,
+.teamMeasuresWorkflow *::before,
+.teamMeasuresWorkflow *::after {
+  box-sizing: border-box;
+}
+
+.teamMeasuresIntro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.72fr);
+  align-items: center;
+  gap: clamp(18px, 3vw, 38px);
+  padding: 3px 0 clamp(20px, 2.6vw, 30px);
+  border-bottom: 1px solid var(--measure-line);
+}
+
+.teamMeasuresIntro .teamSectionLabel {
+  margin: 0;
+}
+
+.teamMeasuresIntro .teamSectionLabel > span {
+  width: 42px;
+  height: 42px;
+  color: var(--measure-accent);
+  background:
+    radial-gradient(circle at 30% 24%, #fff 0 11%, transparent 12%),
+    var(--measure-soft);
+  box-shadow: 0 8px 22px
+    color-mix(in srgb, var(--measure-accent) 14%, transparent);
+}
+
+.teamMeasuresIntro .teamSectionLabel strong {
+  color: var(--measure-ink);
+  font-size: clamp(1.02rem, 1.5vw, 1.2rem);
+}
+
+.teamMeasuresGuardrail {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px 4px 13px 16px;
+  border-left: 3px solid var(--measure-accent);
+  color: color-mix(in srgb, var(--measure-ink) 72%, var(--muted, #657487));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--measure-soft) 72%, transparent),
+    transparent
+  );
+}
+
+.teamMeasuresGuardrail svg {
+  flex: 0 0 auto;
+  color: var(--measure-accent);
+}
+
+.teamMeasuresGuardrail p {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.teamMeasuresTabs {
+  position: relative;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  margin: -14px 0 0;
+  padding: 0 2px 10px;
+  border-bottom: 1px solid var(--measure-line);
+  scrollbar-width: thin;
+  scrollbar-color: var(--measure-glow) transparent;
+}
+
+.teamMeasuresTab {
+  position: relative;
+  min-width: max-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 45px;
+  padding: 9px 13px;
+  border: 0;
+  border-radius: 13px 13px 4px 4px;
+  color: var(--muted, #657487);
+  background: transparent;
+  font-size: 0.84rem;
+  font-weight: 830;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.teamMeasuresTab::after {
+  content: "";
+  position: absolute;
+  right: 13px;
+  bottom: -11px;
+  left: 13px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--measure-accent);
+  opacity: 0;
+  transform: scaleX(0.35);
+  transition:
+    opacity 0.2s ease,
+    transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.teamMeasuresTab:hover {
+  color: var(--measure-accent);
+  background: color-mix(in srgb, var(--measure-soft) 68%, transparent);
+  transform: translateY(-1px);
+}
+
+.teamMeasuresTab.isActive,
+.teamMeasuresTab[aria-selected="true"] {
+  color: var(--measure-ink);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--measure-soft) 76%, #fff),
+    transparent
+  );
+}
+
+.teamMeasuresTab.isActive svg,
+.teamMeasuresTab[aria-selected="true"] svg {
+  color: var(--measure-accent);
+}
+
+.teamMeasuresTab.isActive::after,
+.teamMeasuresTab[aria-selected="true"]::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.teamMeasuresPanel {
+  min-width: 0;
+  animation: teamMeasuresPanelIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.teamMeasuresPanorama,
+.teamMeasuresRecords,
+.teamMeasuresRegister,
+.teamMeasuresRelocation {
+  position: relative;
+  isolation: isolate;
+  scroll-margin-top: 20px;
+}
+
+.teamMeasuresPanel[hidden] {
+  display: none;
+}
+
+.teamMeasuresPanelHeading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 26px;
+  margin-bottom: clamp(18px, 2.5vw, 26px);
+}
+
+.teamMeasuresPanelHeading h3 {
+  max-width: 720px;
+  margin: 3px 0 0;
+  color: var(--measure-ink);
+  font-size: clamp(1.24rem, 2.2vw, 1.68rem);
+  letter-spacing: -0.025em;
+}
+
+.teamMeasuresPanelHeading > p {
+  max-width: 490px;
+  margin: 0;
+  color: var(--muted, #657487);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.teamMeasuresMetrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 0 0 24px;
+  padding: 0;
+  border-block: 1px solid var(--measure-line);
+}
+
+.teamMeasuresMetric {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 145px;
+  padding: 20px clamp(13px, 1.7vw, 22px) 17px;
+  background:
+    radial-gradient(
+      circle at 20% 0,
+      color-mix(in srgb, var(--measure-soft) 76%, transparent),
+      transparent 57%
+    );
+  animation: teamMeasuresMetricIn 0.48s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.teamMeasuresMetric + .teamMeasuresMetric::before {
+  content: "";
+  position: absolute;
+  top: 19px;
+  bottom: 19px;
+  left: 0;
+  width: 1px;
+  background: var(--measure-line);
+}
+
+.teamMeasuresMetric:nth-child(2) {
+  animation-delay: 40ms;
+}
+
+.teamMeasuresMetric:nth-child(3) {
+  animation-delay: 80ms;
+}
+
+.teamMeasuresMetric:nth-child(4) {
+  animation-delay: 120ms;
+}
+
+.teamMeasuresMetric:nth-child(5) {
+  animation-delay: 160ms;
+}
+
+.teamMeasuresMetric dt {
+  order: 2;
+  margin-top: 7px;
+  color: var(--text, #17202a);
+  font-size: 0.82rem;
+  font-weight: 790;
+  line-height: 1.35;
+}
+
+.teamMeasuresMetric dd {
+  order: 1;
+  margin: 0;
+  color: var(--measure-accent);
+  font-size: clamp(1.75rem, 3vw, 2.35rem);
+  font-weight: 920;
+  letter-spacing: -0.055em;
+  line-height: 1;
+}
+
+.teamMeasuresMetric small {
+  order: 3;
+  display: block;
+  margin-top: auto;
+  padding-top: 9px;
+  color: var(--muted, #657487);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+.teamMeasuresContextNotice,
+.teamMeasuresLocationCaution {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin: 22px 0;
+  padding: 14px 17px;
+  border-left: 4px solid #d97706;
+  border-radius: 4px 15px 15px 4px;
+  color: #75501e;
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, #fff1cc 86%, #fff),
+    color-mix(in srgb, #fff8e8 52%, transparent)
+  );
+}
+
+.teamMeasuresContextNotice svg,
+.teamMeasuresLocationCaution svg {
+  flex: 0 0 auto;
+  color: #b46100;
+}
+
+.teamMeasuresContextNotice p,
+.teamMeasuresLocationCaution p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.52;
+}
+
+.teamMeasuresClassification {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(12px, 2vw, 22px);
+  margin: 26px 0 32px;
+}
+
+.teamMeasuresClassificationCard {
+  position: relative;
+  min-width: 0;
+  padding: 18px 8px 17px 18px;
+  border-top: 2px solid var(--measure-glow);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--measure-soft) 54%, transparent),
+    transparent 72%
+  );
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.teamMeasuresClassificationCard:hover {
+  border-color: var(--measure-accent);
+  transform: translateY(-2px);
+}
+
+.teamMeasuresClassificationCard > span {
+  display: block;
+  margin-bottom: 9px;
+  color: var(--measure-accent);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.teamMeasuresClassificationCard h4 {
+  margin: 0 0 6px;
+  color: var(--measure-ink);
+  font-size: 0.96rem;
+}
+
+.teamMeasuresClassificationCard p {
+  margin: 0;
+  color: var(--muted, #657487);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.teamMeasuresFilters {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 16px;
+  margin-top: 28px;
+  padding: 18px clamp(16px, 2.4vw, 25px);
+  border-block: 1px solid var(--measure-line);
+  background:
+    linear-gradient(
+      115deg,
+      color-mix(in srgb, var(--measure-soft) 66%, #fff),
+      rgba(255, 255, 255, 0.5)
+    );
+}
+
+.teamMeasuresFilterHeading {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  gap: 8px;
+  color: var(--measure-ink);
+  font-size: 0.86rem;
+}
+
+.teamMeasuresFilterHeading svg {
+  color: var(--measure-accent);
+}
+
+.teamMeasuresFilters .teamFieldGrid {
+  grid-template-columns: minmax(220px, 1.35fr) minmax(170px, 0.8fr) minmax(
+      210px,
+      1fr
+    );
+  gap: 12px;
+}
+
+.teamMeasuresFilters .teamField > span:first-child {
+  font-size: 0.78rem;
+}
+
+.teamMeasuresInputWithIcon {
+  min-height: 48px;
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  margin: 0 !important;
+  padding: 0 11px;
+  border: 1.5px solid var(--measure-line);
+  border-radius: 14px;
+  color: var(--muted, #657487) !important;
+  background: rgba(255, 255, 255, 0.77);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.teamMeasuresInputWithIcon:hover {
+  border-color: color-mix(
+    in srgb,
+    var(--measure-accent) 46%,
+    var(--line, #d9e2ec)
+  );
+  background: #fff;
+}
+
+.teamMeasuresInputWithIcon:focus-within {
+  border-color: var(--measure-accent);
+  background: #fff;
+  box-shadow: 0 0 0 4px
+    color-mix(in srgb, var(--measure-accent) 14%, transparent);
+}
+
+.teamMeasuresInputWithIcon input {
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.teamMeasuresReset {
+  white-space: nowrap;
+}
+
+.teamMeasuresResultCount {
+  margin: 13px 0 10px;
+  color: var(--muted, #657487);
+  font-size: 0.76rem;
+  font-weight: 760;
+}
+
+.teamMeasuresHistoryLayout {
+  display: grid;
+  grid-template-columns: minmax(270px, 0.72fr) minmax(0, 1.55fr);
+  gap: clamp(18px, 2.6vw, 32px);
+  align-items: start;
+  min-width: 0;
+}
+
+.teamMeasuresHistoryList {
+  display: grid;
+  gap: 6px;
+  max-height: 760px;
+  overflow-y: auto;
+  padding: 3px 7px 3px 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--measure-glow) transparent;
+}
+
+.teamMeasuresHistoryItem {
+  position: relative;
+  display: grid;
+  justify-items: start;
+  gap: 7px;
+  width: 100%;
+  padding: 15px 14px 15px 17px;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: 3px 14px 14px 3px;
+  color: var(--text, #17202a);
+  background: transparent;
+  text-align: left;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.teamMeasuresHistoryItem:hover {
+  border-left-color: var(--measure-glow);
+  background: color-mix(in srgb, var(--measure-soft) 52%, transparent);
+  transform: translateX(3px);
+}
+
+.teamMeasuresHistoryItem.isSelected,
+.teamMeasuresHistoryItem[aria-pressed="true"] {
+  border-left-color: var(--measure-accent);
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--measure-soft) 86%, #fff),
+    color-mix(in srgb, var(--measure-soft) 34%, transparent)
+  );
+}
+
+.teamMeasuresHistoryItem strong {
+  color: var(--measure-ink);
+  font-size: 0.93rem;
+  line-height: 1.35;
+}
+
+.teamMeasuresHistoryItem small {
+  color: var(--muted, #657487);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.teamMeasuresSource,
+.teamMeasuresMeasureType {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 0.67rem;
+  font-weight: 880;
+  line-height: 1.2;
+}
+
+.teamMeasuresSource.isOfficial {
+  color: #086742;
+  background: #e7f8ef;
+}
+
+.teamMeasuresSource.isJudicial {
+  color: #5b329a;
+  background: #f2ebff;
+}
+
+.teamMeasuresSource.isPress {
+  color: #8a4e00;
+  background: #fff1d4;
+}
+
+.teamMeasuresHistoryDetail {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  padding: clamp(21px, 3vw, 34px);
+  border: 1px solid var(--measure-line);
+  border-radius: 24px;
+  background:
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--measure-soft) 90%, transparent),
+      transparent 38%
+    ),
+    rgba(255, 255, 255, 0.72);
+  box-shadow: 0 16px 38px
+    color-mix(in srgb, var(--measure-accent) 9%, transparent);
+}
+
+.teamMeasuresHistoryDetail::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--measure-accent),
+    var(--measure-glow),
+    transparent
+  );
+}
+
+.teamMeasuresHistoryDetail > header,
+.teamMeasuresLoadedItem > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.teamMeasuresHistoryDetail h3 {
+  margin: 10px 0 4px;
+  color: var(--measure-ink);
+  font-size: clamp(1.18rem, 2vw, 1.55rem);
+  line-height: 1.2;
+}
+
+.teamMeasuresHistoryDetail header p {
+  margin: 0;
+  color: var(--muted, #657487);
+  font-size: 0.9rem;
+}
+
+.teamMeasuresHistoryDetail time {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: var(--measure-ink);
+  background: var(--measure-soft);
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.teamMeasuresDetailFacts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 22px;
+  margin: 24px 0;
+}
+
+.teamMeasuresDetailFacts > div {
+  display: grid;
+  grid-template-columns: minmax(105px, 0.48fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--measure-line);
+}
+
+.teamMeasuresDetailFacts dt {
+  color: var(--measure-ink);
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.teamMeasuresDetailFacts dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--muted, #657487);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.teamMeasuresSupportedFacts {
+  margin-top: 5px;
+  color: var(--text, #17202a);
+}
+
+.teamMeasuresSupportedFacts > strong {
+  color: var(--measure-ink);
+  font-size: 0.88rem;
+}
+
+.teamMeasuresSupportedFacts ul,
+.teamMeasuresRecordCard ul {
+  margin: 10px 0 0;
+  padding-left: 19px;
+  color: var(--muted, #657487);
+  font-size: 0.82rem;
+  line-height: 1.52;
+}
+
+.teamMeasuresSupportedFacts li + li,
+.teamMeasuresRecordCard li + li {
+  margin-top: 6px;
+}
+
+.teamMeasuresCaution {
+  margin-top: 18px;
+  padding: 11px 14px;
+  border-left: 3px solid #d97706;
+  color: #74501d;
+  background: linear-gradient(90deg, #fff5df, transparent);
+  font-size: 0.78rem;
+  line-height: 1.48;
+}
+
+.teamMeasuresActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 21px;
+}
+
+.teamMeasuresActions a:not(.teamGhostButton) {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--measure-accent);
+  font-size: 0.82rem;
+  font-weight: 820;
+  text-decoration: none;
+}
+
+.teamMeasuresActions a:not(.teamGhostButton):hover {
+  color: var(--measure-deep);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.teamMeasuresEmpty {
+  padding: 24px 16px;
+  border-block: 1px dashed var(--measure-line);
+  color: var(--muted, #657487);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--measure-soft) 54%, transparent),
+    transparent
+  );
+  font-size: 0.86rem;
+  text-align: center;
+}
+
+.teamMeasuresTableWrap {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  border-block: 1px solid var(--measure-line);
+  scrollbar-width: thin;
+  scrollbar-color: var(--measure-glow) transparent;
+}
+
+.teamMeasuresEvidenceTable,
+.teamMeasuresRelocationTable {
+  width: 100%;
+  min-width: 850px;
+  border-collapse: collapse;
+  color: var(--text, #17202a);
+}
+
+.teamMeasuresEvidenceTable caption,
+.teamMeasuresRelocationTable caption {
+  width: 1px;
+  height: 1px;
+  position: absolute;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.teamMeasuresEvidenceTable th,
+.teamMeasuresEvidenceTable td,
+.teamMeasuresRelocationTable th,
+.teamMeasuresRelocationTable td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--measure-line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.teamMeasuresEvidenceTable thead th,
+.teamMeasuresRelocationTable thead th {
+  color: var(--measure-ink);
+  background: color-mix(in srgb, var(--measure-soft) 58%, #fff);
+  font-size: 0.72rem;
+  font-weight: 880;
+  letter-spacing: 0.025em;
+}
+
+.teamMeasuresEvidenceTable tbody tr,
+.teamMeasuresRelocationTable tbody tr {
+  transition: background 0.18s ease;
+}
+
+.teamMeasuresEvidenceTable tbody tr:hover,
+.teamMeasuresRelocationTable tbody tr:hover {
+  background: color-mix(in srgb, var(--measure-soft) 44%, transparent);
+}
+
+.teamMeasuresEvidenceTable tbody th {
+  width: 20%;
+  color: var(--measure-ink);
+  font-size: 0.85rem;
+}
+
+.teamMeasuresEvidenceTable tbody th small {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted, #657487);
+  font-size: 0.68rem;
+  font-weight: 620;
+}
+
+.teamMeasuresEvidenceTable td {
+  color: var(--muted, #657487);
+  font-size: 0.79rem;
+  line-height: 1.48;
+}
+
+.teamMeasuresRules {
+  margin-top: clamp(28px, 4vw, 46px);
+}
+
+.teamMeasuresRules dl {
+  counter-reset: evidence;
+  margin: 0;
+  border-block: 1px solid var(--measure-line);
+}
+
+.teamMeasuresRules dl > div {
+  counter-increment: evidence;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(150px, 0.45fr) minmax(0, 1.55fr);
+  gap: 20px;
+  padding: 15px 8px 15px 42px;
+  border-bottom: 1px solid var(--measure-line);
+}
+
+.teamMeasuresRules dl > div:last-child {
+  border-bottom: 0;
+}
+
+.teamMeasuresRules dl > div::before {
+  content: counter(evidence, decimal-leading-zero);
+  position: absolute;
+  top: 14px;
+  left: 6px;
+  color: var(--measure-accent);
+  font-size: 0.67rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.teamMeasuresRules dt {
+  color: var(--measure-ink);
+  font-size: 0.87rem;
+  font-weight: 860;
+}
+
+.teamMeasuresRules dd {
+  margin: 0;
+  color: var(--muted, #657487);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.teamMeasuresRecordCards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(18px, 2.6vw, 28px);
+  margin-top: clamp(30px, 4vw, 48px);
+}
+
+.teamMeasuresRecordCard {
+  position: relative;
+  min-width: 0;
+  padding: 20px 18px 17px;
+  border-top: 2px solid var(--measure-glow);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--measure-soft) 43%, transparent),
+    transparent 72%
+  );
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.teamMeasuresRecordCard:hover {
+  border-color: var(--measure-accent);
+  transform: translateY(-3px);
+}
+
+.teamMeasuresRecordCard h4 {
+  margin: 11px 0 6px;
+  color: var(--measure-ink);
+  font-size: 1rem;
+}
+
+.teamMeasuresRecordCard > p {
+  margin: 0;
+  color: var(--text, #17202a);
+  font-size: 0.82rem;
+}
+
+.teamMeasuresRecordCard .teamMeasuresActions {
+  justify-content: space-between;
+}
+
+.teamMeasuresRegisterGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 8px;
+  border-block: 1px solid var(--measure-line);
+}
+
+.teamMeasuresRegisterForm {
+  min-width: 0;
+  padding: clamp(22px, 3vw, 34px) clamp(18px, 3vw, 34px);
+  background:
+    radial-gradient(
+      circle at 0 0,
+      color-mix(in srgb, var(--measure-soft) 66%, transparent),
+      transparent 40%
+    );
+}
+
+.teamMeasuresRegisterForm + .teamMeasuresRegisterForm {
+  padding-left: clamp(24px, 3.4vw, 42px);
+  border-left: 1px dashed
+    color-mix(
+      in srgb,
+      var(--measure-accent) 33%,
+      var(--line, #d9e2ec)
+    );
+}
+
+.teamMeasuresRegisterForm .teamSectionLabel {
+  min-height: 51px;
+}
+
+.teamMeasuresRegisterForm > .teamField,
+.teamMeasuresRegisterForm > .teamFieldGrid {
+  margin-top: 17px;
+}
+
+.teamMeasuresRegisterForm > .teamSaveButton {
+  margin-top: 21px;
+}
+
+.teamMeasuresInlineStatus {
+  align-items: flex-start;
+}
+
+.teamMeasuresLoadedRecords {
+  margin-top: clamp(34px, 5vw, 58px);
+}
+
+.teamMeasuresLoadedList {
+  border-block: 1px solid var(--measure-line);
+}
+
+.teamMeasuresLoadedItem {
+  padding: clamp(18px, 2.5vw, 27px) 8px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--measure-soft) 33%, transparent),
+    transparent 54%
+  );
+}
+
+.teamMeasuresLoadedItem + .teamMeasuresLoadedItem {
+  border-top: 1px solid var(--measure-line);
+}
+
+.teamMeasuresLoadedItem > header > div {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+}
+
+.teamMeasuresLoadedItem > header strong {
+  color: var(--measure-ink);
+  font-size: 0.92rem;
+}
+
+.teamMeasuresLoadedItem > header small {
+  color: var(--muted, #657487);
+  font-size: 0.7rem;
+}
+
+.teamMeasuresMeasureType {
+  color: var(--measure-ink);
+  background: var(--measure-soft);
+}
+
+.teamMeasuresLoadedItem .teamMeasuresDetailFacts {
+  margin-bottom: 0;
+}
+
+.teamMeasuresRelocationMetrics {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.teamMeasuresRelocationMetrics .teamMeasuresMetric {
+  min-height: 113px;
+}
+
+.teamMeasuresRelocationToolbar {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  align-items: end;
+  gap: 14px;
+  margin: 26px 0 18px;
+}
+
+.teamMeasuresRelocationToolbar .teamField {
+  max-width: 680px;
+}
+
+.teamMeasuresRelocationTable {
+  min-width: 1040px;
+}
+
+.teamMeasuresRelocationTable tbody th {
+  color: var(--measure-ink);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.teamMeasuresCellField {
+  display: block;
+  margin: 0;
+}
+
+.teamMeasuresCellField + .teamMeasuresCellField {
+  margin-top: 7px;
+}
+
+.teamMeasuresCellField :is(input, select) {
+  width: 100%;
+  min-height: 39px;
+  padding: 8px 9px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--text, #17202a);
+  background: rgba(255, 255, 255, 0.55);
+  font-size: 0.77rem;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.teamMeasuresCellField :is(input, select):hover {
+  border-color: var(--measure-line);
+  background: #fff;
+}
+
+.teamMeasuresCellField :is(input, select):focus {
+  border-color: var(--measure-accent);
+  background: #fff;
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--measure-accent) 13%, transparent);
+}
+
+.teamMeasuresTransferChecks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(26px, 4vw, 58px);
+  margin-top: clamp(32px, 4vw, 48px);
+}
+
+.teamMeasuresTransferChecks fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 18px 0 0;
+  border: 0;
+  border-top: 2px solid var(--measure-glow);
+}
+
+.teamMeasuresTransferChecks legend {
+  padding: 0 10px 0 0;
+  color: var(--measure-ink);
+  font-size: 0.98rem;
+  font-weight: 880;
+}
+
+.teamMeasuresCheck {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 11px 8px;
+  border-bottom: 1px solid var(--measure-line);
+  color: var(--muted, #657487);
+  font-size: 0.84rem;
+  font-weight: 690;
+  line-height: 1.45;
+  cursor: pointer;
+  transition:
+    color 0.18s ease,
+    background 0.18s ease,
+    padding 0.18s ease;
+}
+
+.teamMeasuresCheck:hover {
+  padding-inline: 12px 4px;
+  color: var(--measure-ink);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--measure-soft) 72%, transparent),
+    transparent
+  );
+}
+
+.teamMeasuresCheck:has(input:checked) {
+  color: var(--measure-ink);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--measure-soft) 88%, transparent),
+    transparent
+  );
+}
+
+.teamMeasuresCheck input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin: 1px 0 0;
+  accent-color: var(--measure-accent);
+}
+
+.teamMeasuresRelocationActions {
+  margin-top: 25px;
+  padding-top: 18px;
+  border-top: 1px solid var(--measure-line);
+}
+
+.teamMeasuresWorkflow
+  :is(
+    button,
+    a,
+    input,
+    select,
+    textarea
+  ):focus-visible {
+  outline: 3px solid
+    color-mix(in srgb, var(--measure-accent) 35%, transparent);
+  outline-offset: 3px;
+}
+
+@keyframes teamMeasuresPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes teamMeasuresMetricIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 1120px) {
+  .teamMeasuresIntro {
+    grid-template-columns: minmax(0, 1fr) minmax(250px, 0.8fr);
+  }
+
+  .teamMeasuresMetrics,
+  .teamMeasuresRelocationMetrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .teamMeasuresMetric:nth-child(4)::before {
+    display: none;
+  }
+
+  .teamMeasuresFilters {
+    grid-template-columns: 1fr auto;
+  }
+
+  .teamMeasuresFilterHeading {
+    grid-column: 1 / -1;
+  }
+
+  .teamMeasuresHistoryLayout {
+    grid-template-columns: minmax(255px, 0.7fr) minmax(0, 1.3fr);
+  }
+
+  .teamMeasuresDetailFacts {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .teamMeasuresIntro {
+    grid-template-columns: 1fr;
+  }
+
+  .teamMeasuresGuardrail {
+    max-width: 720px;
+  }
+
+  .teamMeasuresPanelHeading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .teamMeasuresClassification {
+    grid-template-columns: 1fr;
+  }
+
+  .teamMeasuresClassificationCard {
+    padding-left: 12px;
+  }
+
+  .teamMeasuresFilters {
+    grid-template-columns: 1fr;
+  }
+
+  .teamMeasuresFilters .teamFieldGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .teamMeasuresFilters .teamField:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .teamMeasuresReset {
+    width: max-content;
+  }
+
+  .teamMeasuresHistoryLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .teamMeasuresHistoryList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .teamMeasuresHistoryDetail {
+    margin-top: 5px;
+  }
+
+  .teamMeasuresRegisterGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .teamMeasuresRegisterForm + .teamMeasuresRegisterForm {
+    padding-left: clamp(18px, 3vw, 34px);
+    border-top: 1px dashed
+      color-mix(
+        in srgb,
+        var(--measure-accent) 33%,
+        var(--line, #d9e2ec)
+      );
+    border-left: 0;
+  }
+
+  .teamMeasuresRecordCards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .teamMeasuresWorkflow {
+    gap: 24px;
+  }
+
+  .teamMeasuresTabs {
+    margin-top: -10px;
+    padding-bottom: 9px;
+  }
+
+  .teamMeasuresTab {
+    min-height: 42px;
+    padding: 8px 10px;
+    font-size: 0.78rem;
+  }
+
+  .teamMeasuresMetrics,
+  .teamMeasuresRelocationMetrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .teamMeasuresMetric {
+    min-height: 128px;
+  }
+
+  .teamMeasuresMetric:nth-child(3)::before,
+  .teamMeasuresMetric:nth-child(5)::before {
+    display: none;
+  }
+
+  .teamMeasuresMetric:nth-child(4)::before {
+    display: block;
+  }
+
+  .teamMeasuresFilters .teamFieldGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .teamMeasuresFilters .teamField:first-child {
+    grid-column: auto;
+  }
+
+  .teamMeasuresHistoryList {
+    grid-template-columns: 1fr;
+  }
+
+  .teamMeasuresHistoryDetail {
+    border-radius: 19px;
+  }
+
+  .teamMeasuresHistoryDetail > header,
+  .teamMeasuresLoadedItem > header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .teamMeasuresDetailFacts > div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .teamMeasuresActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .teamMeasuresActions :is(.teamGhostButton, .teamSaveButton) {
+    width: 100%;
+  }
+
+  .teamMeasuresRules dl > div {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .teamMeasuresRegisterForm {
+    padding-inline: 4px;
+  }
+
+  .teamMeasuresRegisterForm + .teamMeasuresRegisterForm {
+    padding-inline: 4px;
+  }
+
+  .teamMeasuresRelocationToolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .teamMeasuresRelocationToolbar .teamGhostButton {
+    width: 100%;
+  }
+
+  .teamMeasuresTransferChecks {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 470px) {
+  .teamMeasuresMetrics,
+  .teamMeasuresRelocationMetrics {
+    grid-template-columns: 1fr;
+  }
+
+  .teamMeasuresMetric {
+    min-height: 112px;
+    padding-inline: 9px;
+  }
+
+  .teamMeasuresMetric + .teamMeasuresMetric::before {
+    top: 0;
+    right: 0;
+    bottom: auto;
+    width: auto;
+    height: 1px;
+  }
+
+  .teamMeasuresMetric:nth-child(3)::before,
+  .teamMeasuresMetric:nth-child(4)::before,
+  .teamMeasuresMetric:nth-child(5)::before {
+    display: block;
+  }
+
+  .teamMeasuresContextNotice,
+  .teamMeasuresLocationCaution {
+    padding-right: 10px;
+    padding-left: 12px;
+  }
+
+  .teamMeasuresHistoryDetail {
+    padding: 19px 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .teamMeasuresWorkflow *,
+  .teamMeasuresWorkflow *::before,
+  .teamMeasuresWorkflow *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .teamMeasuresTab:hover,
+  .teamMeasuresClassificationCard:hover,
+  .teamMeasuresHistoryItem:hover,
+  .teamMeasuresRecordCard:hover {
+    transform: none;
+  }
+}

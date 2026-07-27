@@ -1,0 +1,906 @@
+/* Detailed visit workflow -------------------------------------------------- */
+
+.teamVisitWorkflow {
+  --team-visit-urgent: var(--red, #b42318);
+  --team-visit-observed: var(--amber, #8a4b08);
+  --team-visit-ok: var(--green, #087443);
+  position: relative;
+  display: grid;
+  gap: clamp(18px, 2.4vw, 28px);
+  min-width: 0;
+  padding-top: 24px;
+}
+
+.teamVisitControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(270px, .58fr);
+  align-items: end;
+  gap: 18px 28px;
+}
+
+.teamVisitModeSelector {
+  width: max-content;
+  max-width: 100%;
+  border-color: color-mix(in srgb, var(--team) 18%, var(--line));
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--team-soft) 78%, #fff),
+      rgba(255, 255, 255, .82)
+    );
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, .8);
+}
+
+.teamVisitModeSelector button {
+  position: relative;
+  overflow: hidden;
+  border-radius: 999px;
+}
+
+.teamVisitModeSelector button::after {
+  content: "";
+  position: absolute;
+  inset: auto 20% 3px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--team);
+  opacity: 0;
+  transform: scaleX(.35);
+  transition: opacity .2s ease, transform .25s cubic-bezier(.16, 1, .3, 1);
+}
+
+.teamVisitModeSelector button:hover {
+  transform: translateY(-1px);
+}
+
+.teamVisitModeSelector button.isSelected::after {
+  opacity: .8;
+  transform: scaleX(1);
+}
+
+.teamVisitModeSelector button:focus-visible,
+.teamVisitMoment:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.teamVisitCase {
+  width: 100%;
+  max-width: 430px;
+  justify-self: end;
+}
+
+.teamVisitCase select {
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, .96), var(--team-soft));
+}
+
+.teamVisitModeNote {
+  width: fit-content;
+  max-width: 920px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: -3px 0 0;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--team-ink);
+  background: color-mix(in srgb, var(--team-soft) 72%, #fff);
+  box-shadow: 0 5px 16px color-mix(in srgb, var(--team) 8%, transparent);
+  animation: teamVisitNoteIn .38s cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.teamVisitModeNote svg {
+  flex: 0 0 auto;
+  color: var(--team);
+}
+
+.teamVisitMoments {
+  position: relative;
+  min-width: 0;
+  margin: 1px 0 0;
+}
+
+.teamVisitMoments [role="tablist"] {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  isolation: isolate;
+}
+
+.teamVisitMoments [role="tablist"]::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 27px;
+  right: 7%;
+  left: 7%;
+  height: 2px;
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--team) 10%, var(--line)),
+      color-mix(in srgb, var(--team) 50%, var(--line)),
+      color-mix(in srgb, var(--team) 10%, var(--line))
+    );
+}
+
+.teamVisitMoment {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 18px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  text-align: left;
+  transition:
+    color .2s ease,
+    background .2s ease,
+    box-shadow .2s ease,
+    transform .22s cubic-bezier(.16, 1, .3, 1);
+}
+
+.teamVisitMoment:hover {
+  color: var(--team-ink);
+  background: color-mix(in srgb, var(--team-soft) 55%, #fff);
+  transform: translateY(-2px);
+}
+
+.teamVisitMoment.isSelected {
+  color: var(--team-ink);
+  background: rgba(255, 255, 255, .94);
+  box-shadow:
+    0 10px 25px color-mix(in srgb, var(--team) 13%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--team) 16%, transparent);
+}
+
+.teamVisitMomentNumber {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--team) 24%, var(--line));
+  border-radius: 50%;
+  color: var(--team);
+  background: #fff;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .035em;
+  box-shadow: 0 5px 13px color-mix(in srgb, var(--team) 9%, transparent);
+  transition:
+    color .2s ease,
+    border-color .2s ease,
+    background .2s ease,
+    transform .25s cubic-bezier(.16, 1, .3, 1);
+}
+
+.teamVisitMoment:hover .teamVisitMomentNumber {
+  transform: scale(1.06);
+}
+
+.teamVisitMoment.isSelected .teamVisitMomentNumber {
+  border-color: transparent;
+  color: #fff;
+  background:
+    linear-gradient(145deg, var(--team), var(--team-deep));
+  box-shadow: 0 7px 18px color-mix(in srgb, var(--team) 28%, transparent);
+}
+
+.teamVisitMomentCopy {
+  display: block;
+  min-width: 0;
+  flex: 1;
+}
+
+.teamVisitMomentCopy strong,
+.teamVisitMomentCopy small {
+  display: block;
+}
+
+.teamVisitMomentCopy strong {
+  overflow: hidden;
+  color: inherit;
+  font-size: .88rem;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.teamVisitMomentCopy small {
+  overflow: hidden;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: .72rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.teamVisitMomentDone {
+  flex: 0 0 auto;
+  color: var(--team-visit-ok);
+  filter: drop-shadow(0 3px 5px color-mix(in srgb, var(--team-visit-ok) 18%, transparent));
+  animation: teamVisitDoneIn .38s cubic-bezier(.16, 1.4, .3, 1) both;
+}
+
+.teamVisitWorkspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 310px);
+  align-items: start;
+  gap: clamp(25px, 3.8vw, 48px);
+  min-width: 0;
+}
+
+.teamVisitPanel {
+  min-width: 0;
+  padding: 4px 0 0;
+  animation: teamVisitPanelIn .4s cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.teamVisitSectionLabel {
+  position: relative;
+  align-items: center;
+  margin-bottom: 14px;
+  padding-bottom: 16px;
+}
+
+.teamVisitSectionLabel::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 39px;
+  height: 1px;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--team) 38%, var(--line)),
+      transparent
+    );
+}
+
+.teamVisitSectionLabel > span {
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--team) 13%, transparent);
+}
+
+.teamVisitChecklist {
+  min-width: 0;
+}
+
+.teamVisitCheckitem {
+  position: relative;
+  min-width: 0;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 19px 7px 21px 17px;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--team) 12%, var(--line));
+  background: transparent;
+  transition:
+    background .2s ease,
+    border-color .2s ease,
+    transform .22s cubic-bezier(.16, 1, .3, 1);
+  animation: teamVisitItemIn .38s cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.teamVisitCheckitem:first-child {
+  border-top: 1px solid color-mix(in srgb, var(--team) 12%, var(--line));
+}
+
+.teamVisitCheckitem:nth-child(2) { animation-delay: 35ms; }
+.teamVisitCheckitem:nth-child(3) { animation-delay: 70ms; }
+.teamVisitCheckitem:nth-child(4) { animation-delay: 105ms; }
+.teamVisitCheckitem:nth-child(5) { animation-delay: 140ms; }
+.teamVisitCheckitem:nth-child(n + 6) { animation-delay: 170ms; }
+
+.teamVisitCheckitem::before {
+  content: "";
+  position: absolute;
+  top: 15px;
+  bottom: 15px;
+  left: 0;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--team);
+  opacity: 0;
+  transform: scaleY(.35);
+  transition: opacity .2s ease, transform .25s cubic-bezier(.16, 1, .3, 1);
+}
+
+.teamVisitCheckitem:hover,
+.teamVisitCheckitem:focus-within {
+  border-color: transparent;
+  border-radius: 16px;
+  background:
+    linear-gradient(
+      105deg,
+      color-mix(in srgb, var(--team-soft) 62%, #fff),
+      rgba(255, 255, 255, .48)
+    );
+  transform: translateX(3px);
+}
+
+.teamVisitCheckitem:hover::before,
+.teamVisitCheckitem:focus-within::before,
+.teamVisitCheckitem:not([data-status="No revisado"])::before {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+.teamVisitCheckitem[data-status="Urgente"]::before {
+  background: var(--team-visit-urgent);
+}
+
+.teamVisitCheckitem[data-status="Observado"]::before {
+  background: var(--team-visit-observed);
+}
+
+.teamVisitCheckitem[data-status="Conforme"]::before {
+  background: var(--team-visit-ok);
+}
+
+.teamVisitCheckitem[data-status="No aplica"]::before {
+  background: color-mix(in srgb, var(--muted) 68%, var(--line));
+}
+
+.teamVisitPointTitle {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 13px;
+  padding: 0;
+  color: var(--text);
+}
+
+.teamVisitPointTitle > span {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  color: var(--team);
+  background: var(--team-soft);
+  font-size: .66rem;
+  font-weight: 900;
+}
+
+.teamVisitCheckitem[data-status="Urgente"] .teamVisitPointTitle > span {
+  color: #fff;
+  background: var(--team-visit-urgent);
+}
+
+.teamVisitCheckitem[data-status="Observado"] .teamVisitPointTitle > span {
+  color: #fff;
+  background: var(--team-visit-observed);
+}
+
+.teamVisitCheckitem[data-status="Conforme"] .teamVisitPointTitle > span {
+  color: #fff;
+  background: var(--team-visit-ok);
+}
+
+.teamVisitPointTitle strong {
+  padding-top: 2px;
+  font-size: .95rem;
+  line-height: 1.35;
+}
+
+.teamVisitPointFields {
+  display: grid;
+  grid-template-columns: minmax(145px, .72fr) minmax(185px, .95fr) minmax(220px, 1.25fr);
+  align-items: end;
+  gap: 11px;
+  padding-left: 35px;
+}
+
+.teamVisitPointField > span {
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: .73rem;
+  font-weight: 800;
+  letter-spacing: .015em;
+}
+
+.teamVisitPointField :is(input, select) {
+  min-height: 43px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .76);
+  font-size: .82rem;
+}
+
+.teamVisitNote input::placeholder {
+  color: color-mix(in srgb, var(--muted) 72%, transparent);
+}
+
+.teamVisitFindings {
+  margin-top: 20px;
+}
+
+.teamVisitFindings textarea {
+  min-height: 210px;
+  padding: 16px;
+  line-height: 1.55;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, .95),
+      color-mix(in srgb, var(--team-soft) 58%, #fff)
+    );
+}
+
+.teamVisitRules {
+  position: sticky;
+  top: 92px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 13px;
+  overflow: hidden;
+  padding: 20px 18px 21px;
+  border: 1px solid color-mix(in srgb, var(--team) 16%, var(--line));
+  border-radius: 27px 11px 27px 11px;
+  color: var(--team-ink);
+  background:
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--team-glow) 52%, transparent),
+      transparent 45%
+    ),
+    linear-gradient(
+      155deg,
+      color-mix(in srgb, var(--team-soft) 80%, #fff),
+      rgba(255, 255, 255, .92)
+    );
+  box-shadow: 0 15px 35px color-mix(in srgb, var(--team) 11%, transparent);
+  animation: teamVisitRulesIn .45s cubic-bezier(.16, 1, .3, 1) .08s both;
+}
+
+.teamVisitRulesIcon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(145deg, var(--team), var(--team-deep));
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--team) 25%, transparent);
+}
+
+.teamVisitRules h3 {
+  margin: 4px 0 11px;
+  color: var(--team-ink);
+  font-size: .96rem;
+}
+
+.teamVisitRules ul {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.teamVisitRules li {
+  position: relative;
+  padding-left: 15px;
+  color: color-mix(in srgb, var(--team-ink) 77%, var(--muted));
+  font-size: .79rem;
+  line-height: 1.42;
+}
+
+.teamVisitRules li::before {
+  content: "";
+  position: absolute;
+  top: .54em;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--team);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--team) 10%, transparent);
+}
+
+.teamVisitSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 17px 20px;
+  border-top: 1px solid color-mix(in srgb, var(--team) 15%, var(--line));
+  border-bottom: 1px solid color-mix(in srgb, var(--team) 15%, var(--line));
+  border-radius: 18px;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--team-soft) 66%, #fff),
+      rgba(255, 255, 255, .74)
+    );
+}
+
+.teamVisitSummaryIntro {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.teamVisitSummaryIntro > svg {
+  flex: 0 0 auto;
+  color: var(--team);
+  animation: teamVisitSparkle 3s ease-in-out infinite;
+}
+
+.teamVisitSummaryIntro strong,
+.teamVisitSummaryIntro small {
+  display: block;
+}
+
+.teamVisitSummaryIntro strong {
+  color: var(--team-ink);
+  font-size: .9rem;
+}
+
+.teamVisitSummaryIntro small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: .76rem;
+}
+
+.teamVisitStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(82px, 1fr));
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.teamVisitStats > div {
+  min-width: 82px;
+  padding: 2px 16px;
+  text-align: center;
+}
+
+.teamVisitStats > div + div {
+  border-left: 1px solid color-mix(in srgb, var(--team) 17%, var(--line));
+}
+
+.teamVisitStats dt {
+  color: var(--muted);
+  font-size: .68rem;
+  font-weight: 780;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+.teamVisitStats dd {
+  margin: 1px 0 0;
+  color: var(--team-ink);
+  font-size: 1.18rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.teamVisitStats > div:nth-child(2) dd {
+  color: var(--team-visit-urgent);
+}
+
+.teamVisitStats > div:nth-child(3) dd {
+  color: var(--team-visit-observed);
+}
+
+.teamVisitDraft {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: -8px 0 0;
+  border-left-color: var(--team);
+  color: var(--team-ink);
+  background:
+    linear-gradient(
+      115deg,
+      color-mix(in srgb, var(--team-soft) 76%, #fff),
+      rgba(255, 255, 255, .92)
+    );
+  box-shadow: 0 9px 24px color-mix(in srgb, var(--team) 9%, transparent);
+  animation: teamVisitDraftIn .36s cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.teamVisitDraft > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--team);
+}
+
+.teamVisitDraft p {
+  margin: 0;
+  font-size: .87rem;
+}
+
+.teamVisitActions {
+  margin-top: -3px;
+}
+
+.teamVisitActions :is(.teamGhostButton, .teamSaveButton) {
+  gap: 8px;
+}
+
+.teamVisitActions :is(.teamGhostButton, .teamSaveButton) svg {
+  transition: transform .2s cubic-bezier(.16, 1, .3, 1);
+}
+
+.teamVisitActions .teamGhostButton:hover svg {
+  transform: rotate(-4deg) translateY(-1px);
+}
+
+.teamVisitActions .teamSaveButton:hover svg {
+  transform: translateX(3px);
+}
+
+.teamVisitActions :is(.teamGhostButton, .teamSaveButton):focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+@keyframes teamVisitNoteIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes teamVisitPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes teamVisitItemIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes teamVisitRulesIn {
+  from {
+    opacity: 0;
+    transform: translateX(10px) scale(.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes teamVisitDoneIn {
+  from {
+    opacity: 0;
+    transform: scale(.4) rotate(-18deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes teamVisitDraftIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes teamVisitSparkle {
+  0%,
+  100% {
+    transform: rotate(0) scale(1);
+  }
+  50% {
+    transform: rotate(8deg) scale(1.1);
+  }
+}
+
+@media (max-width: 1120px) {
+  .teamVisitWorkspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 23px;
+  }
+
+  .teamVisitRules {
+    position: static;
+    grid-template-columns: auto minmax(0, 1fr);
+    border-radius: 22px 9px 22px 9px;
+  }
+
+  .teamVisitRules ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 22px;
+  }
+}
+
+@media (max-width: 880px) {
+  .teamVisitControls {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .teamVisitModeSelector,
+  .teamVisitCase {
+    width: 100%;
+    max-width: none;
+    justify-self: stretch;
+  }
+
+  .teamVisitModeSelector {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .teamVisitPointFields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .teamVisitNote {
+    grid-column: 1 / -1;
+  }
+
+  .teamVisitSummary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .teamVisitStats {
+    width: 100%;
+  }
+}
+
+@media (max-width: 680px) {
+  .teamVisitWorkflow {
+    gap: 18px;
+    padding-top: 20px;
+  }
+
+  .teamVisitModeSelector {
+    grid-template-columns: minmax(0, 1fr);
+    border-radius: 18px;
+  }
+
+  .teamVisitModeSelector button {
+    min-height: 43px;
+    border-radius: 14px;
+  }
+
+  .teamVisitModeNote {
+    width: 100%;
+    align-items: flex-start;
+    border-radius: 16px;
+    line-height: 1.42;
+  }
+
+  .teamVisitMoments {
+    overflow-x: auto;
+    margin-inline: -4px;
+    padding: 4px 4px 9px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+
+  .teamVisitMoments [role="tablist"] {
+    display: flex;
+    min-width: max-content;
+  }
+
+  .teamVisitMoments [role="tablist"]::before {
+    display: none;
+  }
+
+  .teamVisitMoment {
+    width: min(72vw, 245px);
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  .teamVisitPointFields {
+    grid-template-columns: minmax(0, 1fr);
+    padding-left: 0;
+  }
+
+  .teamVisitNote {
+    grid-column: auto;
+  }
+
+  .teamVisitCheckitem {
+    padding: 17px 5px 19px 13px;
+  }
+
+  .teamVisitCheckitem:hover,
+  .teamVisitCheckitem:focus-within {
+    transform: none;
+  }
+
+  .teamVisitRules {
+    padding: 17px 15px 18px;
+  }
+
+  .teamVisitRules ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .teamVisitSummary {
+    padding: 15px;
+  }
+
+  .teamVisitStats > div {
+    min-width: 0;
+    padding-inline: 8px;
+  }
+
+  .teamVisitActions > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 430px) {
+  .teamVisitMoment {
+    width: 78vw;
+  }
+
+  .teamVisitRules {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .teamVisitRulesIcon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .teamVisitStats dt {
+    font-size: .61rem;
+  }
+
+  .teamVisitStats dd {
+    font-size: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .teamVisitWorkflow,
+  .teamVisitWorkflow *,
+  .teamVisitWorkflow *::before,
+  .teamVisitWorkflow *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

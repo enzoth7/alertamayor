@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import "leaflet/dist/leaflet.css";
 import "./globals.css";
+import "./components/team/TeamCasesWorkflow.css";
+import "./components/team/TeamVisitsWorkflow.css";
+import "./components/team/TeamMeasuresWorkflow.css";
+import "./components/team/TeamLicenseWorkflow.css";
 
 export const metadata: Metadata = {
   title: "Alerta Mayor",

@@ -2,9 +2,22 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
-import { Building2, Map, MapPinned, Search, ShieldAlert } from "lucide-react";
+import { Building2, ChevronDown, Map, MapPinned, Search, ShieldAlert } from "lucide-react";
 import facilityData from "../data/facilities.json";
 import type { Facility, FacilityStatus, MapMode } from "./map-types";
+
+function RegistryNoticeAccordion({ title, tone, defaultOpen = false, children }: { title: string; tone: "violet" | "red" | "amber"; defaultOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return <div className={`registryNoticeAccordion accordion-${tone} ${open ? "accordionOpen" : ""}`}>
+    <button className="registryNoticeHeader" onClick={() => setOpen(!open)} aria-expanded={open}>
+      <strong className="registryNoticeTitle">{title}</strong>
+      <ChevronDown className="registryNoticeChevron" size={19}/>
+    </button>
+    <div className="registryNoticeBody">
+      <div className="registryNoticeContent">{children}</div>
+    </div>
+  </div>;
+}
 
 const StreetMap = dynamic(() => import("./StreetMap"), {
   ssr: false,
@@ -95,9 +108,20 @@ export default function UruguayRegistry({ onReport }: { onReport: () => void }) 
         <button className={`stageCard stage-amber ${status === "registro" ? "selected" : ""}`} onClick={() => setStatus(status === "registro" ? "" : "registro")}><span className="stageNumber">Etapa 1</span><strong><i className="statusDot"/>Certificado de registro</strong><small>Emitidos durante 2024.</small></button>
         <button className={`stageCard stage-violet ${status === "verificar" ? "selected" : ""}`} onClick={() => setStatus(status === "verificar" ? "" : "verificar")}><span className="stageNumber">3 DEMO</span><strong><i className="statusDot"/>Dato no conciliado</strong><small>Capa ficticia pendiente de verificación.</small></button>
       </div>
-      <div className="registryInstitutionalNotice"><strong>Posibles establecimientos no registrados: capa institucional del prototipo.</strong><span> Los tres puntos violetas muestran cómo se incorporaría una alerta que no coincide con las fuentes públicas. Cada ficha indica el origen, el canal de entrada, el organismo receptor propuesto y el estado de la derivación.</span><button className="link" onClick={onReport}>Agregar otro lugar para verificar</button></div>
-      <div className="registryMeasuresNotice"><strong><i/>Las medidas administrativas son otra dimensión.</strong><span> Observación, apercibimiento, multa, suspensión, clausura o caducidad no deben mezclarse con la etapa de habilitación. No existe una base pública nacional única y actualizada de todas esas medidas.</span></div>
-      <div className="registryReadNotice"><strong>Cómo leer este mapa:</strong><span> el color principal indica la etapa administrativa respaldada por la fuente; la precisión geográfica aparece como dato secundario. Un registro histórico puede haber cambiado después de su fecha de corte.</span></div>
+      <div className="registryNoticeStack">
+        <RegistryNoticeAccordion title="Posibles establecimientos no registrados: capa institucional del prototipo" tone="violet">
+          <p>Los tres puntos violetas muestran cómo se incorporaría una alerta que no coincide con las fuentes públicas. Cada ficha indica el origen, el canal de entrada, el organismo receptor propuesto y el estado de la derivación.</p>
+          <button className="link" onClick={onReport}>Agregar otro lugar para verificar</button>
+        </RegistryNoticeAccordion>
+
+        <RegistryNoticeAccordion title="Las medidas administrativas son otra dimensión" tone="red">
+          <p>Observación, apercibimiento, multa, suspensión, clausura o caducidad no deben mezclarse con la etapa de habilitación. No existe una base pública nacional única y actualizada de todas esas medidas.</p>
+        </RegistryNoticeAccordion>
+
+        <RegistryNoticeAccordion title="Cómo leer este mapa" tone="amber">
+          <p>El color principal indica la etapa administrativa respaldada por la fuente; la precisión geográfica aparece como dato secundario. Un registro histórico puede haber cambiado después de su fecha de corte.</p>
+        </RegistryNoticeAccordion>
+      </div>
       <div className="registryToolbar">
         <label className="searchField"><span>Nombre, calle o localidad</span><div className="registrySearchBox"><Search size={19}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ej.: La Paz, Artigas 1308, hogar"/></div></label>
         <label><span>Departamento</span><select value={department} onChange={(event) => setDepartment(event.target.value)}><option value="">Todos</option>{departmentCounts.map(([name]) => <option key={name}>{name}</option>)}</select></label>
