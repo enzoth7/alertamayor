@@ -1,0 +1,16 @@
+# dependencies and build output
+node_modules/
+.next/
+out/
+
+# local tooling
+.agents/
+.vscode/
+
+# environment files
+.env*
+!.env.example
+
+# operating system files
+.DS_Store
+Thumbs.db

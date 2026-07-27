@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="es-UY">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alerta ELEPEM · Mapa y seguimiento institucional</title>
+<meta name="description" content="Prototipo académico de orientación, georreferenciación y seguimiento de casos vinculados con ELEPEM.">
+<link rel="preconnect" href="https://unpkg.com">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<style>
+:root{
+  --bg:#f2f5f8;--surface:#fff;--surface-2:#f8fafc;--text:#15202b;--muted:#5d6875;
+  --line:#d7dee7;--navy:#0b2443;--primary:#155eef;--primary-2:#0e47b8;
+  --danger:#b42318;--danger-bg:#fff0ef;--warning:#8a4b08;--warning-bg:#fff7e6;
+  --ok:#087443;--ok-bg:#ecfdf3;--purple:#6d28d9;--focus:#ffbf47;
+  --shadow:0 14px 38px rgba(15,35,60,.09);--radius:18px;--base:18px;
+}
+*{box-sizing:border-box}
+html{font-size:var(--base)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif;line-height:1.45}
+body.contrast{--bg:#000;--surface:#111;--surface-2:#191919;--text:#fff;--muted:#eee;--line:#777;--navy:#000;--primary:#82b9ff;--primary-2:#a4ceff;--danger:#ff8178;--danger-bg:#260807;--warning:#ffd27a;--warning-bg:#2a1d02;--ok:#75e7ad;--ok-bg:#052819;--purple:#d8b4fe}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:4px solid var(--focus);outline-offset:3px}
+button[disabled]{cursor:not-allowed;opacity:.46}
+.topbar{position:sticky;top:0;z-index:1000;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:10px 18px;box-shadow:0 2px 14px rgba(0,0,0,.14)}
+.brand-wrap{display:flex;align-items:center;gap:10px}.brand-mark{width:34px;height:34px;border-radius:10px;background:#fff;color:var(--navy);display:grid;place-items:center;font-weight:900}.brand{font-weight:900;letter-spacing:.2px}.brand small{display:block;font-weight:400;opacity:.8;font-size:.7rem}
+.top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.utility{border:1px solid rgba(255,255,255,.55);background:transparent;color:#fff;border-radius:999px;padding:8px 12px;font-size:.83rem}.utility:hover{background:rgba(255,255,255,.12)}
+.shell{max-width:1240px;margin:auto;padding:18px 18px 88px}.narrow{max-width:850px;margin:auto}
+.demo-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--warning-bg);color:var(--warning);border:1px solid #ebc981;border-radius:14px;padding:11px 14px;margin-bottom:16px;font-weight:800}.demo-banner span:last-child{font-size:.8rem;font-weight:600}
+.progress-wrap{display:flex;gap:10px;align-items:center;margin:4px 0 18px}.progress-track{height:8px;border-radius:99px;background:var(--line);overflow:hidden;flex:1}.progress-bar{height:100%;width:0;background:var(--primary);transition:width .2s}.progress-label{color:var(--muted);font-size:.84rem;min-width:92px;text-align:right}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)}
+.card + .card{margin-top:16px}.card.flat{box-shadow:none}.card.subtle{background:var(--surface-2)}
+h1{font-size:1.78rem;line-height:1.14;margin:0 0 12px}h2{font-size:1.32rem;line-height:1.2;margin:0 0 10px}h3{font-size:1.02rem;margin:0 0 6px}p{margin:0 0 14px}.lead{font-size:1.08rem;color:var(--muted)}.muted{color:var(--muted)}.small{font-size:.84rem}.micro{font-size:.74rem}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.action-card,.choice{width:100%;min-height:108px;background:var(--surface);color:var(--text);border:2px solid var(--line);border-radius:16px;padding:16px;text-align:left;transition:.14s}.action-card:hover,.choice:hover{border-color:var(--primary);transform:translateY(-1px)}.action-card strong,.choice strong{display:block;font-size:1.03rem;margin-bottom:5px}.action-card.danger{background:var(--danger-bg);border-color:#efb4ae}.action-card.danger strong{color:var(--danger)}.choice.selected{border-color:var(--primary);background:rgba(21,94,239,.07)}.icon{display:block;font-size:1.42rem;margin-bottom:7px}
+.actions{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:22px}.action-group{display:flex;gap:9px;flex-wrap:wrap}.btn{min-height:48px;border:0;border-radius:12px;padding:12px 17px;font-weight:900}.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-2)}.btn-secondary{background:var(--surface);color:var(--text);border:2px solid var(--line)}.btn-secondary:hover{border-color:var(--primary)}.btn-danger{background:var(--danger);color:#fff}.btn-soft{background:rgba(21,94,239,.09);color:var(--primary);border:1px solid rgba(21,94,239,.2)}.btn-link{background:transparent;color:var(--primary);text-decoration:underline;padding:8px 0}.btn-small{min-height:38px;padding:8px 11px;font-size:.82rem}
+.field{margin:15px 0}label{display:block;font-weight:900;margin-bottom:7px}input,select,textarea{width:100%;background:var(--surface);color:var(--text);border:2px solid var(--line);border-radius:12px;padding:12px 13px}textarea{min-height:110px;resize:vertical}.help{color:var(--muted);font-size:.83rem;margin-top:5px}.inline-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.checkrow{display:flex;gap:10px;align-items:flex-start;margin:12px 0}.checkrow input{width:24px;height:24px;margin-top:1px}.checkrow label{font-weight:700;margin:0}
+.notice{border-left:5px solid var(--primary);background:rgba(21,94,239,.07);border-radius:11px;padding:14px;margin:14px 0}.notice.danger{border-left-color:var(--danger);background:var(--danger-bg)}.notice.ok{border-left-color:var(--ok);background:var(--ok-bg)}.notice.warning{border-left-color:var(--warning);background:var(--warning-bg)}
+.pill{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:999px;padding:5px 9px;font-size:.77rem;font-weight:900;margin:2px 4px 2px 0;white-space:nowrap}.pill.ok{color:var(--ok);background:var(--ok-bg);border-color:#a4ddc0}.pill.warn{color:var(--warning);background:var(--warning-bg);border-color:#ebc981}.pill.danger{color:var(--danger);background:var(--danger-bg);border-color:#efb4ae}.pill.info{color:var(--primary);background:rgba(21,94,239,.08);border-color:rgba(21,94,239,.25)}.pill.purple{color:var(--purple);background:rgba(109,40,217,.08);border-color:rgba(109,40,217,.23)}
+.result{border:2px solid var(--line);border-radius:15px;padding:14px;margin:10px 0;background:var(--surface)}.result.selected{border-color:var(--primary);background:rgba(21,94,239,.06)}.result-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.result-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.map-shell{position:relative;border:2px solid var(--line);border-radius:16px;overflow:hidden;background:#dce9ef;min-height:430px}.map{height:430px;width:100%;z-index:1}.map-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}.map-status{padding:8px 10px;border-radius:9px;background:var(--surface-2);color:var(--muted);font-size:.82rem}.map-legend{position:absolute;right:10px;bottom:10px;z-index:500;background:rgba(255,255,255,.95);color:#15202b;border:1px solid #cbd5e1;border-radius:10px;padding:8px 10px;font-size:12px;box-shadow:0 5px 18px rgba(0,0,0,.12)}.legend-row{display:flex;align-items:center;gap:7px;margin:4px 0}.dot{width:11px;height:11px;border-radius:50%;display:inline-block}.dot-blue{background:#155eef}.dot-green{background:#087443}.dot-orange{background:#d97706}.dot-red{background:#b42318}.dot-purple{background:#6d28d9}.leaflet-container{font:14px Arial,Helvetica,sans-serif}.leaflet-popup-content .btn{min-height:34px;padding:6px 9px;font-size:12px}.leaflet-control-attribution{font-size:10px!important}
+.fallback-map{height:430px;position:relative;overflow:hidden;background:linear-gradient(135deg,#d8edf3 0 36%,#eef3da 36% 100%)}.fallback-map:before{content:"Mapa de demostración";position:absolute;left:12px;top:12px;background:rgba(255,255,255,.9);padding:6px 9px;border-radius:8px;font-size:12px;font-weight:800;color:#17324d}.fallback-road{position:absolute;height:3px;background:rgba(111,124,135,.45);transform-origin:left center;border-radius:4px}.fallback-marker{position:absolute;width:24px;height:24px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.24);cursor:pointer}.fallback-marker span{display:block;transform:rotate(45deg);font-size:10px;color:#fff;text-align:center;line-height:16px;font-weight:900}.fallback-label{position:absolute;background:rgba(255,255,255,.93);padding:5px 7px;border-radius:7px;font-size:11px;border:1px solid #cbd5e1;max-width:160px}
+.location-card{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:12px;background:var(--surface-2);margin:12px 0}.coords{font-family:Consolas,monospace;font-size:.82rem}
+.summary{border-top:1px solid var(--line);margin-top:14px}.summary-row{display:grid;grid-template-columns:190px 1fr;gap:15px;padding:11px 0;border-bottom:1px solid var(--line)}
+.status-list{list-style:none;padding:0;margin:18px 0}.status-list li{position:relative;padding:0 0 22px 36px;color:var(--muted)}.status-list li:before{content:"";position:absolute;left:9px;top:7px;width:12px;height:12px;border-radius:50%;background:var(--line)}.status-list li:after{content:"";position:absolute;left:14px;top:19px;width:2px;height:calc(100% - 7px);background:var(--line)}.status-list li:last-child:after{display:none}.status-list li.done{color:var(--text)}.status-list li.done:before{background:var(--ok)}.status-list li.current{color:var(--text);font-weight:900}.status-list li.current:before{background:var(--primary);box-shadow:0 0 0 5px rgba(21,94,239,.14)}
+.route{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0}.route span{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-weight:900}.route b{color:var(--muted)}
+.screen{display:none}.screen.active{display:block;animation:fade .17s ease-out}@keyframes fade{from{opacity:.25;transform:translateY(4px)}to{opacity:1;transform:none}}
+/* Institutional portal */
+.portal-shell{display:grid;grid-template-columns:250px minmax(0,1fr);gap:16px}.sidebar{background:var(--navy);color:#fff;border-radius:18px;padding:18px;min-height:690px;position:sticky;top:74px;align-self:start}.sidebar h2{font-size:1.05rem}.sidebar p{color:rgba(255,255,255,.72)}.side-nav{display:grid;gap:7px;margin:20px 0}.side-nav button{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:10px;text-align:left;padding:10px 11px;font-weight:800}.side-nav button.active,.side-nav button:hover{background:rgba(255,255,255,.14)}.side-bottom{border-top:1px solid rgba(255,255,255,.2);padding-top:14px;margin-top:20px}
+.portal-main{min-width:0}.portal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}.portal-head .actions{margin:0}.kpi{background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:16px;box-shadow:var(--shadow)}.kpi .value{font-size:1.8rem;font-weight:900;line-height:1}.kpi .label{color:var(--muted);font-size:.82rem;margin-top:7px}.kpi.danger{border-top:5px solid var(--danger)}.kpi.warn{border-top:5px solid #d97706}.kpi.info{border-top:5px solid var(--primary)}.kpi.ok{border-top:5px solid var(--ok)}
+.dashboard-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(340px,.75fr);gap:16px;margin-top:16px}.filter-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}.filter-row select,.filter-row input{padding:9px 10px;font-size:.86rem}.case-list{display:grid;gap:9px;max-height:520px;overflow:auto;padding-right:4px}.case-row{display:grid;grid-template-columns:100px minmax(170px,1.25fr) 95px minmax(180px,1.15fr);gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:11px;background:var(--surface);cursor:pointer}.case-row:hover,.case-row.selected{border-color:var(--primary);background:rgba(21,94,239,.05)}.case-id{font-family:Consolas,monospace;font-weight:900;color:var(--primary)}.case-cell strong{display:block}.case-cell span{display:block;color:var(--muted);font-size:.78rem}.urgency{font-weight:900}.urgency.critica{color:var(--danger)}.urgency.alta{color:#c05f00}.urgency.media{color:var(--primary)}.urgency.baja{color:var(--ok)}
+.case-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(310px,.65fr);gap:16px}.case-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}.meta-box{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:11px}.meta-box span{display:block;color:var(--muted);font-size:.76rem}.meta-box strong{display:block;margin-top:3px}.timeline{border-left:3px solid var(--line);margin:16px 0 0 8px;padding-left:20px}.timeline-item{position:relative;padding:0 0 18px}.timeline-item:before{content:"";position:absolute;left:-28px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--primary);border:3px solid var(--surface)}.timeline-item time{display:block;color:var(--muted);font-size:.76rem}.timeline-item p{margin:4px 0 0}.action-panel{display:grid;gap:12px}.action-panel .card{padding:17px}.access-note{font-size:.8rem;background:var(--warning-bg);color:var(--warning);border-radius:10px;padding:10px}
+.public-map-layout{display:grid;grid-template-columns:290px minmax(0,1fr);gap:16px}.filter-card{position:sticky;top:76px;align-self:start}.filter-card .checkrow{align-items:center}.filter-card .checkrow input{width:20px;height:20px}.public-list{max-height:260px;overflow:auto;display:grid;gap:7px}.public-item{border:1px solid var(--line);border-radius:10px;padding:9px;cursor:pointer}.public-item:hover{border-color:var(--primary)}
+.footer-note{text-align:center;color:var(--muted);font-size:.79rem;margin-top:18px}.quick-exit{position:fixed;right:14px;bottom:14px;z-index:1100;border:0;border-radius:999px;background:#151515;color:#fff;padding:11px 15px;font-weight:900;box-shadow:var(--shadow)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);background:#17202b;color:#fff;border-radius:11px;padding:11px 15px;z-index:1500;opacity:0;pointer-events:none;transition:.18s;max-width:90%;text-align:center}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:1000px){.portal-shell{grid-template-columns:1fr}.sidebar{position:static;min-height:auto}.side-nav{grid-template-columns:repeat(4,minmax(0,1fr))}.dashboard-grid,.case-layout{grid-template-columns:1fr}.public-map-layout{grid-template-columns:1fr}.filter-card{position:static}.grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:720px){:root{--base:17px}.shell{padding:14px 12px 78px}.topbar{align-items:flex-start}.brand small{display:none}.grid,.grid-3,.grid-4,.inline-fields,.filter-row,.case-meta{grid-template-columns:1fr}.card{padding:18px}.summary-row{grid-template-columns:1fr;gap:3px}.map,.fallback-map,.map-shell{height:390px;min-height:390px}.side-nav{grid-template-columns:1fr 1fr}.case-row{grid-template-columns:85px 1fr}.case-row .case-cell:nth-child(3),.case-row .case-cell:nth-child(4),.case-row .case-cell:nth-child(5){grid-column:2}.portal-head{display:block}.portal-head .actions{margin-top:10px}.demo-banner{display:block}.demo-banner span:last-child{display:block;margin-top:4px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand-wrap"><div class="brand-mark">AE</div><div class="brand">Alerta ELEPEM<small>Mapa, orientación y seguimiento</small></div></div>
+  <div class="top-actions">
+    <button class="utility" data-go="home">Canal ciudadano</button>
+    <button class="utility" data-go="publicMap">Mapa</button>
+    <button class="utility" data-go="orgLogin">Portal organismos</button>
+    <button class="utility" id="fontBtn">A+ Texto</button>
+    <button class="utility" id="contrastBtn">Contraste</button>
+  </div>
+</header>
+
+<main class="shell">
+  <div class="demo-banner"><span>PROTOTIPO ACADÉMICO · TODOS LOS CASOS, CENTROS Y ESTADOS SON FICTICIOS</span><span>No recibe ni envía denuncias reales</span></div>
+  <div class="progress-wrap" id="progressWrap"><div class="progress-track"><div class="progress-bar" id="progressBar"></div></div><div class="progress-label" id="progressLabel">Inicio</div></div>
+
+  <section class="screen active" data-screen="home">
+    <div class="narrow">
+      <div class="card">
+        <h1>Una puerta para comunicar. Un recorrido para que el caso no se pierda.</h1>
+        <p class="lead">Esta versión agrega georreferenciación, un mapa de establecimientos y un portal institucional para aceptar, derivar y seguir casos.</p>
+        <div class="grid">
+          <button class="action-card danger" data-go="emergency"><span class="icon">⚠️</span><strong>Necesito ayuda ahora</strong>Fuego, violencia en curso, lesión grave, encierro o peligro inmediato.</button>
+          <button class="action-card" data-go="role"><span class="icon">🗣️</span><strong>Quiero comunicar una situación</strong>Abuso, negligencia, accidente, riesgo o posible irregularidad.</button>
+          <button class="action-card" data-go="publicMap"><span class="icon">🗺️</span><strong>Consultar el mapa de ELEPEM</strong>Buscar por nombre, dirección o cercanía y ver información administrativa ficticia.</button>
+          <button class="action-card" data-go="orgLogin"><span class="icon">🏛️</span><strong>Portal para organismos</strong>Recibir, aceptar, derivar, registrar actuaciones y seguir los casos.</button>
+          <button class="action-card" data-go="provider"><span class="icon">📋</span><strong>Reportar un incidente como responsable</strong>Recorrido separado para notificación obligatoria del prestador.</button>
+          <button class="action-card" data-go="trackingLookup"><span class="icon">🔢</span><strong>Seguir una comunicación</strong>Consultar el estado mediante un código ficticio, sin crear una cuenta.</button>
+        </div>
+        <div class="notice"><strong>Separación necesaria:</strong> el mapa público muestra establecimientos y estados administrativos verificados. Las alertas y ubicaciones exactas de casos solo aparecen dentro del portal autorizado.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" data-screen="emergency">
+    <div class="narrow"><div class="card">
+      <h1>Primero, buscá ayuda inmediata</h1><p class="lead">El formulario nunca debe interponerse entre la persona y los servicios de emergencia.</p>
+      <div class="grid">
+        <button class="choice" data-select="emergencyType" data-value="Fuego o humo"><span class="icon">🔥</span><strong>Fuego, humo o explosión</strong></button>
+        <button class="choice" data-select="emergencyType" data-value="Violencia en curso"><span class="icon">🚨</span><strong>Violencia en curso</strong></button>
+        <button class="choice" data-select="emergencyType" data-value="Lesión grave"><span class="icon">🩺</span><strong>Persona inconsciente o herida grave</strong></button>
+        <button class="choice" data-select="emergencyType" data-value="Encierro o desaparición"><span class="icon">🚪</span><strong>Encierro, desaparición o imposibilidad de salir</strong></button>
+      </div>
+      <div class="notice danger"><strong>En una situación real:</strong> llamar al 911, a Bomberos o al servicio médico correspondiente. Luego puede registrarse el incidente para que quede asociado al establecimiento y tenga seguimiento.</div>
+      <div class="actions"><button class="btn btn-secondary" data-go="home">Volver</button><button class="btn btn-primary" data-go="role">Continuar con registro ficticio</button></div>
+    </div></div>
+  </section>
+
+  <section class="screen" data-screen="role">
+    <div class="narrow"><div class="card">
+      <h1>¿Desde qué lugar comunicás la situación?</h1><p class="lead">El recorrido, la protección y las preguntas cambian según quién comunica.</p>
+      <div class="grid">
+        <button class="choice" data-select="role" data-value="Persona residente"><span class="icon">👤</span><strong>Vivo en el establecimiento</strong></button>
+        <button class="choice" data-select="role" data-value="Familiar o referente"><span class="icon">🤝</span><strong>Soy familiar o referente</strong></button>
+        <button class="choice" data-select="role" data-value="Trabajador/a o extrabajador/a"><span class="icon">🧑‍⚕️</span><strong>Trabajo o trabajé allí</strong></button>
+        <button class="choice" data-select="role" data-value="Vecino/a o visitante"><span class="icon">🏘️</span><strong>Soy vecino/a o visitante</strong></button>
+        <button class="choice" data-select="role" data-value="Profesional"><span class="icon">🗂️</span><strong>Soy profesional</strong></button>
+        <button class="choice" data-select="role" data-value="Otra persona"><span class="icon">➕</span><strong>Otro vínculo</strong></button>
+      </div>
+      <div class="actions"><button class="btn btn-secondary" data-go="home">Volver</button><button class="btn btn-primary" data-require="role" data-go="locate" disabled>Ubicar el lugar</button></div>
+    </div></div>
+  </section>
+
+  <section class="screen" data-screen="locate">
+    <div class="card">
+      <h1>Ubicá el establecimiento o el lugar</h1>
+      <p class="lead">Podés buscarlo, usar tu ubicación o marcarlo manualmente. En una versión real también se cruzarían nombres anteriores, responsables y anexos.</p>
+      <div class="inline-fields">
+        <div class="field"><label for="citizenSearch">Nombre, dirección, barrio o localidad</label><input id="citizenSearch" placeholder="Ej.: calle, esquina o nombre del lugar"></div>
+        <div class="field"><label for="citizenDept">Departamento</label><select id="citizenDept"><option value="">Todos</option><option>Montevideo</option><option>Canelones</option><option>Durazno</option><option>Paysandú</option></select></div>
+      </div>
+      <div class="map-toolbar">
+        <button class="btn btn-primary" id="citizenSearchBtn">Buscar</button>
+        <button class="btn btn-secondary" id="geoBtn">📍 Usar mi ubicación</button>
+        <button class="btn btn-secondary" id="manualPinBtn">➕ Marcar en el mapa</button>
+        <span class="map-status" id="geoStatus">Todavía no seleccionaste una ubicación.</span>
+      </div>
+      <div class="map-shell"><div id="citizenMap" class="map" aria-label="Mapa de establecimientos ficticios"></div><div class="map-legend"><div class="legend-row"><span class="dot dot-green"></span> Habilitado</div><div class="legend-row"><span class="dot dot-orange"></span> En trámite</div><div class="legend-row"><span class="dot dot-red"></span> Medida administrativa</div><div class="legend-row"><span class="dot dot-blue"></span> Tu ubicación o pin</div></div></div>
+      <div id="selectedLocation"></div>
+      <div id="citizenResults"></div>
+      <div class="notice warning"><strong>Privacidad geográfica:</strong> en el canal ciudadano se captura la ubicación necesaria para identificar el lugar. La precisión exacta no debe publicarse en un mapa abierto de denuncias.</div>
+      <div class="actions"><button class="btn btn-secondary" data-back>Volver</button><button class="btn btn-primary" id="continueFromMap" disabled>Continuar</button></div>
+    </div>
+  </section>
+
+  <section class="screen" data-screen="category">
+    <div class="narrow"><div class="card">
+      <h1>¿Qué tipo de situación querés comunicar?</h1><p class="lead">Podés elegir más de una. Un incidente reportado no se presenta como abuso confirmado.</p>
+      <div class="grid">
+        <button class="choice" data-multi="categories" data-value="Violencia física, psicológica o sexual"><span class="icon">🛑</span><strong>Violencia o amenazas</strong>Golpes, gritos, humillación, abuso sexual o represalias.</button>
+        <button class="choice" data-multi="categories" data-value="Negligencia o abandono"><span class="icon">🥛</span><strong>Negligencia o abandono</strong>Falta de comida, agua, higiene, atención o supervisión.</button>
+        <button class="choice" data-multi="categories" data-value="Medicación, contención o encierro"><span class="icon">💊</span><strong>Medicación, contención o encierro</strong>Restricciones o sedación sin explicación suficiente.</button>
+        <button class="choice" data-multi="categories" data-value="Abuso patrimonial"><span class="icon">💳</span><strong>Dinero, documentos o bienes</strong>Presión, apropiación, firmas o uso indebido de recursos.</button>
+        <button class="choice" data-multi="categories" data-value="Incidente clínico o accidente"><span class="icon">🩹</span><strong>Accidente o incidente clínico</strong>Caída, error de medicación, atragantamiento o lesión.</button>
+        <button class="choice" data-multi="categories" data-value="Riesgo edilicio o incendio"><span class="icon">🏚️</span><strong>Riesgo edilicio o incendio</strong>Salidas bloqueadas, electricidad, gas, humo o hacinamiento.</button>
+        <button class="choice" data-multi="categories" data-value="Irregularidad del establecimiento"><span class="icon">📍</span><strong>Posible irregularidad</strong>No aparece, usa otra dirección, oculta un anexo o incumple una medida.</button>
+        <button class="choice" data-multi="categories" data-value="Otra preocupación"><span class="icon">✍️</span><strong>Otra preocupación</strong>Algo que no encaja claramente en las opciones anteriores.</button>
+      </div>
+      <div class="actions"><button class="btn btn-secondary" data-back>Volver</button><button class="btn btn-primary" data-require-multi="categories" data-go="details" disabled>Continuar</button></div>
+    </div></div>
+  </section>
+
+  <section class="screen" data-screen="details">
+    <div class="narrow"><div class="card">
+      <h1>Contá lo esencial</h1><p class="lead">No hace falta conocer términos técnicos. Un equipo humano debería revisar la situación.</p>
+      <div class="field"><label for="when">¿Cuándo ocurrió o desde cuándo ocurre?</label><select id="when"><option value="">Elegir</option><option>Está ocurriendo ahora</option><option>Ocurrió hoy</option><option>Ocurrió durante la última semana</option><option>Ocurre de forma repetida</option><option>No lo sé</option></select></div>
+      <div class="field"><label for="story">¿Qué pasó?</label><textarea id="story" placeholder="Ejemplo ficticio: Durante el turno nocturno una persona permaneció caída sin recibir ayuda."></textarea><div class="help">No uses nombres ni datos reales en este prototipo.</div></div>
+      <div class="grid"><button class="choice mock"><span class="icon">🎙️</span><strong>Contarlo con la voz</strong>Transcripción simulada y revisable.</button><button class="choice mock"><span class="icon">📎</span><strong>Adjuntar evidencia</strong>Fotos o documentos simulados.</button></div>
+      <div class="checkrow"><input id="multiple" type="checkbox"><label for="multiple">Creo que puede afectar a más personas del establecimiento.</label></div>
+      <div class="actions"><button class="btn btn-secondary" data-back>Volver</button><button class="btn btn-primary" data-go="privacy">Continuar</button></div>
+    </div></div>
+  </section>
+
+  <section class="screen" data-screen="privacy">
+    <div class="narrow"><div class="card">
+      <h1>Elegí cómo proteger tu identidad</h1><p class="lead">La herramienta debe explicar claramente beneficios y límites.</p>
+      <div class="grid">
+        <button class="choice" data-select="privacy" data-value="Anónima"><span class="icon">◯</span><strong>Anónima</strong>No se registra mi identidad. Puede dificultar el contacto y la investigación.</button>
+        <button class="choice" data-select="privacy" data-value="Confidencial"><span class="icon">🔒</span><strong>Confidencial</strong>La identidad queda bajo custodia del equipo independiente y no se entrega al centro.</button>
+        <button class="choice" data-select="privacy" data-value="Identificada"><span class="icon">✓</span><strong>Identificada</strong>Autorizo a compartir los datos mínimos con los organismos necesarios.</button>
+      </div>
+      <div class="actions"><button class="btn btn-secondary" data-back>Volver</button><button class="btn btn-primary" data-require="privacy" data-go="contact" disabled>Continuar</button></div>
+    </div></div>
+  </section>
+
+  <section class="screen" data-screen="contact">
+    <div class="narrow"><div class="card">
+      <h1>¿Cómo sería seguro contactarte?</h1><p class="lead">Esto es central para residentes y trabajadores que temen represalias.</p>
+      <div class="field"><label for="contactMode">Medio preferido</label><select id="contactMode"><option value="">No deseo contacto / soy anónimo</option><option>Llamada telefónica</option><option>WhatsApp o SMS</option><option>Correo electrónico</option><option>Persona de confianza</option></select></div>
+      <div class="field"><label for="safeTime">Horario o condición segura</label><input id="safeTime" placeholder="Ej.: llamar después de las 18:00; no dejar mensaje"></div>
+      <div class="checkrow"><input id="noCenter" type="checkbox"><label for="noCenter">No contactar al establecimiento antes de hablar conmigo o con la persona afectada.</label></div>
+      <div class="actions"><button class="btn btn-secondary" data-back>Volver</button><button class="btn btn-primary" data-go="review">Revisar</button></div>
+    </div></div>
+  </section>
+
+  <section class="screen" data-screen="review">
+    <div class="narrow"><div class="card">
+      <h1>Revisá antes de continuar</h1><p class="lead">La persona puede corregir el resumen y decidir qué información compartir.</p>
+      <div class="summary" id="summary"></div>
+      <div class="notice"><strong>Ruta de demostración</strong><div class="route" id="route"></div></div>
+      <div class="checkrow"><input id="consent" type="checkbox"><label for="consent">Entiendo que este prototipo usa datos ficticios y no envía información.</label></div>
+      <div class="actions"><button class="btn btn-secondary" data-back>Corregir</button><button class="btn btn-primary" id="submitDemo" disabled>Generar caso ficticio</button></div>
+    </div></div>
+  </section>
+
+  <section class="screen" data-screen="confirmation">
+    <div class="narrow"><div class="card">
+      <div class="notice ok"><h1>Caso ficticio generado</h1><p>No se envió información a ningún organismo.</p></div>
+      <h2>Código de seguimiento</h2><p id="protocol" style="font-size:1.5rem;font-weight:900;letter-spacing:1px">DEMO-000000</p>
+      <h2>Qué demuestra esta versión</h2>
+      <ul class="status-list"><li class="done">Comunicación georreferenciada y asociada a un lugar.</li><li class="done">Evaluación inicial y ruta sugerida.</li><li class="current">Entrada en la bandeja del organismo responsable.</li><li>Confirmación de aceptación o redirección.</li><li>Actuaciones, medida de protección, inspección o realojo.</li><li>Cierre explicado y trazable.</li></ul>
+      <div class="actions"><button class="btn btn-secondary" data-go="tracking">Ver seguimiento ciudadano</button><button class="btn btn-primary" id="openInstitutionalCase">Ver cómo llega al portal institucional</button></div>
+    </div></div>
+  </section>
+
+  <section class="screen" data-screen="trackingLookup">
+    <div class="narrow"><div class="card">
+      <h1>Seguir una comunicación</h1><p class="lead">La consulta no debería exigir una cuenta compleja.</p>
+      <div class="field"><label for="trackingCode">Código</label><input id="trackingCode" placeholder="Ej.: DEMO-240701"></div>
+      <div class="actions"><button class="btn btn-secondary" data-go="home">Volver</button><button class="btn btn-primary" data-go="tracking">Consultar estado ficticio</button></div>
+    </div></div>
+  </section>
+
+  <section class="screen" data-screen="tracking">
+    <div class="narrow"><div class="card">
+      <h1>Seguimiento del caso</h1><p class="lead">El valor no es solo enviar: es saber quién aceptó el caso y qué ocurrió después.</p>
+      <div class="location-card"><div><strong id="trackingPlace">Lugar identificado</strong><div class="small muted" id="trackingCoords"></div></div><span class="pill info">Ubicación protegida</span></div>
+      <ul class="status-list"><li class="done"><strong>Recibido</strong><br><span class="small">Código único generado.</span></li><li class="done"><strong>Evaluación inicial completada</strong><br><span class="small">Urgencia, ubicación y contacto seguro revisados.</span></li><li class="current"><strong>Pendiente de aceptación institucional</strong><br><span class="small">El organismo debe aceptar, solicitar datos o redirigir formalmente.</span></li><li><strong>Medidas y resultado</strong><br><span class="small">Se muestran cuando existe una actuación verificable.</span></li></ul>
+      <div class="notice warning">La persona no debería ver nombres ni datos privados de terceros, pero sí un estado comprensible y la explicación de cada derivación.</div>
+      <div class="actions"><button class="btn btn-secondary" data-go="home">Volver al inicio</button><button class="btn btn-primary" data-go="orgLogin">Abrir portal de demostración</button></div>
+    </div></div>
+  </section>
+
+  <section class="screen" data-screen="publicMap">
+    <div class="public-map-layout">
+      <aside class="card filter-card">
+        <h2>Mapa público de ELEPEM</h2><p class="small muted">Datos ficticios. No muestra denuncias ni identifica personas.</p>
+        <div class="field"><label for="publicSearch">Buscar</label><input id="publicSearch" placeholder="Nombre, barrio o departamento"></div>
+        <h3>Estado administrativo</h3>
+        <div class="checkrow"><input type="checkbox" class="public-filter" value="Habilitado" checked><label>Habilitado</label></div>
+        <div class="checkrow"><input type="checkbox" class="public-filter" value="En trámite" checked><label>Registrado / en trámite</label></div>
+        <div class="checkrow"><input type="checkbox" class="public-filter" value="Medida administrativa" checked><label>Medida administrativa verificada</label></div>
+        <div class="notice warning small"><strong>No equivale a un ranking de seguridad.</strong> Un estado administrativo es información vigente a una fecha, no una garantía de ausencia de riesgos.</div>
+        <h3>Resultados</h3><div class="public-list" id="publicList"></div>
+      </aside>
+      <div class="card">
+        <div class="portal-head"><div><h1>Ubicación y estado administrativo</h1><p class="lead">El mapa público sirve para identificar el establecimiento y la autoridad que actualizó el dato.</p></div><div class="actions"><button class="btn btn-primary" data-go="role">Comunicar una situación</button></div></div>
+        <div class="map-shell"><div id="publicMapCanvas" class="map"></div><div class="map-legend"><div class="legend-row"><span class="dot dot-green"></span> Habilitado</div><div class="legend-row"><span class="dot dot-orange"></span> En trámite</div><div class="legend-row"><span class="dot dot-red"></span> Medida administrativa</div></div></div>
+        <div class="notice"><strong>Diseño propuesto:</strong> el registro público debe tener un identificador permanente, nombres anteriores, dirección, fecha de actualización y fuente. Los casos permanecen en una capa protegida.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" data-screen="orgLogin">
+    <div class="narrow"><div class="card">
+      <h1>Portal de organismos · demostración</h1><p class="lead">Simula acceso por rol. No existe autenticación ni conexión institucional real.</p>
+      <div class="field"><label for="agencySelect">Ingresar como</label><select id="agencySelect"><option>Inmayores / MIDES</option><option>MSP · fiscalización ELEPEM</option><option>Policía / Fiscalía</option><option>Bomberos</option><option>Sistema de Cuidados / BPS</option><option>Coordinación interinstitucional</option></select></div>
+      <div class="field"><label for="demoUser">Nombre de demostración</label><input id="demoUser" value="Equipo técnico ficticio" readonly></div>
+      <div class="notice warning"><strong>En una versión real:</strong> acceso con identidad institucional, permisos por función, auditoría, separación de datos identificatorios y trazabilidad de cada consulta.</div>
+      <div class="actions"><button class="btn btn-secondary" data-go="home">Volver</button><button class="btn btn-primary" id="enterPortal">Ingresar al tablero</button></div>
+    </div></div>
+  </section>
+
+  <section class="screen" data-screen="orgDashboard">
+    <div class="portal-shell">
+      <aside class="sidebar">
+        <h2>Portal institucional</h2><p id="agencyLabel">Inmayores / MIDES</p>
+        <nav class="side-nav"><button class="active" data-portal-view="dashboard">▦ Bandeja de casos</button><button data-go="orgMap">⌖ Mapa de casos</button><button data-go="publicMap">◉ Registro público</button><button data-go="orgAnalytics">▥ Indicadores</button></nav>
+        <div class="side-bottom"><p class="micro">DATOS FICTICIOS</p><button class="utility" data-go="home">Cerrar demostración</button></div>
+      </aside>
+      <div class="portal-main">
+        <div class="portal-head"><div><h1>Bandeja interinstitucional</h1><p class="lead">Aceptar, derivar, registrar actuaciones y ver alertas repetidas sobre un mismo lugar.</p></div><div class="action-group"><button class="btn btn-secondary" data-go="orgMap">Ver mapa completo</button><button class="btn btn-primary" id="newInstitutionalDemo">+ Crear caso ficticio</button></div></div>
+        <div class="grid-4"><div class="kpi danger"><div class="value" id="kpiCritical">0</div><div class="label">Críticos o con plazo vencido</div></div><div class="kpi warn"><div class="value" id="kpiPending">0</div><div class="label">Pendientes de aceptación</div></div><div class="kpi info"><div class="value" id="kpiOpen">0</div><div class="label">Casos abiertos</div></div><div class="kpi ok"><div class="value" id="kpiClosed">0</div><div class="label">Cerrados con resultado</div></div></div>
+        <div class="dashboard-grid">
+          <div class="card flat">
+            <h2>Casos</h2>
+            <div class="filter-row"><input id="caseSearch" placeholder="Buscar código o centro"><select id="statusFilter"><option value="">Todos los estados</option></select><select id="urgencyFilter"><option value="">Toda urgencia</option><option>Crítica</option><option>Alta</option><option>Media</option><option>Baja</option></select><select id="agencyFilter"><option value="">Todos los organismos</option></select></div>
+            <div class="case-list" id="caseList"></div>
+          </div>
+          <div class="card flat"><h2>Mapa operativo</h2><p class="small muted">Las ubicaciones exactas son visibles solo para roles autorizados.</p><div class="map-shell" style="min-height:440px"><div id="dashboardMap" class="map" style="height:440px"></div><div class="map-legend"><div class="legend-row"><span class="dot dot-red"></span> Crítica</div><div class="legend-row"><span class="dot dot-orange"></span> Alta</div><div class="legend-row"><span class="dot dot-blue"></span> Media</div><div class="legend-row"><span class="dot dot-green"></span> Cerrada</div></div></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" data-screen="orgMap">
+    <div class="portal-shell">
+      <aside class="sidebar"><h2>Portal institucional</h2><p id="agencyLabelMap">Organismo</p><nav class="side-nav"><button data-go="orgDashboard">▦ Bandeja</button><button class="active">⌖ Mapa de casos</button><button data-go="publicMap">◉ Registro público</button><button data-go="orgAnalytics">▥ Indicadores</button></nav><div class="side-bottom"><p class="micro">DATOS FICTICIOS</p><button class="utility" data-go="home">Cerrar</button></div></aside>
+      <div class="portal-main"><div class="portal-head"><div><h1>Mapa operativo de casos</h1><p class="lead">Permite detectar concentración, reincidencia institucional y diferencias entre lugar declarado y lugar reportado.</p></div><button class="btn btn-primary" data-go="orgDashboard">Volver a la bandeja</button></div>
+        <div class="card"><div class="filter-row"><select id="mapStatusFilter"><option value="">Todos los estados</option></select><select id="mapUrgencyFilter"><option value="">Toda urgencia</option><option>Crítica</option><option>Alta</option><option>Media</option><option>Baja</option></select><select id="mapAgencyFilter"><option value="">Todos los organismos</option></select><select id="mapLayer"><option value="cases">Casos individuales autorizados</option><option value="aggregated">Vista agregada por zona</option></select></div><div class="map-shell" style="min-height:620px"><div id="orgFullMap" class="map" style="height:620px"></div><div class="map-legend"><div class="legend-row"><span class="dot dot-red"></span> Crítica</div><div class="legend-row"><span class="dot dot-orange"></span> Alta</div><div class="legend-row"><span class="dot dot-blue"></span> Media</div><div class="legend-row"><span class="dot dot-green"></span> Cerrada</div><div class="legend-row"><span class="dot dot-purple"></span> Múltiples alertas</div></div></div></div>
+        <div class="notice warning"><strong>Regla de seguridad:</strong> la vista agregada es la única apta para informes públicos. El mapa individual requiere permisos, justificación de acceso y registro de auditoría.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" data-screen="orgCase">
+    <div class="portal-shell">
+      <aside class="sidebar"><h2>Portal institucional</h2><p id="agencyLabelCase">Organismo</p><nav class="side-nav"><button data-go="orgDashboard">← Bandeja de casos</button><button data-go="orgMap">⌖ Mapa</button><button data-go="orgAnalytics">▥ Indicadores</button></nav><div class="side-bottom"><p class="micro">DATOS FICTICIOS</p></div></aside>
+      <div class="portal-main"><div class="portal-head"><div><h1 id="caseTitle">Caso</h1><p class="lead" id="caseSubtitle"></p></div><div id="caseStatusPills"></div></div>
+        <div class="case-layout">
+          <div>
+            <div class="card"><h2>Resumen protegido</h2><div class="case-meta" id="caseMeta"></div><div class="notice" id="caseSummary"></div><div class="route" id="caseRoute"></div><div class="access-note">La identidad del denunciante y los datos de salud se guardarían separados. Esta vista muestra solo los datos mínimos para la actuación.</div></div>
+            <div class="card"><h2>Ubicación y antecedentes del lugar</h2><div class="map-shell" style="min-height:330px"><div id="caseMap" class="map" style="height:330px"></div></div><div id="repeatAlert"></div></div>
+            <div class="card"><h2>Línea de tiempo</h2><div class="timeline" id="caseTimeline"></div></div>
+          </div>
+          <aside class="action-panel">
+            <div class="card"><h2>Responsabilidad</h2><button class="btn btn-primary" id="acceptCase" style="width:100%">Aceptar caso</button><div class="field"><label for="routeAgency">Derivar o sumar organismo</label><select id="routeAgency"></select></div><button class="btn btn-secondary" id="routeCase" style="width:100%">Registrar derivación</button></div>
+            <div class="card"><h2>Nueva actuación</h2><div class="field"><label for="actionText">Nota breve</label><textarea id="actionText" placeholder="Ej.: contacto privado realizado; se coordina inspección."></textarea></div><div class="field"><label for="newStatus">Actualizar estado</label><select id="newStatus"></select></div><button class="btn btn-primary" id="addAction" style="width:100%">Guardar actuación ficticia</button></div>
+            <div class="card"><h2>Protección y seguimiento</h2><button class="btn btn-soft" id="protectionBtn" style="width:100%;margin-bottom:8px">Registrar medida de protección</button><button class="btn btn-soft" id="inspectionBtn" style="width:100%;margin-bottom:8px">Registrar inspección</button><button class="btn btn-soft" id="closeBtn" style="width:100%">Cerrar con resultado</button></div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" data-screen="orgAnalytics">
+    <div class="portal-shell">
+      <aside class="sidebar"><h2>Portal institucional</h2><p id="agencyLabelAnalytics">Organismo</p><nav class="side-nav"><button data-go="orgDashboard">▦ Bandeja</button><button data-go="orgMap">⌖ Mapa</button><button class="active">▥ Indicadores</button></nav><div class="side-bottom"><p class="micro">DATOS FICTICIOS</p></div></aside>
+      <div class="portal-main"><div class="portal-head"><div><h1>Indicadores de gestión y protección</h1><p class="lead">No cuentan únicamente denuncias: distinguen alertas, incidentes, actuaciones y resultados.</p></div><button class="btn btn-primary" data-go="orgDashboard">Volver</button></div>
+        <div class="grid-4"><div class="kpi info"><div class="value" id="metricAcceptance">—</div><div class="label">Aceptados dentro del plazo</div></div><div class="kpi warn"><div class="value" id="metricContact">—</div><div class="label">Contacto seguro logrado</div></div><div class="kpi danger"><div class="value" id="metricRepeat">—</div><div class="label">Centros con alertas repetidas</div></div><div class="kpi ok"><div class="value" id="metricResolved">—</div><div class="label">Cierres con resultado registrado</div></div></div>
+        <div class="grid-3" style="margin-top:16px"><div class="card"><h2>Por categoría</h2><div id="categoryMetrics"></div></div><div class="card"><h2>Por organismo</h2><div id="agencyMetrics"></div></div><div class="card"><h2>Por etapa</h2><div id="statusMetrics"></div></div></div>
+        <div class="notice warning"><strong>Para una evaluación real:</strong> los denominadores deben considerar población residente o días de residencia. Un mayor número de alertas no equivale automáticamente a peor calidad.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" data-screen="provider">
+    <div class="narrow"><div class="card"><h1>Reporte obligatorio de incidente</h1><p class="lead">Canal separado para responsables del ELEPEM. No sustituye la denuncia independiente de residentes, familias o trabajadores.</p>
+      <div class="field"><label for="providerEstablishment">Establecimiento ficticio</label><select id="providerEstablishment"></select></div><div class="field"><label for="providerType">Tipo de incidente crítico</label><select id="providerType"><option>Muerte inesperada</option><option>Lesión grave u hospitalización</option><option>Incendio, humo o evacuación</option><option>Desaparición o ausencia no explicada</option><option>Presunto abuso o negligencia grave</option><option>Error de medicación con daño</option><option>Falta crítica de personal o servicios</option></select></div><div class="field"><label for="providerAction">Medidas inmediatas adoptadas</label><textarea id="providerAction" placeholder="Datos ficticios únicamente."></textarea></div><div class="notice">En una versión real se necesitarían base normativa, plazos, identidad institucional y consecuencias por no informar.</div><div class="actions"><button class="btn btn-secondary" data-go="home">Volver</button><button class="btn btn-primary" id="providerSubmit">Generar reporte ficticio</button></div>
+    </div></div>
+  </section>
+
+  <section class="screen" data-screen="providerDone">
+    <div class="narrow"><div class="card"><h1>Reporte institucional ficticio creado</h1><p class="lead">Se asoció con el identificador permanente del establecimiento y apareció en la bandeja institucional.</p><div class="route"><span>ELEPEM</span><b>→</b><span>Registro único</span><b>→</b><span>MSP / MIDES</span><b>→</b><span>Seguimiento</span></div><div class="notice danger">El reporte del establecimiento nunca bloquea la presentación de otra versión por residentes, familias o trabajadores.</div><div class="actions"><button class="btn btn-secondary" data-go="home">Volver</button><button class="btn btn-primary" data-go="orgDashboard">Ver en el portal</button></div></div></div>
+  </section>
+
+  <div class="footer-note">Diseño exploratorio. No representa un servicio oficial ni una validación institucional. Datos y nombres ficticios.</div>
+</main>
+<button class="quick-exit" id="quickExit">Salida rápida</button><div class="toast" id="toast"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+"use strict";
+const AGENCIES=["Inmayores / MIDES","MSP · fiscalización ELEPEM","Policía / Fiscalía","Bomberos","Sistema de Cuidados / BPS","Coordinación interinstitucional"];
+const STATUSES=["Pendiente de aceptación","En evaluación","Contacto seguro realizado","Verificación territorial","Inspección coordinada","Medida de protección activa","Realojo en curso","Derivado a vía penal","Cerrado con resultado"];
+const establishments=[
+ {id:"E-001",name:"Residencial Los Tilos",aliases:["Los Tilos"],address:"Av. Central 1234",dept:"Montevideo",status:"Habilitado",lat:-34.8826,lng:-56.1647,updated:"18/07/2026",source:"MSP · dato ficticio"},
+ {id:"E-002",name:"Hogar Amanecer",aliases:["Amanecer"],address:"Calle del Parque 456",dept:"Canelones",status:"En trámite",lat:-34.7638,lng:-56.2231,updated:"12/07/2026",source:"MSP · dato ficticio"},
+ {id:"E-003",name:"Casa del Prado",aliases:["Prado Hogar"],address:"Camino Norte 980",dept:"Montevideo",status:"Medida administrativa",lat:-34.8498,lng:-56.2059,updated:"22/07/2026",source:"MSP · dato ficticio"},
+ {id:"E-004",name:"Residencial Horizonte",aliases:["Horizonte"],address:"Ruta 5 km 181",dept:"Durazno",status:"Habilitado",lat:-33.3822,lng:-56.5234,updated:"20/07/2026",source:"MSP · dato ficticio"},
+ {id:"E-005",name:"Hogar del Litoral",aliases:["Litoral"],address:"Zelmar 770",dept:"Paysandú",status:"Habilitado",lat:-32.3193,lng:-58.0757,updated:"19/07/2026",source:"MSP · dato ficticio"},
+ {id:"E-006",name:"Residencial Santa Clara",aliases:["Santa Clara"],address:"Camino de los Aromos 114",dept:"Canelones",status:"En trámite",lat:-34.7075,lng:-55.9554,updated:"10/07/2026",source:"MSP · dato ficticio"}
+];
+let cases=[
+ {id:"DEMO-240701",establishmentId:"E-003",place:"Casa del Prado",lat:-34.8498,lng:-56.2059,urgency:"Crítica",status:"Pendiente de aceptación",category:"Riesgo edilicio o incendio",source:"Vecino/a",privacy:"Confidencial",assigned:["Inmayores / MIDES","MSP · fiscalización ELEPEM","Bomberos"],updated:"26/07/2026 14:32",due:"Hoy 16:30",summary:"Salida posterior bloqueada y olor persistente a cable quemado. La persona reportante teme que el centro conozca su identidad.",repeat:3,timeline:[{date:"26/07/2026 14:32",actor:"Sistema",text:"Alerta recibida y georreferenciada."},{date:"26/07/2026 14:35",actor:"Equipo de ingreso",text:"Clasificación preliminar crítica; se sugiere contacto con Bomberos y fiscalización."}]},
+ {id:"DEMO-240702",establishmentId:"E-001",place:"Residencial Los Tilos",lat:-34.8826,lng:-56.1647,urgency:"Alta",status:"En evaluación",category:"Violencia o amenazas",source:"Familiar",privacy:"Identificada",assigned:["Inmayores / MIDES","Policía / Fiscalía"],updated:"26/07/2026 12:10",due:"27/07 12:00",summary:"La residente refiere gritos, amenazas y retiro del teléfono luego de intentar comunicarse con su familia.",repeat:2,timeline:[{date:"26/07/2026 11:42",actor:"Sistema",text:"Caso recibido."},{date:"26/07/2026 12:10",actor:"Inmayores / MIDES",text:"Caso aceptado para evaluación y contacto seguro."}]},
+ {id:"DEMO-240703",establishmentId:"E-002",place:"Hogar Amanecer",lat:-34.7638,lng:-56.2231,urgency:"Media",status:"Inspección coordinada",category:"Medicación, contención o encierro",source:"Trabajador/a",privacy:"Confidencial",assigned:["Inmayores / MIDES","MSP · fiscalización ELEPEM"],updated:"25/07/2026 17:40",due:"29/07",summary:"Se reporta administración reiterada de medicación sedante sin que el personal pueda identificar una indicación actualizada.",repeat:1,timeline:[{date:"25/07/2026 09:20",actor:"Sistema",text:"Alerta de trabajador recibida."},{date:"25/07/2026 11:05",actor:"MSP",text:"Aceptación confirmada."},{date:"25/07/2026 17:40",actor:"MSP",text:"Inspección coordinada."}]},
+ {id:"DEMO-240704",establishmentId:null,place:"Casa sin identificar · zona La Comercial",lat:-34.8769,lng:-56.1722,urgency:"Alta",status:"Verificación territorial",category:"Irregularidad del establecimiento",source:"Vecino/a",privacy:"Anónima",assigned:["Inmayores / MIDES","MSP · fiscalización ELEPEM","Policía / Fiscalía"],updated:"25/07/2026 15:55",due:"27/07",summary:"Se observan traslados frecuentes de personas mayores. El lugar no aparece en el registro bajo el nombre usado por quienes lo administran.",repeat:4,timeline:[{date:"25/07/2026 08:18",actor:"Sistema",text:"Ubicación manual marcada; no coincide con registro público."},{date:"25/07/2026 15:55",actor:"Coordinación",text:"Solicitud de verificación territorial abierta."}]},
+ {id:"DEMO-240705",establishmentId:"E-005",place:"Hogar del Litoral",lat:-32.3193,lng:-58.0757,urgency:"Media",status:"Medida de protección activa",category:"Negligencia o abandono",source:"Profesional de salud",privacy:"Identificada",assigned:["Inmayores / MIDES","MSP · fiscalización ELEPEM"],updated:"24/07/2026 18:20",due:"Seguimiento 28/07",summary:"Una persona llegó a consulta con signos de deshidratación y úlceras por presión sin plan de tratamiento visible.",repeat:1,timeline:[{date:"24/07/2026 10:00",actor:"Profesional",text:"Situación comunicada."},{date:"24/07/2026 12:30",actor:"Inmayores / MIDES",text:"Contacto seguro realizado."},{date:"24/07/2026 18:20",actor:"Coordinación",text:"Medida de protección registrada."}]},
+ {id:"DEMO-240706",establishmentId:"E-004",place:"Residencial Horizonte",lat:-33.3822,lng:-56.5234,urgency:"Baja",status:"Cerrado con resultado",category:"Incidente clínico o accidente",source:"Responsable ELEPEM",privacy:"Institucional",assigned:["MSP · fiscalización ELEPEM"],updated:"23/07/2026 16:00",due:"Cerrado",summary:"Caída con lesión leve informada por el prestador. Se verificó atención médica y actualización del plan de prevención.",repeat:1,timeline:[{date:"22/07/2026 14:00",actor:"ELEPEM",text:"Reporte obligatorio presentado."},{date:"22/07/2026 15:20",actor:"MSP",text:"Reporte aceptado."},{date:"23/07/2026 16:00",actor:"MSP",text:"Cierre con medidas correctivas verificadas."}]}
+];
+const state={role:"",privacy:"",categories:[],emergencyType:"",establishment:null,location:null,locationSource:"",history:[],agency:AGENCIES[0],currentCaseId:null,lastCreatedCaseId:null,manualPin:false};
+const maps={};
+const progress={home:[0,"Inicio"],emergency:[8,"Emergencia"],role:[15,"1 de 6"],locate:[30,"2 de 6"],category:[45,"3 de 6"],details:[60,"4 de 6"],privacy:[73,"5 de 6"],contact:[85,"6 de 6"],review:[94,"Revisión"],confirmation:[100,"Creado"],trackingLookup:[20,"Consulta"],tracking:[100,"Seguimiento"],publicMap:[0,"Mapa público"],orgLogin:[0,"Acceso"],orgDashboard:[0,"Portal"],orgMap:[0,"Mapa operativo"],orgCase:[0,"Caso"],orgAnalytics:[0,"Indicadores"],provider:[45,"Reporte"],providerDone:[100,"Creado"]};
+
+function esc(value){return String(value??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2600);}
+function show(name,push=true){
+ const current=document.querySelector(".screen.active")?.dataset.screen;
+ if(push&&current&&current!==name) state.history.push(current);
+ document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("active",s.dataset.screen===name));
+ const [pct,label]=progress[name]||[0,""];document.getElementById("progressBar").style.width=pct+"%";document.getElementById("progressLabel").textContent=label;
+ document.getElementById("progressWrap").style.display=name.startsWith("org")||name==="publicMap"?"none":"flex";
+ if(name==="locate") setTimeout(initCitizenMap,80);
+ if(name==="publicMap") setTimeout(initPublicMap,80);
+ if(name==="review") renderReview();
+ if(name==="tracking") renderTracking();
+ if(name==="orgDashboard") setTimeout(renderDashboard,50);
+ if(name==="orgMap") setTimeout(renderOrgMap,50);
+ if(name==="orgCase") setTimeout(renderCase,30);
+ if(name==="orgAnalytics") renderAnalytics();
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+function refreshRequirements(){document.querySelectorAll("[data-require]").forEach(b=>b.disabled=!state[b.dataset.require]);document.querySelectorAll("[data-require-multi]").forEach(b=>b.disabled=!(state[b.dataset.requireMulti]||[]).length);}
+function statusColor(status){return status==="Habilitado"?"#087443":status==="En trámite"?"#d97706":"#b42318";}
+function urgencyColor(urgency,status){if(status==="Cerrado con resultado")return "#087443";return urgency==="Crítica"?"#b42318":urgency==="Alta"?"#d97706":urgency==="Media"?"#155eef":"#087443";}
+function urgencyClass(urgency){return ({"Crítica":"critica","Alta":"alta","Media":"media","Baja":"baja"})[urgency]||"media";}
+function defaultCenter(){return [-34.81,-56.15];}
+function leafletReady(){return typeof window.L!=="undefined";}
+function destroyMap(key){if(maps[key]?.leaflet){maps[key].leaflet.remove();}maps[key]=null;}
+function makeFallback(container,markers,onSelect,opts={}){
+ container.innerHTML='<div class="fallback-map"><div class="fallback-road" style="left:5%;top:68%;width:90%;transform:rotate(-8deg)"></div><div class="fallback-road" style="left:20%;top:12%;width:75%;transform:rotate(48deg)"></div><div class="fallback-road" style="left:6%;top:38%;width:88%;transform:rotate(12deg)"></div></div>';
+ const canvas=container.firstElementChild;
+ const bounds={minLat:-35.05,maxLat:-32.1,minLng:-58.3,maxLng:-55.7};
+ markers.forEach((m,i)=>{const x=Math.max(3,Math.min(94,(m.lng-bounds.minLng)/(bounds.maxLng-bounds.minLng)*100));const y=Math.max(5,Math.min(90,(bounds.maxLat-m.lat)/(bounds.maxLat-bounds.minLat)*100));const btn=document.createElement("button");btn.type="button";btn.className="fallback-marker";btn.style.left=x+"%";btn.style.top=y+"%";btn.style.background=m.color||"#155eef";btn.innerHTML='<span>'+((i+1)%10)+'</span>';btn.title=m.label;btn.addEventListener("click",()=>onSelect&&onSelect(m));canvas.appendChild(btn);});
+ const lab=document.createElement("div");lab.className="fallback-label";lab.style.left="12px";lab.style.bottom="12px";lab.textContent="Sin conexión al mapa base. Los puntos siguen siendo seleccionables.";canvas.appendChild(lab);
+ if(opts.onClick){canvas.addEventListener("click",e=>{if(e.target.closest(".fallback-marker"))return;const r=canvas.getBoundingClientRect();const px=(e.clientX-r.left)/r.width,py=(e.clientY-r.top)/r.height;const lng=bounds.minLng+px*(bounds.maxLng-bounds.minLng);const lat=bounds.maxLat-py*(bounds.maxLat-bounds.minLat);opts.onClick({latlng:{lat,lng}});});}
+ return {fallback:true,container};
+}
+function createMap(key,containerId,markers,onSelect,opts={}){
+ const container=document.getElementById(containerId);if(!container)return null;destroyMap(key);container.innerHTML="";
+ if(!leafletReady()) return maps[key]=makeFallback(container,markers,onSelect,opts);
+ const map=L.map(containerId,{zoomControl:true,scrollWheelZoom:true}).setView(opts.center||defaultCenter(),opts.zoom||8);
+ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+ const layer=L.layerGroup().addTo(map);
+ markers.forEach(m=>{const marker=L.circleMarker([m.lat,m.lng],{radius:m.radius||9,color:"#fff",weight:2,fillColor:m.color||"#155eef",fillOpacity:.95});marker.addTo(layer);marker.bindPopup(`<strong>${esc(m.label)}</strong>${m.subtitle?`<br><span>${esc(m.subtitle)}</span>`:""}${m.button?`<br><button class="btn btn-primary map-open" data-map-id="${esc(m.id)}">Abrir</button>`:""}`);marker.on("click",()=>onSelect&&onSelect(m));});
+ if(markers.length>1&&opts.fit!==false){const group=L.featureGroup(layer.getLayers());try{map.fitBounds(group.getBounds().pad(.15),{maxZoom:opts.maxZoom||13});}catch(e){}}
+ if(opts.onClick)map.on("click",opts.onClick);
+ setTimeout(()=>map.invalidateSize(),120);
+ return maps[key]={leaflet:map,layer};
+}
+function addOrMoveUserMarker(lat,lng,label="Ubicación seleccionada"){
+ state.location={lat:+lat,lng:+lng};
+ if(maps.citizen?.leaflet){if(maps.citizen.userMarker)maps.citizen.userMarker.setLatLng([lat,lng]);else maps.citizen.userMarker=L.circleMarker([lat,lng],{radius:10,color:"#fff",weight:3,fillColor:"#155eef",fillOpacity:1}).addTo(maps.citizen.leaflet).bindPopup(label);maps.citizen.leaflet.setView([lat,lng],14);maps.citizen.userMarker.openPopup();}
+ renderSelectedLocation();
+}
+function renderSelectedLocation(){const box=document.getElementById("selectedLocation");if(!box)return;if(!state.location){box.innerHTML="";document.getElementById("continueFromMap").disabled=true;return;}const place=state.establishment?state.establishment.name:"Ubicación marcada manualmente";box.innerHTML=`<div class="location-card"><div><strong>${esc(place)}</strong><div class="small muted">${esc(state.locationSource||"Ubicación seleccionada")}</div><div class="coords">${state.location.lat.toFixed(5)}, ${state.location.lng.toFixed(5)}</div></div><button class="btn btn-secondary btn-small" id="clearLocation">Cambiar</button></div>`;document.getElementById("continueFromMap").disabled=false;document.getElementById("clearLocation")?.addEventListener("click",()=>{state.location=null;state.establishment=null;state.locationSource="";renderSelectedLocation();});}
+function establishmentMarkers(items=establishments){return items.map(e=>({id:e.id,lat:e.lat,lng:e.lng,label:e.name,subtitle:e.status+" · "+e.dept,color:statusColor(e.status),raw:e}));}
+function initCitizenMap(){
+ const onSelect=m=>{selectEstablishment(m.raw);};
+ createMap("citizen","citizenMap",establishmentMarkers(),onSelect,{center:defaultCenter(),zoom:8,onClick:e=>{if(!state.manualPin)return;state.manualPin=false;state.establishment=null;state.locationSource="Pin manual";addOrMoveUserMarker(e.latlng.lat,e.latlng.lng,"Lugar marcado manualmente");document.getElementById("geoStatus").textContent="Ubicación marcada. Podés moverla activando nuevamente el pin.";}});
+ if(state.location)addOrMoveUserMarker(state.location.lat,state.location.lng);
+ renderCitizenResults(establishments);
+}
+function selectEstablishment(e){state.establishment=e;state.locationSource="Establecimiento del registro ficticio";addOrMoveUserMarker(e.lat,e.lng,e.name);document.getElementById("geoStatus").textContent=`Seleccionaste ${e.name}.`;document.querySelectorAll(".result[data-establishment]").forEach(x=>x.classList.toggle("selected",x.dataset.establishment===e.id));}
+function renderCitizenResults(items){const target=document.getElementById("citizenResults");if(!target)return;target.innerHTML=items.slice(0,6).map(e=>`<div class="result" data-establishment="${e.id}"><div class="result-head"><div><h3>${esc(e.name)}</h3><p class="small muted">${esc(e.address)} · ${esc(e.dept)}</p></div><span class="pill ${e.status==="Habilitado"?"ok":e.status==="En trámite"?"warn":"danger"}">${esc(e.status)}</span></div><div class="small">Actualizado: ${esc(e.updated)} · ${esc(e.source)}</div><div class="result-actions"><button class="btn btn-secondary btn-small select-est" data-id="${e.id}">Seleccionar</button><button class="btn btn-link btn-small focus-est" data-id="${e.id}">Ver en mapa</button></div></div>`).join("")+`<div class="result"><h3>El lugar no aparece o usa otro nombre</h3><p class="small muted">Marcá la ubicación aproximada en el mapa. Esto crea una solicitud de verificación, no una acusación pública.</p><button class="btn btn-secondary btn-small" id="unregisteredBtn">Marcar lugar no identificado</button></div>`;
+ target.querySelectorAll(".select-est").forEach(b=>b.addEventListener("click",()=>selectEstablishment(establishments.find(e=>e.id===b.dataset.id))));target.querySelectorAll(".focus-est").forEach(b=>b.addEventListener("click",()=>{const e=establishments.find(x=>x.id===b.dataset.id);if(maps.citizen?.leaflet)maps.citizen.leaflet.setView([e.lat,e.lng],15);else toast("Punto resaltado en el mapa esquemático.");}));document.getElementById("unregisteredBtn")?.addEventListener("click",()=>{state.establishment=null;state.manualPin=true;document.getElementById("geoStatus").textContent="Hacé clic en el mapa para marcar el lugar aproximado.";toast("Modo pin activado: hacé clic en el mapa.");});
+}
+function filterCitizen(){const q=document.getElementById("citizenSearch").value.trim().toLowerCase();const d=document.getElementById("citizenDept").value;const items=establishments.filter(e=>(!d||e.dept===d)&&(!q||[e.name,e.address,e.dept,...e.aliases].join(" ").toLowerCase().includes(q)));renderCitizenResults(items);if(items.length===1){const e=items[0];if(maps.citizen?.leaflet)maps.citizen.leaflet.setView([e.lat,e.lng],15);}if(!items.length)toast("No se encontró un centro ficticio. Podés marcar el lugar manualmente.");}
+function useGeolocation(){const s=document.getElementById("geoStatus");if(!navigator.geolocation){s.textContent="Este navegador no ofrece geolocalización. Usá el pin manual.";return;}s.textContent="Solicitando permiso de ubicación…";navigator.geolocation.getCurrentPosition(pos=>{state.establishment=null;state.locationSource="Ubicación del dispositivo";addOrMoveUserMarker(pos.coords.latitude,pos.coords.longitude,"Tu ubicación aproximada");s.textContent=`Ubicación obtenida con precisión aproximada de ${Math.round(pos.coords.accuracy)} m.`;},err=>{s.textContent="No se pudo obtener la ubicación. En archivos locales puede estar bloqueada; publicá por HTTPS o usá el pin manual.";toast("Geolocalización no disponible. Usá el pin manual.");},{enableHighAccuracy:false,timeout:8000,maximumAge:60000});}
+function initPublicMap(){renderPublicList();updatePublicMap();}
+function publicFiltered(){const q=(document.getElementById("publicSearch")?.value||"").trim().toLowerCase();const statuses=[...document.querySelectorAll(".public-filter:checked")].map(x=>x.value);return establishments.filter(e=>statuses.includes(e.status)&&(!q||[e.name,e.address,e.dept,...e.aliases].join(" ").toLowerCase().includes(q)));}
+function renderPublicList(){const items=publicFiltered();const list=document.getElementById("publicList");if(!list)return;list.innerHTML=items.map(e=>`<div class="public-item" data-id="${e.id}"><strong>${esc(e.name)}</strong><div class="small muted">${esc(e.address)} · ${esc(e.dept)}</div><span class="pill ${e.status==="Habilitado"?"ok":e.status==="En trámite"?"warn":"danger"}">${esc(e.status)}</span></div>`).join("")||'<p class="small muted">Sin resultados.</p>';list.querySelectorAll(".public-item").forEach(x=>x.addEventListener("click",()=>{const e=establishments.find(y=>y.id===x.dataset.id);if(maps.public?.leaflet){maps.public.leaflet.setView([e.lat,e.lng],15);maps.public.layer.eachLayer(l=>{if(l.getLatLng&&Math.abs(l.getLatLng().lat-e.lat)<.0001){l.openPopup();}});}}));}
+function updatePublicMap(){const items=publicFiltered();createMap("public","publicMapCanvas",establishmentMarkers(items),m=>{}, {center:defaultCenter(),zoom:8});}
+
+function routeForCategories(){const text=state.categories.join(" ").toLowerCase();const a=["Inmayores / MIDES"];if(/edilicio|incendio|irregularidad|accidente|medicación|negligencia/.test(text))a.push("MSP · fiscalización ELEPEM");if(/violencia|sexual|patrimonial|encierro/.test(text))a.push("Policía / Fiscalía");if(/incendio/.test(text))a.push("Bomberos");return [...new Set(a)];}
+function renderReview(){const rows=[["Quién comunica",state.role||"No indicado"],["Lugar",state.establishment?state.establishment.name:"Lugar no identificado"],["Ubicación",state.location?`${state.location.lat.toFixed(5)}, ${state.location.lng.toFixed(5)}`:"No indicada"],["Situaciones",state.categories.join("; ")||"No indicado"],["Cuándo",document.getElementById("when").value||"No indicado"],["Resumen",document.getElementById("story").value.trim()||"Sin relato escrito"],["Identidad",state.privacy||"No indicado"],["Contacto seguro",(document.getElementById("contactMode").value||"Sin contacto")+" · "+(document.getElementById("safeTime").value.trim()||"Sin condición indicada")]];document.getElementById("summary").innerHTML=rows.map(([a,b])=>`<div class="summary-row"><strong>${esc(a)}</strong><span>${esc(b)}</span></div>`).join("");const route=routeForCategories();document.getElementById("route").innerHTML=route.map((x,i)=>`${i?"<b>→</b>":""}<span>${esc(x)}</span>`).join("");}
+function createCaseFromCitizen(){const n=String(Math.floor(100000+Math.random()*900000));const id="DEMO-"+n;const route=routeForCategories();const category=state.categories[0]||"Otra preocupación";const urgency=/incendio|violencia|encierro/i.test(state.categories.join(" "))?"Alta":"Media";const place=state.establishment?.name||"Lugar marcado sin identificar";const loc=state.location||{lat:-34.90,lng:-56.16};const c={id,establishmentId:state.establishment?.id||null,place,lat:loc.lat,lng:loc.lng,urgency,status:"Pendiente de aceptación",category,source:state.role||"Persona",privacy:state.privacy||"Confidencial",assigned:route,updated:new Date().toLocaleString("es-UY"),due:"Pendiente de evaluación",summary:document.getElementById("story").value.trim()||"Relato ficticio sin texto adicional.",repeat:1,timeline:[{date:new Date().toLocaleString("es-UY"),actor:"Sistema",text:"Comunicación ficticia recibida y georreferenciada."},{date:new Date().toLocaleString("es-UY"),actor:"Clasificación inicial",text:"Ruta institucional sugerida; pendiente de aceptación."}]};cases.unshift(c);state.currentCaseId=id;state.lastCreatedCaseId=id;document.getElementById("protocol").textContent=id;show("confirmation");}
+function renderTracking(){const c=cases.find(x=>x.id===state.lastCreatedCaseId)||cases[0];document.getElementById("trackingPlace").textContent=c?.place||"Lugar identificado";document.getElementById("trackingCoords").textContent=c?`Coordenadas protegidas · ${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}`:"";}
+
+function enterPortal(){state.agency=document.getElementById("agencySelect").value;updateAgencyLabels();const scoped=state.agency==="Coordinación interinstitucional"?"":state.agency;document.getElementById("agencyFilter").value=scoped;document.getElementById("mapAgencyFilter").value=scoped;show("orgDashboard");}
+function updateAgencyLabels(){["agencyLabel","agencyLabelMap","agencyLabelCase","agencyLabelAnalytics"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=state.agency;});}
+function populateSelects(){
+ ["agencyFilter","mapAgencyFilter","routeAgency"].forEach(id=>{const el=document.getElementById(id);if(!el)return;const first=id.includes("Filter")?'<option value="">Todos los organismos</option>':'';el.innerHTML=first+AGENCIES.map(a=>`<option>${esc(a)}</option>`).join("");});
+ ["statusFilter","mapStatusFilter","newStatus"].forEach(id=>{const el=document.getElementById(id);if(!el)return;const first=id.includes("Filter")?'<option value="">Todos los estados</option>':'';el.innerHTML=first+STATUSES.map(s=>`<option>${esc(s)}</option>`).join("");});
+ document.getElementById("providerEstablishment").innerHTML=establishments.map(e=>`<option value="${e.id}">${esc(e.name)} · ${esc(e.dept)}</option>`).join("");
+}
+function filteredCases(prefix=""){const q=(document.getElementById(prefix+"caseSearch")?.value||document.getElementById("caseSearch")?.value||"").trim().toLowerCase();const status=document.getElementById(prefix+"statusFilter")?.value||document.getElementById("statusFilter")?.value||"";const urgency=document.getElementById(prefix+"urgencyFilter")?.value||document.getElementById("urgencyFilter")?.value||"";const agency=document.getElementById(prefix+"agencyFilter")?.value||document.getElementById("agencyFilter")?.value||"";return cases.filter(c=>(!q||[c.id,c.place,c.category].join(" ").toLowerCase().includes(q))&&(!status||c.status===status)&&(!urgency||c.urgency===urgency)&&(!agency||c.assigned.includes(agency)));}
+function renderKPIs(){const open=cases.filter(c=>c.status!=="Cerrado con resultado");document.getElementById("kpiCritical").textContent=open.filter(c=>c.urgency==="Crítica").length;document.getElementById("kpiPending").textContent=open.filter(c=>c.status==="Pendiente de aceptación").length;document.getElementById("kpiOpen").textContent=open.length;document.getElementById("kpiClosed").textContent=cases.filter(c=>c.status==="Cerrado con resultado").length;}
+function caseMarker(c){return{id:c.id,lat:c.lat,lng:c.lng,label:`${c.id} · ${c.place}`,subtitle:`${c.urgency} · ${c.status}`,color:urgencyColor(c.urgency,c.status),button:true,raw:c,radius:c.repeat>2?13:9};}
+function renderDashboard(){updateAgencyLabels();renderKPIs();const items=filteredCases();const list=document.getElementById("caseList");list.innerHTML=items.map(c=>`<div class="case-row" data-id="${c.id}"><div class="case-id">${esc(c.id)}</div><div class="case-cell"><strong>${esc(c.place)}</strong><span>${esc(c.category)}</span></div><div class="case-cell"><strong class="urgency ${urgencyClass(c.urgency)}">${esc(c.urgency)}</strong><span>${esc(c.source)}</span></div><div class="case-cell"><strong>${esc(c.status)}</strong><span>${esc(c.assigned.join(" · "))}</span><span><b>${esc(c.due)}</b> · ${c.repeat>1?`${c.repeat} alertas del lugar`:"Sin repetición"}</span></div></div>`).join("")||'<p class="muted">No hay casos con esos filtros.</p>';list.querySelectorAll(".case-row").forEach(r=>r.addEventListener("click",()=>openCase(r.dataset.id)));
+ createMap("dashboard","dashboardMap",items.map(caseMarker),m=>{state.currentCaseId=m.id;}, {center:defaultCenter(),zoom:7,maxZoom:12});
+ document.getElementById("dashboardMap").onclick=e=>{const b=e.target.closest(".map-open");if(b)openCase(b.dataset.mapId);};
+}
+function renderOrgMap(){updateAgencyLabels();let items=cases.filter(c=>{const s=document.getElementById("mapStatusFilter").value,u=document.getElementById("mapUrgencyFilter").value,a=document.getElementById("mapAgencyFilter").value;return(!s||c.status===s)&&(!u||c.urgency===u)&&(!a||c.assigned.includes(a));});const aggregated=document.getElementById("mapLayer").value==="aggregated";let markers;if(aggregated){const groups={};items.forEach(c=>{const key=c.establishmentId||`${c.lat.toFixed(2)}-${c.lng.toFixed(2)}`;groups[key]=groups[key]||{...c,count:0};groups[key].count++;});markers=Object.values(groups).map(g=>({id:g.id,lat:g.lat,lng:g.lng,label:`Zona con ${g.count} caso(s) ficticio(s)`,subtitle:"Vista agregada sin relato ni identidad",color:g.count>1?"#6d28d9":"#155eef",radius:10+g.count*2,button:false}));}else markers=items.map(caseMarker);createMap("orgfull","orgFullMap",markers,m=>{if(!aggregated&&m.id)openCase(m.id);},{center:defaultCenter(),zoom:7,maxZoom:12});document.getElementById("orgFullMap").onclick=e=>{const b=e.target.closest(".map-open");if(b)openCase(b.dataset.mapId);};}
+function openCase(id){state.currentCaseId=id;show("orgCase");}
+function currentCase(){return cases.find(c=>c.id===state.currentCaseId)||cases[0];}
+function renderCase(){updateAgencyLabels();const c=currentCase();if(!c)return;document.getElementById("caseTitle").textContent=c.id;document.getElementById("caseSubtitle").textContent=c.place+" · actualizado "+c.updated;document.getElementById("caseStatusPills").innerHTML=`<span class="pill ${c.urgency==="Crítica"?"danger":c.urgency==="Alta"?"warn":"info"}">${esc(c.urgency)}</span><span class="pill info">${esc(c.status)}</span><span class="pill purple">${esc(c.privacy)}</span>`;const meta=[["Origen",c.source],["Categoría",c.category],["Plazo",c.due],["Responsables",c.assigned.join(" · ")],["Ubicación","Exacta · acceso restringido"],["Alertas del lugar",String(c.repeat)]];document.getElementById("caseMeta").innerHTML=meta.map(([a,b])=>`<div class="meta-box"><span>${esc(a)}</span><strong>${esc(b)}</strong></div>`).join("");document.getElementById("caseSummary").innerHTML=`<strong>Relato resumido</strong><p>${esc(c.summary)}</p>`;document.getElementById("caseRoute").innerHTML=c.assigned.map((x,i)=>`${i?"<b>→</b>":""}<span>${esc(x)}</span>`).join("");document.getElementById("repeatAlert").innerHTML=c.repeat>1?`<div class="notice warning"><strong>Patrón a revisar:</strong> existen ${c.repeat} alertas ficticias asociadas a este lugar. Deben analizarse sin asumir que todas están confirmadas.</div>`:'<div class="notice">No hay otras alertas ficticias asociadas a este lugar.</div>';document.getElementById("caseTimeline").innerHTML=c.timeline.map(t=>`<div class="timeline-item"><time>${esc(t.date)} · ${esc(t.actor)}</time><p>${esc(t.text)}</p></div>`).join("");document.getElementById("newStatus").value=c.status;document.getElementById("acceptCase").disabled=c.status!=="Pendiente de aceptación";document.getElementById("acceptCase").textContent=c.status==="Pendiente de aceptación"?"Aceptar caso":"Caso ya aceptado";createMap("case","caseMap",[{id:c.id,lat:c.lat,lng:c.lng,label:c.place,subtitle:"Ubicación exacta ficticia · acceso restringido",color:urgencyColor(c.urgency,c.status)}],null,{center:[c.lat,c.lng],zoom:15,fit:false});}
+function addTimeline(c,actor,text,status){c.timeline.push({date:new Date().toLocaleString("es-UY"),actor,text});if(status)c.status=status;c.updated=new Date().toLocaleString("es-UY");renderCase();toast("Actuación ficticia registrada.");}
+function acceptCurrent(){const c=currentCase();if(c.status!=="Pendiente de aceptación")return;addTimeline(c,state.agency,"Caso aceptado dentro de la competencia del organismo.","En evaluación");}
+function routeCurrent(){const c=currentCase(),a=document.getElementById("routeAgency").value;if(!c.assigned.includes(a))c.assigned.push(a);addTimeline(c,state.agency,`Derivación registrada para ${a}.`,c.status);}
+function addCurrentAction(){const c=currentCase(),text=document.getElementById("actionText").value.trim();if(!text){toast("Escribí una nota ficticia.");return;}const s=document.getElementById("newStatus").value;addTimeline(c,state.agency,text,s);document.getElementById("actionText").value="";}
+function renderAnalytics(){updateAgencyLabels();const open=cases.filter(c=>c.status!=="Cerrado con resultado");const pct=(n,d)=>d?Math.round(n/d*100)+"%":"—";document.getElementById("metricAcceptance").textContent=pct(cases.filter(c=>c.status!=="Pendiente de aceptación").length,cases.length);document.getElementById("metricContact").textContent=pct(cases.filter(c=>c.timeline.some(t=>/contacto seguro/i.test(t.text))).length,cases.length);const grouped={};cases.forEach(c=>{const k=c.establishmentId||c.place;grouped[k]=(grouped[k]||0)+1;});document.getElementById("metricRepeat").textContent=Object.values(grouped).filter(n=>n>1).length;document.getElementById("metricResolved").textContent=pct(cases.filter(c=>c.status==="Cerrado con resultado").length,cases.length);renderMetricList("categoryMetrics",countBy(cases,"category"));renderMetricList("agencyMetrics",countAgencies());renderMetricList("statusMetrics",countBy(cases,"status"));}
+function countBy(arr,key){return arr.reduce((o,x)=>(o[x[key]]=(o[x[key]]||0)+1,o),{});}function countAgencies(){const o={};cases.forEach(c=>c.assigned.forEach(a=>o[a]=(o[a]||0)+1));return o;}function renderMetricList(id,obj){const max=Math.max(...Object.values(obj),1);document.getElementById(id).innerHTML=Object.entries(obj).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div style="margin:10px 0"><div class="small"><strong>${esc(k)}</strong> · ${v}</div><div style="height:9px;background:var(--line);border-radius:9px;overflow:hidden"><div style="height:100%;width:${v/max*100}%;background:var(--primary)"></div></div></div>`).join("");}
+function createProviderCase(){const e=establishments.find(x=>x.id===document.getElementById("providerEstablishment").value),type=document.getElementById("providerType").value,action=document.getElementById("providerAction").value.trim()||"Medidas iniciales no detalladas en la demostración.";const id="DEMO-P"+Math.floor(10000+Math.random()*90000);cases.unshift({id,establishmentId:e.id,place:e.name,lat:e.lat,lng:e.lng,urgency:/Muerte|Incendio|Desaparición|abuso|negligencia/i.test(type)?"Crítica":"Alta",status:"Pendiente de aceptación",category:type,source:"Responsable ELEPEM",privacy:"Institucional",assigned:["MSP · fiscalización ELEPEM","Inmayores / MIDES"],updated:new Date().toLocaleString("es-UY"),due:"Revisión prioritaria",summary:action,repeat:1,timeline:[{date:new Date().toLocaleString("es-UY"),actor:"ELEPEM",text:`Reporte obligatorio ficticio: ${type}.`}]});state.currentCaseId=id;show("providerDone");}
+function resetCitizen(){state.role="";state.privacy="";state.categories=[];state.emergencyType="";state.establishment=null;state.location=null;state.locationSource="";state.history=[];document.querySelectorAll(".choice.selected").forEach(x=>x.classList.remove("selected"));document.querySelectorAll("input,textarea").forEach(x=>{if(x.type==="checkbox")x.checked=false;else if(!x.readOnly)x.value="";});document.querySelectorAll("select").forEach(x=>{if(!["agencySelect","providerEstablishment"].includes(x.id))x.selectedIndex=0;});document.getElementById("consent").checked=false;document.getElementById("submitDemo").disabled=true;renderSelectedLocation();refreshRequirements();}
+
+document.addEventListener("click",e=>{
+ const go=e.target.closest("[data-go]");if(go){show(go.dataset.go);return;}
+ const back=e.target.closest("[data-back]");if(back){show(state.history.pop()||"home",false);return;}
+ const select=e.target.closest("[data-select]");if(select){const key=select.dataset.select;state[key]=select.dataset.value;document.querySelectorAll(`[data-select="${key}"]`).forEach(x=>x.classList.toggle("selected",x===select));refreshRequirements();return;}
+ const multi=e.target.closest("[data-multi]");if(multi){const key=multi.dataset.multi,value=multi.dataset.value;state[key]=state[key]||[];const i=state[key].indexOf(value);if(i>=0)state[key].splice(i,1);else state[key].push(value);multi.classList.toggle("selected",i<0);refreshRequirements();return;}
+ if(e.target.closest(".mock")){toast("Función simulada: no se graba ni adjunta información.");return;}
+});
+
+document.getElementById("citizenSearchBtn").addEventListener("click",filterCitizen);document.getElementById("citizenSearch").addEventListener("keydown",e=>{if(e.key==="Enter")filterCitizen();});document.getElementById("geoBtn").addEventListener("click",useGeolocation);document.getElementById("manualPinBtn").addEventListener("click",()=>{state.manualPin=true;document.getElementById("geoStatus").textContent="Hacé clic en el mapa para colocar un pin.";toast("Modo pin activado.");});document.getElementById("continueFromMap").addEventListener("click",()=>show("category"));
+document.getElementById("consent").addEventListener("change",e=>document.getElementById("submitDemo").disabled=!e.target.checked);document.getElementById("submitDemo").addEventListener("click",createCaseFromCitizen);document.getElementById("openInstitutionalCase").addEventListener("click",()=>{state.currentCaseId=state.lastCreatedCaseId;state.agency="Coordinación interinstitucional";updateAgencyLabels();show("orgCase");});
+document.querySelectorAll(".public-filter").forEach(x=>x.addEventListener("change",()=>{renderPublicList();updatePublicMap();}));document.getElementById("publicSearch").addEventListener("input",()=>{renderPublicList();updatePublicMap();});
+document.getElementById("enterPortal").addEventListener("click",enterPortal);["caseSearch","statusFilter","urgencyFilter","agencyFilter"].forEach(id=>document.getElementById(id).addEventListener(id==="caseSearch"?"input":"change",renderDashboard));["mapStatusFilter","mapUrgencyFilter","mapAgencyFilter","mapLayer"].forEach(id=>document.getElementById(id).addEventListener("change",renderOrgMap));document.getElementById("acceptCase").addEventListener("click",acceptCurrent);document.getElementById("routeCase").addEventListener("click",routeCurrent);document.getElementById("addAction").addEventListener("click",addCurrentAction);document.getElementById("protectionBtn").addEventListener("click",()=>addTimeline(currentCase(),state.agency,"Medida de protección ficticia registrada.","Medida de protección activa"));document.getElementById("inspectionBtn").addEventListener("click",()=>addTimeline(currentCase(),state.agency,"Inspección ficticia realizada; hallazgos pendientes de validación.","Inspección coordinada"));document.getElementById("closeBtn").addEventListener("click",()=>addTimeline(currentCase(),state.agency,"Caso cerrado con un resultado y explicación registrados.","Cerrado con resultado"));document.getElementById("providerSubmit").addEventListener("click",createProviderCase);document.getElementById("newInstitutionalDemo").addEventListener("click",()=>{const e=establishments[Math.floor(Math.random()*establishments.length)];const id="DEMO-I"+Math.floor(10000+Math.random()*90000);cases.unshift({id,establishmentId:e.id,place:e.name,lat:e.lat,lng:e.lng,urgency:"Media",status:"Pendiente de aceptación",category:"Otra preocupación",source:"Derivación institucional",privacy:"Confidencial",assigned:[state.agency],updated:new Date().toLocaleString("es-UY"),due:"Sin asignar",summary:"Caso ficticio creado desde la bandeja para probar el flujo.",repeat:1,timeline:[{date:new Date().toLocaleString("es-UY"),actor:state.agency,text:"Caso de prueba creado."}]});renderDashboard();toast("Caso ficticio agregado.");});
+document.getElementById("fontBtn").addEventListener("click",()=>{const n=parseInt(getComputedStyle(document.documentElement).getPropertyValue("--base"));document.documentElement.style.setProperty("--base",(n>=23?17:n+2)+"px");setTimeout(()=>Object.values(maps).forEach(m=>m?.leaflet?.invalidateSize()),100);});document.getElementById("contrastBtn").addEventListener("click",()=>document.body.classList.toggle("contrast"));document.getElementById("quickExit").addEventListener("click",()=>{document.body.innerHTML='<main style="font-family:Arial;padding:40px"><h1>Página cerrada</h1><p>Este botón simula una salida rápida. Cerrá esta pestaña para finalizar.</p></main>';});
+populateSelects();refreshRequirements();renderPublicList();
+</script>
+</body>
+</html>
