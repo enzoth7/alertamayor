@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Alerta ELEPEM",
+  title: "Alerta Mayor",
   icons: {
     icon: "/alertamayor.png",
     apple: "/alertamayor.png",

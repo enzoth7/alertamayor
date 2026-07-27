@@ -40,7 +40,7 @@ export default function UruguayRegistry({ onReport }: { onReport: () => void }) 
   const [department, setDepartment] = useState("");
   const [status, setStatus] = useState<"" | FacilityStatus>("");
   const [precision, setPrecision] = useState("");
-  const [mode, setMode] = useState<MapMode>("overview");
+  const [mode, setMode] = useState<MapMode>("streets");
   const [selectedId, setSelectedId] = useState<string | null>(facilities[0]?.id ?? null);
 
   useEffect(() => {
@@ -95,15 +95,19 @@ export default function UruguayRegistry({ onReport }: { onReport: () => void }) 
         <button className={`stageCard stage-amber ${status === "registro" ? "selected" : ""}`} onClick={() => setStatus(status === "registro" ? "" : "registro")}><span className="stageNumber">Etapa 1</span><strong><i className="statusDot"/>Certificado de registro</strong><small>Emitidos durante 2024.</small></button>
         <button className={`stageCard stage-violet ${status === "verificar" ? "selected" : ""}`} onClick={() => setStatus(status === "verificar" ? "" : "verificar")}><span className="stageNumber">3 DEMO</span><strong><i className="statusDot"/>Dato no conciliado</strong><small>Capa ficticia pendiente de verificación.</small></button>
       </div>
-      <div className="notice registryCoverage"><strong>Cobertura visible:</strong> {totals.habilitado + totals.registro} puntos derivados de recursos oficiales y {totals.verificar} alertas ficticias pendientes de verificación.</div>
+      <div className="registryInstitutionalNotice"><strong>Posibles establecimientos no registrados: capa institucional del prototipo.</strong><span> Los tres puntos violetas muestran cómo se incorporaría una alerta que no coincide con las fuentes públicas. Cada ficha indica el origen, el canal de entrada, el organismo receptor propuesto y el estado de la derivación.</span><button className="link" onClick={onReport}>Agregar otro lugar para verificar</button></div>
+      <div className="registryMeasuresNotice"><strong><i/>Las medidas administrativas son otra dimensión.</strong><span> Observación, apercibimiento, multa, suspensión, clausura o caducidad no deben mezclarse con la etapa de habilitación. No existe una base pública nacional única y actualizada de todas esas medidas.</span></div>
+      <div className="registryReadNotice"><strong>Cómo leer este mapa:</strong><span> el color principal indica la etapa administrativa respaldada por la fuente; la precisión geográfica aparece como dato secundario. Un registro histórico puede haber cambiado después de su fecha de corte.</span></div>
       <div className="registryToolbar">
-        <label className="searchField"><span>Nombre, dirección o localidad</span><span className="search"><Search size={18}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ej.: La Paz, Av. Italia, hogar"/></span></label>
+        <label className="searchField"><span>Nombre, calle o localidad</span><div className="registrySearchBox"><Search size={19}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ej.: La Paz, Artigas 1308, hogar"/></div></label>
         <label><span>Departamento</span><select value={department} onChange={(event) => setDepartment(event.target.value)}><option value="">Todos</option>{departmentCounts.map(([name]) => <option key={name}>{name}</option>)}</select></label>
-        <label><span>Precisión</span><select value={precision} onChange={(event) => setPrecision(event.target.value)}><option value="">Todas</option><option value="puerta">Nivel de puerta</option><option value="calle">Nivel de calle</option><option value="referencial">Referencial</option></select></label>
+        <label><span>Situación administrativa</span><select value={status} onChange={(event) => setStatus(event.target.value as "" | FacilityStatus)}><option value="">Todas las que tienen punto</option><option value="habilitado">Habilitación final · corte 2024</option><option value="registro">Certificado de registro · emitido 2024</option><option value="verificar">No figura / dato no coincide · DEMO</option></select></label>
+        <label><span>Precisión (opcional)</span><select value={precision} onChange={(event) => setPrecision(event.target.value)}><option value="">Todas</option><option value="puerta">Nivel de puerta</option><option value="calle">Nivel de calle</option><option value="referencial">Referencial</option></select></label>
         <button className="secondary resetMapFilters" onClick={resetFilters}>Ver todo</button>
       </div>
+      <div className="notice registryCoverage"><strong>Cobertura visible:</strong> {totals.habilitado + totals.registro} puntos derivados de recursos oficiales y {totals.verificar} alertas ficticias pendientes de verificación. <span>Los puntos violetas pertenecen a una capa institucional de demostración.</span></div>
       <div className="departmentChips"><button className={!department ? "active" : ""} onClick={() => setDepartment("")}>Todos · {baseWithoutDepartment.length}</button>{departmentCounts.map(([name, count]) => <button className={department === name ? "active" : ""} onClick={() => setDepartment(department === name ? "" : name)} key={name}>{name} · {count}</button>)}</div>
-      <div className="mapModes"><strong>Cómo verlos:</strong><button className={mode === "overview" ? "active" : ""} onClick={() => setMode("overview")}><Map size={18}/> Vista general</button><button className={mode === "streets" ? "active" : ""} onClick={() => setMode("streets")}><MapPinned size={18}/> Mapa con calles</button><button className={mode === "list" ? "active" : ""} onClick={() => setMode("list")}><Building2 size={18}/> Solo listado</button></div>
+      <div className="mapModes"><strong>Cómo verlos:</strong><button className={mode === "streets" ? "active" : ""} onClick={() => setMode("streets")}><MapPinned size={18}/> Mapa con calles</button><button className={mode === "overview" ? "active" : ""} onClick={() => setMode("overview")}><Map size={18}/> Vista general</button><button className={mode === "list" ? "active" : ""} onClick={() => setMode("list")}><Building2 size={18}/> Solo listado</button></div>
     </section>
 
     <div className={`registryMapLayout ${mode === "list" ? "mapListOnly" : ""}`}>
@@ -131,7 +135,13 @@ export default function UruguayRegistry({ onReport }: { onReport: () => void }) 
 
       <aside className="card registryResults">
         <div className="resultsHead"><div><div className="eyebrow">Registro consultable</div><h2>Resultados</h2></div><span className="resultCount">{visible.length}</span></div>
-        <div className="resultsLegend"><span><i className="dot greenDot"/>Habilitación final</span><span><i className="dot amberDot"/>Certificado de registro</span><span><i className="dot violetDot"/>Dato no conciliado</span></div>
+        <div className="resultsLegend">
+          <span><i className="dot greenDot"/>Habilitación final · corte 2024</span>
+          <span><i className="dot amberDot"/>Certificado de registro · emitido 2024</span>
+          <span><i className="dot blueDot"/>Certificado social · directorio externo 2026</span>
+          <span><i className="dot violetDot"/>No figura / dato no coincide · DEMO institucional</span>
+          <span><i className="dot redDot"/>Medida oficial, cuando exista una publicación verificable</span>
+        </div>
         <p className="resultsMeta">{visible.length} resultados · {totals.habilitado} etapa 3 · {totals.registro} etapa 1 · {totals.verificar} para verificar.</p>
         <div className="registryResultsScroll">{orderedResults.map((facility) => <FacilityCard facility={facility} selected={selected?.id === facility.id} onSelect={setSelectedId} onReport={onReport} key={facility.id}/>)}</div>
       </aside>
