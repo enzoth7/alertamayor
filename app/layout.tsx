@@ -3,6 +3,10 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Alerta ELEPEM",
+  icons: {
+    icon: "/alertamayor.png",
+    apple: "/alertamayor.png",
+  },
   description: "Orientación, registro y seguimiento institucional.",
 };
 
