@@ -1,71 +1,115 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, ArrowLeft, ArrowRight, ArrowUpRight, Building2, ChevronRight, FileText, Filter, HelpCircle, LayoutDashboard, MapPin, Menu, Search, ShieldCheck, X } from "lucide-react";
+import { ArrowRight, Building2, CheckCircle2, Contrast, HeartHandshake, MapPin, Menu, Search, ShieldAlert, Users, X } from "lucide-react";
 
-type Case = { id: string; title: string; location: string; category: string; status: "Nuevo" | "En revisión" | "En seguimiento"; priority: "Crítica" | "Alta" | "Media"; time: string; x: number; y: number };
-const cases: Case[] = [
-  { id: "AE-2418", title: "Situación a verificar", location: "Centro, Montevideo", category: "Posible negligencia", status: "Nuevo", priority: "Crítica", time: "Hace 18 min", x: 56, y: 38 },
-  { id: "AE-2417", title: "Solicitud de inspección", location: "La Blanqueada, Montevideo", category: "Condiciones edilicias", status: "En revisión", priority: "Alta", time: "Hace 1 h", x: 34, y: 62 },
-  { id: "AE-2415", title: "Comunicación ciudadana", location: "Cordón, Montevideo", category: "Atención y cuidados", status: "En seguimiento", priority: "Media", time: "Hace 3 h", x: 67, y: 71 },
-  { id: "AE-2412", title: "Consulta sobre establecimiento", location: "Pocitos, Montevideo", category: "Información administrativa", status: "En revisión", priority: "Media", time: "Ayer", x: 78, y: 25 },
+type View = "inicio" | "orientacion" | "denuncia" | "residenciales" | "equipos" | "aprendizajes" | "fuentes";
+
+const residences = [
+  { name: "Hogar Los Aromos", place: "Parque Batlle, Montevideo", address: "Av. Italia 1240", stage: "Habilitación final MSP", kind: "green", source: "MSP · corte 2024", x: 61, y: 39 },
+  { name: "Residencial del Prado", place: "Prado, Montevideo", address: "Av. Lucas Obes 1133", stage: "Certificado de registro", kind: "amber", source: "MSP · emitido 2024", x: 36, y: 58 },
+  { name: "Casa de cuidados La Paz", place: "La Paz, Canelones", address: "Ubicación protegida", stage: "Dato pendiente de verificación", kind: "violet", source: "Alerta DEMO · sin verificar", x: 72, y: 68 },
 ];
 
-function Status({ value }: { value: Case["status"] }) { return <span className={`status ${value.toLowerCase().replaceAll(" ", "-")}`}>{value}</span>; }
+const choices = [
+  ["🏠", "En su casa o en la comunidad", "Vive sola, con familiares, una persona cuidadora u otras personas."],
+  ["🏢", "En un residencial o ELEPEM", "Está alojada de forma permanente o temporal en un establecimiento."],
+  ["🏥", "En otro servicio", "Hospital, policlínica, centro de día u otro espacio de cuidado."],
+  ["?", "No lo sé", "La persona que consulta no conoce el tipo de lugar."],
+];
 
 export default function Home() {
-  const [section, setSection] = useState<"panel" | "mapa" | "publico" | "denuncia">("panel");
-  const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState(cases[0]);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const filtered = useMemo(() => cases.filter(c => `${c.id} ${c.title} ${c.location}`.toLowerCase().includes(query.toLowerCase())), [query]);
+  const [view, setView] = useState<View>("inicio");
+  const [menu, setMenu] = useState(false);
+  const [contrast, setContrast] = useState(false);
+  const [largeText, setLargeText] = useState(false);
+  const [step, setStep] = useState(1);
+  const [setting, setSetting] = useState("");
+  const [story, setStory] = useState("");
+  const [search, setSearch] = useState("");
+  const [sent, setSent] = useState(false);
+  const go = (next: View) => { setView(next); setMenu(false); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const filteredResidences = useMemo(() => residences.filter(({ name, place }) => `${name} ${place}`.toLowerCase().includes(search.toLowerCase())), [search]);
 
-  return <main>
-    <header className="topbar">
-      <button className="brand" onClick={() => setSection("panel")} aria-label="Ir al inicio"><span>AE</span><div>Alerta ELEPEM<small>Gestión y seguimiento</small></div></button>
-      <nav className={menuOpen ? "nav open" : "nav"}>
-        <button className="reportNav" onClick={() => { setSection("denuncia"); setMenuOpen(false); }}>Hacer una denuncia</button>
-        <button className={section === "panel" ? "active" : ""} onClick={() => { setSection("panel"); setMenuOpen(false); }}>Panel</button>
-        <button className={section === "mapa" ? "active" : ""} onClick={() => { setSection("mapa"); setMenuOpen(false); }}>Mapa operativo</button>
-        <button className={section === "publico" ? "active" : ""} onClick={() => { setSection("publico"); setMenuOpen(false); }}>Registro público</button>
-      </nav>
-      <div className="headerActions"><button className="help"><HelpCircle size={17}/> Ayuda</button><button className="avatar">MR</button><button className="menuButton" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X/> : <Menu/>}</button></div>
-    </header>
-
-    <div className="appShell">
-      <aside className="sidebar">
-        <div className="agency"><div className="agencyIcon"><Building2 size={19}/></div><div><strong>Intendencia de Montevideo</strong><small>Equipo de protección</small></div></div>
-        <div className="sideLabel">GESTIÓN</div>
-        <button className={section === "panel" ? "sideLink current" : "sideLink"} onClick={() => setSection("panel")}><LayoutDashboard size={18}/> Bandeja de casos</button>
-        <button className={section === "mapa" ? "sideLink current" : "sideLink"} onClick={() => setSection("mapa")}><MapPin size={18}/> Mapa operativo</button>
-        <button className="sideLink"><FileText size={18}/> Actividad reciente</button>
-        <div className="sideLabel space">CONSULTA</div>
-        <button className={section === "publico" ? "sideLink current" : "sideLink"} onClick={() => setSection("publico")}><Search size={18}/> Registro público</button>
-        <div className="privacy"><ShieldCheck size={18}/><span>Los datos sensibles solo se muestran a personal autorizado.</span></div>
-      </aside>
-
-      <section className="content">
-        {section === "panel" && <>
-          <div className="pageHeading"><div><p className="eyebrow">Lunes, 26 de julio</p><h1>Buenos días, María</h1><p className="subtitle">Hay <b>2 casos que requieren atención hoy</b>.</p></div><button className="primary"><FileText size={18}/> Registrar actuación</button></div>
-          <div className="metrics"><Metric label="Casos abiertos" value="24" detail="+3 esta semana"/><Metric label="Sin asignar" value="5" detail="Requieren responsable" accent="amber"/><Metric label="Dentro de plazo" value="91%" detail="Últimos 30 días" accent="green"/><Metric label="Alertas hoy" value="7" detail="2 de prioridad alta" accent="red"/></div>
-          <div className="workspace">
-            <div className="casePanel"><div className="panelHead"><div><h2>Casos recientes</h2><p>Actualizado hace unos instantes</p></div><button className="textButton">Ver todos <ChevronRight size={16}/></button></div>
-              <div className="tools"><div className="search"><Search size={17}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Buscar por código o ubicación"/></div><button className="filter"><Filter size={17}/> Filtrar</button></div>
-              <div className="caseList">{filtered.map(item => <button key={item.id} onClick={() => setSelected(item)} className={selected.id === item.id ? "caseRow selected" : "caseRow"}><div className={`priority ${item.priority.toLowerCase()}`}></div><div className="caseInfo"><strong>{item.title}</strong><span>{item.id} · {item.location}</span></div><Status value={item.status}/><time>{item.time}</time><ChevronRight className="rowChevron" size={17}/></button>)}{filtered.length === 0 && <p className="empty">No encontramos casos con esa búsqueda.</p>}</div>
-            </div>
-            <CaseDetail item={selected}/>
-          </div>
-        </>}
-        {section === "mapa" && <MapView selected={selected} onPick={setSelected}/>} 
-        {section === "publico" && <PublicRegistry onReport={() => setSection("denuncia")}/>} 
-        {section === "denuncia" && <ReportForm onBack={() => setSection("publico")}/>} 
-      </section>
+  return <main className={`site ${contrast ? "contrast" : ""} ${largeText ? "largeText" : ""}`}>
+    <header className="top"><div className="topin">
+      <button className="brand" onClick={() => go("inicio")}><span className="brandMark"><HeartHandshake size={20}/></span><span>Cuidados y protección<small>Prototipo académico · nombre por definir</small></span></button>
+      <nav className={menu ? "nav open" : "nav"}>{([ ["inicio", "Inicio"], ["orientacion", "Orientación"], ["residenciales", "Residenciales"], ["equipos", "Equipos"], ["aprendizajes", "Aprendizajes"], ["fuentes", "Fuentes"] ] as [View, string][]).map(([key, label]) => <button key={key} className={view === key ? "active" : ""} onClick={() => go(key)}>{label}</button>)}</nav>
+      <div className="tools"><button onClick={() => setMenu(!menu)} aria-label="Abrir menú"><Menu size={17}/> Menú</button><button onClick={() => setLargeText(!largeText)}>A+ Texto</button><button onClick={() => setContrast(!contrast)} aria-label="Alternar contraste"><Contrast size={17}/></button></div>
+    </div></header>
+    <div className="shell">
+      <div className="banner"><ShieldAlert size={20}/><span><strong>PROTOTIPO ACADÉMICO</strong> · No recibe ni envía denuncias reales. Los casos, alertas, tareas y aportes son ficticios. Los datos históricos y administrativos muestran su fuente y fecha. No representa un servicio oficial.</span></div>
+      {view === "inicio" && <HomeView go={go}/>} 
+      {view === "orientacion" && <Orientation story={story} setStory={setStory} go={go}/>} 
+      {view === "denuncia" && <Report step={step} setStep={setStep} setting={setting} setSetting={setSetting} sent={sent} setSent={setSent} go={go}/>} 
+      {view === "residenciales" && <Residences search={search} setSearch={setSearch} items={filteredResidences} go={go}/>} 
+      {view === "equipos" && <Team/>}
+      {view === "aprendizajes" && <Learning/>}
+      {view === "fuentes" && <Sources/>}
     </div>
+    <button className="quickExit" onClick={() => go("inicio")}><X size={17}/> Salida rápida</button>
   </main>;
 }
 
-function Metric({ label, value, detail, accent = "blue" }: { label: string; value: string; detail: string; accent?: string }) { return <article className={`metric ${accent}`}><p>{label}</p><strong>{value}</strong><span>{detail}</span></article>; }
-function CaseDetail({ item }: { item: Case }) { return <aside className="detail"><div className="detailTop"><div><p className="eyebrow">CASO {item.id}</p><h2>{item.title}</h2></div><Status value={item.status}/></div><div className="detailMeta"><div><span>Prioridad</span><b className={item.priority.toLowerCase()}>{item.priority}</b></div><div><span>Recibido</span><b>{item.time}</b></div><div><span>Ubicación</span><b>{item.location}</b></div></div><div className="summary"><h3>Resumen</h3><p>Se recibió una comunicación vinculada a {item.category.toLowerCase()}. El equipo debe validar la información y definir la primera actuación.</p></div><div className="timeline"><div><i></i><span>Ahora</span><b>Asignado al equipo de protección</b></div><div><i></i><span>Hace 18 min</span><b>Comunicación recibida</b></div></div><div className="detailActions"><button className="secondary">Ver caso completo</button><button className="primary">Tomar caso</button></div></aside>; }
-function MapView({ selected, onPick }: { selected: Case; onPick: (item: Case) => void }) { return <><div className="pageHeading"><div><p className="eyebrow">VISTA RESTRINGIDA</p><h1>Mapa operativo</h1><p className="subtitle">Ubicaciones aproximadas de casos en curso.</p></div><button className="secondary">Vista por zonas</button></div><div className="mapLayout"><div className="mapCanvas"><div className="mapGrid"></div><div className="mapName nameOne">Montevideo</div><div className="mapName nameTwo">Rambla República</div>{cases.map(item => <button title={item.title} onClick={() => onPick(item)} style={{ left: `${item.x}%`, top: `${item.y}%` }} className={`pin ${item.priority.toLowerCase()} ${selected.id === item.id ? "active" : ""}`} key={item.id}><MapPin size={19}/></button>)}<div className="mapLegend"><span><i className="critical"></i>Crítica</span><span><i className="high"></i>Alta</span><span><i className="medium"></i>Media</span></div></div><CaseDetail item={selected}/></div></>; }
-function PublicRegistry({ onReport }: { onReport: () => void }) { const [term, setTerm] = useState(""); const places = ["Hogar Los Aromos", "Residencial del Prado", "Centro Vida Sur"]; return <><div className="publicHero"><div><p className="eyebrow">INFORMACIÓN PÚBLICA</p><h1>Consultá establecimientos registrados</h1><p>Información administrativa disponible para la comunidad. No muestra reportes ni datos personales.</p><button className="reportButton" onClick={onReport}><AlertTriangle size={18}/> Hacer una denuncia</button></div><AlertTriangle size={32}/></div><div className="registry"><div className="registrySearch"><Search size={19}/><input value={term} onChange={e => setTerm(e.target.value)} placeholder="Buscar por nombre o dirección"/><button>Buscar</button></div><p className="results">{places.filter(p => p.toLowerCase().includes(term.toLowerCase())).length} establecimientos encontrados</p>{places.filter(p => p.toLowerCase().includes(term.toLowerCase())).map((place, i) => <article className="place" key={place}><div className="placeIcon"><Building2 size={21}/></div><div><h2>{place}</h2><p>{i === 0 ? "Av. Italia 1240 · Parque Batlle" : i === 1 ? "Av. Lucas Obes 1133 · Prado" : "Bv. Artigas 1821 · Tres Cruces"}</p></div><span className={i === 1 ? "status review" : "status enabled"}>{i === 1 ? "En trámite" : "Habilitado"}</span><ArrowUpRight size={19}/></article>)}</div></>; }
-function ReportForm({ onBack }: { onBack: () => void }) { const [step, setStep] = useState(1); const [done, setDone] = useState(false); return <div className="reportPage"><button className="back" onClick={onBack}><ArrowLeft size={17}/> Volver</button>{done ? <div className="success"><ShieldCheck size={36}/><p className="eyebrow">COMUNICACIÓN RECIBIDA</p><h1>Tu denuncia fue registrada</h1><p>Guardá este código para consultar novedades: <b>AE-48291</b></p><button className="primary" onClick={onBack}>Volver al inicio</button></div> : <><div className="reportHeader"><p className="eyebrow">COMUNICACIÓN CIUDADANA</p><h1>Hacer una denuncia</h1><p>Contanos lo esencial. Podés hacerlo sin crear una cuenta.</p></div><div className="emergency"><AlertTriangle size={20}/><div><b>¿Hay peligro inmediato?</b><span>Llamá al 911 o al servicio de emergencia antes de completar este formulario.</span></div></div><div className="stepper"><span className={step >= 1 ? "now" : ""}>1. Situación</span><i></i><span className={step >= 2 ? "now" : ""}>2. Lugar</span><i></i><span className={step >= 3 ? "now" : ""}>3. Contacto</span></div><div className="reportCard">{step === 1 && <><h2>¿Qué está pasando?</h2><p>Elegí la opción más cercana y describí brevemente la situación.</p><div className="choices"><button className="choice selected">Posible negligencia o maltrato</button><button className="choice">Condiciones del establecimiento</button><button className="choice">Otro motivo</button></div><textarea placeholder="Escribí lo que consideres importante..."></textarea></>}{step === 2 && <><h2>¿Dónde ocurrió?</h2><p>Indicanos el establecimiento o una referencia para poder ubicarlo.</p><input placeholder="Nombre del lugar o dirección"/><input placeholder="Barrio o localidad (opcional)"/></>}{step === 3 && <><h2>¿Cómo podemos contactarte?</h2><p>Es opcional. Tus datos no se compartirán con el establecimiento.</p><input placeholder="Nombre (opcional)"/><input placeholder="Teléfono o correo (opcional)"/><label className="check"><input type="checkbox"/> Quiero recibir novedades de esta comunicación.</label></>}<div className="formActions"><button className="secondary" disabled={step === 1} onClick={() => setStep(step - 1)}>Anterior</button><button className="primary" onClick={() => step === 3 ? setDone(true) : setStep(step + 1)}>{step === 3 ? "Enviar denuncia" : <>Continuar <ArrowRight size={17}/></>}</button></div></div></>}</div>; }
+function HomeView({ go }: { go: (view: View) => void }) {
+  const actions: [React.ReactNode, string, string, View, string][] = [
+    [<HeartHandshake key="support"/>, "Necesito orientación o apoyo", "No sé por dónde empezar, faltan cuidados o quiero encontrar el canal adecuado.", "orientacion", "amber"],
+    [<ShieldAlert key="report"/>, "Quiero comunicar una preocupación", "Puede hacerlo la propia persona, un familiar, vecino, cuidador, trabajador o profesional.", "denuncia", "violet"],
+    [<MapPin key="map"/>, "Quiero consultar un residencial", "Ver la etapa administrativa conocida, la fecha de la fuente y antecedentes verificables.", "residenciales", "rose"],
+    [<Users key="team"/>, "Trabajo en un equipo u organización", "Registrar entradas, organizar tareas, preparar visitas, derivar y dar seguimiento.", "equipos", "blue"],
+  ];
+
+  return <>
+    <section className="card hero homeHero">
+      <div className="eyebrow">Una entrada sencilla, distintas respuestas</div>
+      <h1>¿Qué necesitás hacer?</h1>
+      <p className="lead">La herramienta empieza por la necesidad de la persona. Puede orientar, recibir una preocupación, consultar un residencial o ayudar a un equipo a organizar la respuesta.</p>
+      <div className="grid actionsGrid homeActions">{actions.map(([icon, title, text, target, tone]) =>
+        <button className={`action action-${tone}`} key={title} onClick={() => go(target)}>
+          <span className="actionIcon">{icon}</span><span className="actionCopy"><strong>{title}</strong><span>{text}</span></span><ArrowRight className="actionArrow" size={19}/>
+        </button>)}</div>
+      <div className="actions compactActions"><button className="secondary" onClick={() => go("aprendizajes")}>Ver aprendizajes y participación</button><button className="link" onClick={() => go("fuentes")}>Cómo se usan los datos y las fuentes</button></div>
+    </section>
+    <div className="grid three principles simplePrinciples">
+      <Info tone="rose" icon="?" title="No hace falta saber si es maltrato" text="La persona puede comunicar lo que le preocupa. Un equipo humano distingue después entre violencia, falta de cuidados, riesgo o necesidad de orientación."/>
+      <Info tone="amber" icon="🤝" title="La tecnología no reemplaza la respuesta" text="La herramienta ordena información, pero el contacto, la protección y las decisiones siguen en manos de personas responsables."/>
+      <Info tone="blue" icon="📊" title="La experiencia vuelve como aprendizaje" text="Solo datos agregados y anonimizados pueden ayudar a investigar barreras y mejorar los servicios."/>
+    </div>
+  </>;
+}
+function Orientation({ story, setStory, go }: { story:string; setStory:(s:string)=>void; go:(v:View)=>void }) { const [result, setResult] = useState(""); return <><section className="card"><div className="eyebrow">Orientación inicial</div><h1>¿Qué está pasando?</h1><p className="lead">Elegí la opción más cercana. No hace falta conocer términos jurídicos ni tener una valoración formal de dependencia.</p><div className="grid"><button className="action danger" onClick={() => setResult("En una emergencia real llamá al 911, Bomberos o al servicio de emergencia médica.")}><span className="icon">🚨</span><strong>Hay peligro ahora</strong>Violencia en curso, incendio, lesión grave o falta inmediata de medicación esencial.</button><button className="action" onClick={() => go("denuncia")}><span className="icon">?</span><strong>No sé si esto es maltrato</strong>Quiero contar lo que veo y que una persona me oriente.</button><button className="action" onClick={() => go("denuncia")}><span className="icon">🦶</span><strong>Faltan cuidados o apoyos</strong>La persona necesita ayuda para alimentarse, moverse o tomar medicación.</button><button className="action" onClick={() => setResult("Podés revisar los recursos disponibles y registrar una consulta para evaluación humana.")}><span className="icon">🔎</span><strong>Busco un servicio o apoyo</strong>Necesito saber qué recurso podría corresponder.</button></div>{result && <div className="notice dangerNotice">{result}</div>}</section><div className="grid two gap"><section className="card"><h2>También puedo contarlo con mis palabras</h2><p className="muted">Esta demostración ordena un relato, pero no toma decisiones.</p><label>Escribí o simulá un relato de voz</label><textarea value={story} onChange={e => setStory(e.target.value)} placeholder="Ejemplo ficticio: mi vecina vive sola y no tiene quién la ayude."/><div className="actions"><button className="secondary" onClick={() => setStory("Mi vecina vive sola, se cayó y necesita apoyo con comida y medicación.")}>Simular relato</button><button className="primary" onClick={() => setResult(story ? "Se registraron posibles necesidades de apoyo, alimentación y medicación para revisión humana." : "Primero escribí un relato breve.")}>Ordenar lo que conté</button></div></section><section className="card"><h2>Seguir una comunicación</h2><p className="muted">En un sistema real, el código permite ver si la entrada fue recibida.</p><label>Código de demostración</label><input placeholder="Ej.: DEM-2401"/><button className="primary full">Consultar estado</button></section></div></> }
+function Report({ step, setStep, setting, setSetting, sent, setSent, go }: { step:number; setStep:(n:number)=>void; setting:string; setSetting:(s:string)=>void; sent:boolean; setSent:(b:boolean)=>void; go:(v:View)=>void }) { if(sent) return <section className="card success"><CheckCircle2/><div className="eyebrow">Comunicación recibida</div><h1>Expediente ficticio creado</h1><p>El código de demostración es <strong>DEM-48291</strong>. No se envió información a ningún organismo.</p><button className="primary" onClick={() => {setSent(false); setStep(1); go("inicio")}}>Volver al inicio</button></section>; const titles = ["Dónde vive o está habitualmente la persona", "Quién comunica y cómo llegó la alerta", "Apoyos para la vida diaria", "Ubicación", "Qué preocupa", "Señales de urgencia", "Identidad y contacto seguro", "Revisión"]; return <section className="card report"><div className="eyebrow">Consulta, alerta o denuncia</div><h1>Comunicar una preocupación</h1><p className="lead">No hace falta saber si es delito o maltrato. La herramienta prepara una evaluación humana.</p><div className="steps">{titles.map((_, i) => <span className={step === i + 1 ? "current" : step > i + 1 ? "done" : ""} key={i}>{i + 1}</span>)}</div><h2>{titles[step - 1]}</h2>{step === 1 ? <div className="grid two">{choices.map(([icon, title, text]) => <button key={title} className={`choice ${setting === title ? "selected" : ""}`} onClick={() => setSetting(title)}><span>{icon}</span><strong>{title}</strong>{text}</button>)}</div> : step === 5 ? <><p className="muted">Se puede elegir más de una opción. “Reportado” no significa “confirmado”.</p><textarea placeholder="Contá brevemente qué ocurrió. Solo datos ficticios."/></> : step === 8 ? <div className="notice"><strong>Ruta sugerida para evaluación humana</strong><p>Entrada → Revisión humana → Responsable → Tareas y derivaciones</p></div> : <div className="grid two"><div><label>Información para esta etapa</label><input placeholder="Completá si lo conocés"/></div><div><label>Detalle adicional</label><input placeholder="Opcional"/></div></div>}<div className="actions"><button className="secondary" disabled={step === 1} onClick={() => setStep(step - 1)}>Volver</button><button className="primary" disabled={step === 1 && !setting} onClick={() => step === 8 ? setSent(true) : setStep(step + 1)}>{step === 8 ? "Crear expediente ficticio" : <>Continuar <ArrowRight size={17}/></>}</button></div></section> }
+function Residences({ search, setSearch, items, go }: { search:string; setSearch:(s:string)=>void; items: typeof residences; go:(v:View)=>void }) {
+  const stages = [
+    ["Etapa 3", "Habilitación final MSP", "Completó las tres etapas en el corte de la fuente.", "green"],
+    ["Etapa 2", "Certificado social MIDES", "Evaluación social aprobada; proceso aún en curso.", "blue"],
+    ["Etapa 1", "Certificado de registro MSP", "La documentación inicial fue recibida.", "amber"],
+    ["3 DEMO", "No figura o el dato no coincide", "Capa institucional pendiente de verificación.", "violet"],
+  ];
+
+  return <>
+    <section className="card registryIntro">
+      <div className="eyebrow">Registro integrado por etapas</div>
+      <h1>¿En qué situación administrativa está cada ELEPEM?</h1>
+      <p className="lead">“No habilitado” no es una sola categoría. La etapa administrativa y las medidas de fiscalización son dimensiones distintas; cada dato muestra su fuente y fecha.</p>
+      <div className="stats">{[["237", "puntos visibles", "Fuentes oficiales + capa DEMO"], ["234", "con respaldo oficial", "207 habilitados + 27 registros"], ["212", "listado MSP 2026", "Requiere conciliación nominal"], ["319", "certificado social", "Directorio MIDES 2026"], ["3 DEMO", "por verificar", "No son casos reales"]].map(([n,l,note])=><div className="stat" key={l}><b>{n}</b><span>{l}</span><small>{note}</small></div>)}</div>
+      <div className="stageGrid">{stages.map(([number,title,text,tone]) => <button className={`stageCard stage-${tone}`} key={title}><span className="stageNumber">{number}</span><strong><i className="statusDot"/>{title}</strong><small>{text}</small></button>)}</div>
+      <div className="notice noticeViolet"><strong>Posibles establecimientos no registrados: capa institucional del prototipo.</strong><span> Estos puntos muestran cómo se incorporaría una alerta que no coincide con las fuentes públicas; no equivalen a una acusación.</span></div>
+      <div className="notice noticeRed"><strong>Las medidas administrativas son otra dimensión.</strong><span> Observación, multa, suspensión o clausura no deben mezclarse con la etapa de habilitación.</span></div>
+      <div className="registryToolbar"><label className="searchField"><span>Nombre, dirección o localidad</span><span className="search"><Search size={18}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Ej.: La Paz, Av. Italia, hogar"/></span></label><label><span>Departamento</span><select><option>Todos</option><option>Montevideo</option><option>Canelones</option></select></label><label><span>Situación</span><select><option>Todas</option><option>Habilitación final</option><option>Registro</option><option>Por verificar</option></select></label></div>
+    </section>
+    <div className="layout gap registryLayout">
+      <section className="mapFake" aria-label="Vista general ilustrativa del registro">
+        <div className="mapWater"/><div className="mapLand"/><div className="road roadOne"/><div className="road roadTwo"/><div className="road roadThree"/><span className="mapLabel labelMontevideo">Montevideo</span><span className="mapLabel labelCanelones">Canelones</span>
+        {items.map(item=><button className={`mapPin pin-${item.kind}`} style={{left:`${item.x}%`,top:`${item.y}%`}} title={item.name} key={item.name}><MapPin size={17}/></button>)}
+        <div className="mapCaption"><strong>Vista general</strong><span>{items.length} resultados visibles · ubicación aproximada</span></div>
+      </section>
+      <aside className="card resultsPanel"><div className="resultsHead"><div><div className="eyebrow">Registro consultable</div><h2>Resultados</h2></div><span className="resultCount">{items.length}</span></div><div className="legend"><span><i className="dot greenDot"/>Habilitado</span><span><i className="dot amberDot"/>Registro</span><span><i className="dot violetDot"/>Por verificar</span></div>{items.map(item=><article className={`residence residence-${item.kind}`} key={item.name}><span className="residenceIcon"><Building2 size={19}/></span><div><strong>{item.name}</strong><span>{item.address} · {item.place}</span><small>{item.stage}</small><em>{item.source}</em></div></article>)}{items.length===0&&<p className="emptyState">No encontramos resultados con esa búsqueda.</p>}<button className="primary full" onClick={()=>go("denuncia")}>Comunicar un lugar que no encuentro</button></aside>
+    </div>
+    <div className="grid two gap registryFoot"><Info tone="blue" icon={<Building2 size={22}/>} title="La ficha separa dos cosas" text="La etapa administrativa se muestra por separado de cualquier medida vigente o antecedente verificable."/><Info tone="violet" icon={<ShieldAlert size={22}/>} title="Cuando el lugar no aparece" text="Se registra como dato pendiente de verificación, con origen, fecha y recorrido institucional."/></div>
+  </>;
+}
+function Team() { return <><section className="card"><div className="eyebrow">Herramientas de trabajo</div><h1>¿Qué tarea tenés hoy?</h1><p className="lead">Cada persona ve solo lo necesario para su función. La app conserva el origen de la alerta, tareas y resultado.</p><div className="grid"><Info icon="📥" title="Recibir y gestionar una entrada" text="Registrar llamadas, mensajes, correos y derivaciones."/><Info icon="📋" title="Preparar o registrar una visita" text="Diferenciar una visita de protección de una inspección regulatoria."/><Info icon="⛔" title="Revisar medidas y antecedentes" text="Separar alerta, hallazgo y medida administrativa."/><Info icon="🗃️" title="Trabajar en habilitación" text="Controlar documentación, visitas, plazos y decisiones."/></div></section><section className="card gap"><h2>De una señal a una respuesta</h2><div className="workflow"><span>Entrada</span><b>→</b><span>Revisión humana</span><b>→</b><span>Responsable</span><b>→</b><span>Tareas</span><b>→</b><span>Seguimiento</span></div></section></> }
+function Learning(){return <section className="card"><div className="eyebrow">Aprendizajes y participación</div><h1>Mejorar con información agregada</h1><p className="lead">Los aprendizajes sirven para identificar barreras y mejorar las respuestas sin exponer a las personas.</p><div className="grid three"><Info icon="🔒" title="Datos protegidos" text="No se publican relatos ni datos identificatorios."/><Info icon="🧭" title="Barreras detectadas" text="Se registran dificultades de acceso y recorridos de derivación."/><Info icon="🤝" title="Devolución pública" text="Los resultados se comparten en formato agregado."/></div></section>}
+function Sources(){return <section className="card"><div className="eyebrow">Datos, fuentes y límites</div><h1>Cómo se usan los datos</h1><p className="lead">El prototipo diferencia información administrativa, antecedentes verificables y alertas pendientes de revisión.</p><div className="source"><strong>Registro y habilitación</strong><span>Fuentes oficiales del MSP y MIDES con su fecha de corte.</span></div><div className="source"><strong>Alertas</strong><span>Información ficticia, institucional y pendiente de verificación humana.</span></div><div className="source"><strong>Antecedentes</strong><span>Solo se muestran cuando existe una fuente verificable.</span></div></section>}
+function Info({icon,title,text,tone="blue"}:{icon:React.ReactNode;title:string;text:string;tone?:string}){return <article className={`info info-${tone}`}><span className="infoIcon">{icon}</span><h2>{title}</h2><p>{text}</p></article>}
