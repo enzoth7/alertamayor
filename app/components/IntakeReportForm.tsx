@@ -1,16 +1,20 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, Copy, Mail, Paperclip, Phone, ShieldAlert, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, Copy, Mail, MapPin, Paperclip, Phone, ShieldAlert, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 type IntakeDraft = {
   setting: string;
   concerns: string[];
   narrative: string;
   department: string;
-  locationReference: string;
+  city: string;
+  locality: string;
+  streetAddress: string;
+  doorNumber: string;
   facilityName: string;
   reporter: string;
+  reporterName: string;
   urgency: "Alta" | "Media" | "Baja" | "";
   privacy: string;
   contactEmail: string;
@@ -25,9 +29,13 @@ const initialDraft: IntakeDraft = {
   concerns: [],
   narrative: "",
   department: "",
-  locationReference: "",
+  city: "",
+  locality: "",
+  streetAddress: "",
+  doorNumber: "",
   facilityName: "",
   reporter: "",
+  reporterName: "",
   urgency: "",
   privacy: "",
   contactEmail: "",
@@ -51,9 +59,30 @@ const concerns = [
 const reporters = ["La propia persona", "Familiar o referente", "Vecino/a o amistad", "Cuidador/a", "Profesional", "Otra persona"];
 const departments = ["Artigas", "Canelones", "Cerro Largo", "Colonia", "Durazno", "Flores", "Florida", "Lavalleja", "Maldonado", "Montevideo", "Paysandú", "Río Negro", "Rivera", "Rocha", "Salto", "San José", "Soriano", "Tacuarembó", "Treinta y Tres", "No se conoce"];
 
+const deptCoords: Record<string, [number, number]> = {
+  "Artigas": [-30.4, -56.5],
+  "Canelones": [-34.52, -56.0],
+  "Cerro Largo": [-32.36, -54.15],
+  "Colonia": [-33.87, -57.84],
+  "Durazno": [-33.38, -56.52],
+  "Flores": [-33.52, -56.89],
+  "Florida": [-34.09, -56.21],
+  "Lavalleja": [-33.91, -55.24],
+  "Maldonado": [-34.9, -55.0],
+  "Montevideo": [-34.9, -56.19],
+  "Paysandú": [-32.32, -58.08],
+  "Río Negro": [-33.09, -58.02],
+  "Rivera": [-30.9, -55.55],
+  "Rocha": [-34.49, -54.34],
+  "Salto": [-31.39, -57.96],
+  "San José": [-34.34, -56.71],
+  "Soriano": [-33.47, -57.8],
+  "Tacuarembó": [-31.73, -55.98],
+  "Treinta y Tres": [-33.23, -54.37],
+};
+
 function OptionGrid({ options, selected, onSelect, multiple = false }: { options: string[]; selected: string | string[]; onSelect: (value: string) => void; multiple?: boolean }) {
   const selectedValues = Array.isArray(selected) ? selected : [selected];
-
   return <div className="reportOptionGrid isCompact">{options.map((option) => {
     const isSelected = selectedValues.includes(option);
     return <button key={option} type="button" className={`reportOption ${isSelected ? "isSelected" : ""}`} aria-pressed={isSelected} onClick={() => onSelect(option)}>
@@ -61,6 +90,58 @@ function OptionGrid({ options, selected, onSelect, multiple = false }: { options
       {multiple && <span className="reportOptionCheck">{isSelected ? <CheckCircle2 size={16}/> : "+"}</span>}
     </button>;
   })}</div>;
+}
+
+function LocationMap({ department, city, locality, streetAddress, doorNumber }: { department: string; city: string; locality: string; streetAddress: string; doorNumber: string }) {
+  const [exactCoords, setExactCoords] = useState<[number, number] | null>(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+
+  useEffect(() => {
+    const fullQuery = [streetAddress, doorNumber, locality, city, department, "Uruguay"].filter(Boolean).join(", ");
+    if (!streetAddress.trim() && !locality.trim() && !city.trim()) {
+      setExactCoords(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsGeocoding(true);
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullQuery)}&limit=1`);
+        const data = await res.json();
+        if (data && data.length > 0) {
+          const lat = parseFloat(data[0].lat);
+          const lon = parseFloat(data[0].lon);
+          if (!isNaN(lat) && !isNaN(lon)) {
+            setExactCoords([lat, lon]);
+          }
+        }
+      } catch {
+        // fallback a coords departamento
+      } finally {
+        setIsGeocoding(false);
+      }
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [department, city, locality, streetAddress, doorNumber]);
+
+  const baseCoords = deptCoords[department];
+  if (!baseCoords && !exactCoords) return null;
+
+  const [lat, lng] = exactCoords || baseCoords || [-32.8, -56.0];
+  const delta = exactCoords ? 0.005 : 0.35;
+  const src = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - delta},${lat - delta},${lng + delta},${lat + delta}&layer=mapnik&marker=${lat},${lng}`;
+
+  const locationText = [streetAddress, doorNumber, locality || city, department].filter(Boolean).join(", ");
+
+  return (
+    <div className="reportLocationMap">
+      <iframe src={src} title={`Mapa — ${locationText}`} loading="lazy" referrerPolicy="no-referrer" sandbox="allow-scripts allow-same-origin" />
+      <small>
+        <MapPin size={12}/> {exactCoords ? `Ubicación exacta encontrada: ${locationText}` : isGeocoding ? "Buscando dirección exacta..." : `Referencia aproximada · ${department}, Uruguay`}
+      </small>
+    </div>
+  );
 }
 
 function urgencyLabel(value: IntakeDraft["urgency"]): string {
@@ -96,14 +177,16 @@ export function IntakeReportForm({
 
   const update = <Key extends keyof IntakeDraft>(key: Key, value: IntakeDraft[Key]) => setDraft((current) => ({ ...current, [key]: value }));
   const toggleConcern = (concern: string) => update("concerns", draft.concerns.includes(concern) ? draft.concerns.filter((item) => item !== concern) : [...draft.concerns, concern]);
+  const locationSummary = [draft.city, draft.locality, draft.streetAddress, draft.doorNumber].filter(Boolean).join(" · ");
+  const showContactFields = draft.contactMethod !== "Sin contacto";
 
   const validate = (): boolean => {
     if (step === 1 && !draft.setting && !draft.concerns.length && !draft.narrative.trim()) {
       setMessage("Indicá al menos un dato: el ámbito, una preocupación o un relato breve.");
       return false;
     }
-    if (step === 2 && (!draft.department || !draft.locationReference.trim())) {
-      setMessage("Indicá el departamento y una referencia del lugar, o elegí “No se conoce”.");
+    if (step === 2 && !draft.department) {
+      setMessage("Indicá el departamento donde ocurre la situación.");
       return false;
     }
     if (step === 3 && (!draft.reporter || !draft.urgency || !draft.privacy)) {
@@ -135,7 +218,6 @@ export function IntakeReportForm({
     if (!validate()) return;
     setSubmitting(true);
     setMessage("");
-
     try {
       const response = await fetch("/api/intake-reports", {
         method: "POST",
@@ -143,15 +225,13 @@ export function IntakeReportForm({
         body: JSON.stringify({
           report: {
             setting: draft.setting,
-            reporter: draft.reporter,
+            reporter: draft.reporterName ? `${draft.reporter} (${draft.reporterName})` : draft.reporter,
             channel: "Formulario web / app",
             location: {
               department: draft.department,
-              reference: draft.locationReference,
+              reference: locationSummary || "No especificada",
             },
-            facility: {
-              name: draft.facilityName || null,
-            },
+            facility: { name: draft.facilityName || null },
             concerns: draft.concerns,
             narrative: draft.narrative,
             risks: [urgencyLabel(draft.urgency)],
@@ -167,17 +247,14 @@ export function IntakeReportForm({
         }),
       });
       const data: unknown = await response.json().catch(() => null);
-
       if (!response.ok || !data || typeof data !== "object" || !("caseCode" in data) || typeof data.caseCode !== "string") {
         const error = data && typeof data === "object" && "error" in data && typeof data.error === "string" ? data.error : "No se pudo guardar la comunicación. Intentá nuevamente.";
         throw new Error(error);
       }
-
       const savedCaseCode = data.caseCode;
       const uploadToken = "uploadToken" in data && typeof data.uploadToken === "string" ? data.uploadToken : "";
       setCaseCode(savedCaseCode);
       try { window.sessionStorage.setItem("alerta-mayor-last-code", savedCaseCode); } catch {}
-
       const notification = "emailNotification" in data && data.emailNotification && typeof data.emailNotification === "object"
         ? data.emailNotification as Record<string, unknown>
         : null;
@@ -186,7 +263,6 @@ export function IntakeReportForm({
           ? `También enviamos el código a ${draft.contactEmail.trim()}.`
           : "El correo quedó registrado. El envío automático se habilitará al configurar Resend.");
       }
-
       if (files.length) {
         setAttachmentState("uploading");
         const uploads = await Promise.all(files.map(async (file) => {
@@ -194,14 +270,9 @@ export function IntakeReportForm({
           formData.set("file", file);
           formData.set("uploadToken", uploadToken);
           try {
-            const uploadResponse = await fetch(`/api/intake-reports/${encodeURIComponent(savedCaseCode)}/attachments`, {
-              method: "POST",
-              body: formData,
-            });
+            const uploadResponse = await fetch(`/api/intake-reports/${encodeURIComponent(savedCaseCode)}/attachments`, { method: "POST", body: formData });
             return uploadResponse.ok;
-          } catch {
-            return false;
-          }
+          } catch { return false; }
         }));
         const uploaded = uploads.filter(Boolean).length;
         setUploadedFileCount(uploaded);
@@ -252,32 +323,40 @@ export function IntakeReportForm({
   };
 
   if (caseCode) return <section className="reportFlow reportSuccess">
-    <div className="reportSuccessMark"><CheckCircle2 size={32}/></div>
-    <div className="eyebrow">Comunicación guardada</div>
+    <div className="reportSuccessMark"><CheckCircle2 size={36}/></div>
     <h1>Recibimos tu comunicación</h1>
     <p className="reportTrackingWarning"><strong>Guardá este código.</strong> Lo vas a necesitar para seguir el avance o hacer un reclamo sobre esta comunicación.</p>
-    <div className="reportTrackingCode">
+    
+    <div className="reportTrackingCodeClean">
       <code>{caseCode}</code>
-      <button type="button" onClick={() => void copyCaseCode()}>{copyState === "copied" ? <Check size={17}/> : <Copy size={17}/>} {copyState === "copied" ? "Copiado" : "Copiar código"}</button>
+      <button type="button" className="reportCopyButtonClean" onClick={() => void copyCaseCode()}>
+        {copyState === "copied" ? <Check size={16}/> : <Copy size={16}/>} 
+        {copyState === "copied" ? "Copiado" : "Copiar código"}
+      </button>
     </div>
+
     {copyState === "error" && <p className="reportCopyError" role="alert">No se pudo copiar automáticamente. Seleccioná el código y copialo manualmente.</p>}
     {emailNotice && <p className="reportSuccessNotice"><Mail size={17}/>{emailNotice}</p>}
     {attachmentState === "uploading" && <p className="reportSuccessNotice"><Paperclip size={17}/>Subiendo {files.length} {files.length === 1 ? "archivo" : "archivos"}…</p>}
     {attachmentState === "complete" && <p className="reportSuccessNotice isComplete"><Check size={17}/>{uploadedFileCount} {uploadedFileCount === 1 ? "archivo guardado" : "archivos guardados"} como evidencia privada.</p>}
     {attachmentState === "partial" && <p className="reportSuccessNotice isWarning"><ShieldAlert size={17}/>La comunicación se guardó, pero sólo se pudieron adjuntar {uploadedFileCount} de {files.length} archivos.</p>}
-    <div className="reportSuccessActions"><button className="reportBack" onClick={restart}>Nueva comunicación</button>{onFollow && <button className="reportBack" onClick={onFollow}>Seguir esta comunicación</button>}<button className="reportContinue" onClick={onHome}>Volver al inicio <ArrowRight size={17}/></button></div>
+    
+    <div className="reportSuccessSingleAction">
+      <button className="reportContinue" onClick={onHome}>
+        Volver al inicio <ArrowRight size={17}/>
+      </button>
+    </div>
   </section>;
 
   const stageTitle = step === 1 ? "¿Qué está pasando?" : step === 2 ? "¿Dónde ocurre?" : step === 3 ? "Urgencia y contacto" : "Revisá y enviá";
 
   return <section className="reportFlow">
     <header className="reportFlowHeader">
-      <div className="eyebrow">Comunicar una preocupación</div>
       <h1>{stageTitle}</h1>
       <p className="lead">Completá sólo lo que sepas. En el primer paso alcanza con indicar uno de los datos.</p>
     </header>
 
-    <nav className="reportStepper" aria-label="Pasos de la comunicación">
+    <nav className="reportStepper reportStepperFour" aria-label="Pasos de la comunicación">
       {["Situación", "Lugar", "Urgencia", "Enviar"].map((label, index) => <button key={label} type="button" className={`reportStep ${step === index + 1 ? "isCurrent" : ""} ${step > index + 1 ? "isComplete" : ""}`} onClick={() => index + 1 < step && setStep(index + 1)} disabled={index + 1 > step || submitting} aria-current={step === index + 1 ? "step" : undefined}><span className="reportStepNumber">{step > index + 1 ? <CheckCircle2 size={15}/> : index + 1}</span><span className="reportStepLabel">{label}</span></button>)}
     </nav>
 
@@ -294,9 +373,25 @@ export function IntakeReportForm({
       {step === 2 && <>
         <div className="reportFieldGrid">
           <label className="reportField"><span>Departamento</span><select value={draft.department} onChange={(event) => update("department", event.target.value)}><option value="">Elegí una opción</option>{departments.map((department) => <option key={department}>{department}</option>)}</select></label>
-          <label className="reportField"><span>Barrio, localidad o referencia</span><input value={draft.locationReference} onChange={(event) => update("locationReference", event.target.value)} placeholder="Ej.: barrio, localidad o “No se conoce”" /></label>
+          <label className="reportField"><span>Ciudad o localidad principal <em>opcional</em></span><input value={draft.city} onChange={(event) => update("city", event.target.value)} placeholder="Ej.: Montevideo, Salto, Las Piedras" /></label>
         </div>
-        {draft.setting === "En un residencial / ELEPEM" && <label className="reportField"><span>Nombre del residencial <em>opcional</em></span><input value={draft.facilityName} onChange={(event) => update("facilityName", event.target.value)} placeholder="Si lo conocés" /></label>}
+        <div className="reportFieldGrid">
+          <label className="reportField"><span>Barrio o zona <em>opcional</em></span><input value={draft.locality} onChange={(event) => update("locality", event.target.value)} placeholder="Ej.: Pocitos, Centro, Barrio Sur" /></label>
+          <label className="reportField"><span>Dirección o referencia <em>opcional</em></span><input value={draft.streetAddress} onChange={(event) => update("streetAddress", event.target.value)} placeholder="Ej.: Av. 18 de Julio 1234" /></label>
+        </div>
+        <div className="reportFieldGrid reportFieldGridOne">
+          <label className="reportField"><span>Número de puerta <em>opcional</em></span><input value={draft.doorNumber} onChange={(event) => update("doorNumber", event.target.value)} placeholder="Ej.: Apto 3, Torre B" /></label>
+        </div>
+        {draft.setting === "En un residencial / ELEPEM" && <label className="reportField" style={{marginTop: "16px"}}><span>Nombre del residencial <em>opcional</em></span><input value={draft.facilityName} onChange={(event) => update("facilityName", event.target.value)} placeholder="Si lo conocés" /></label>}
+        {draft.department && draft.department !== "No se conoce" && (
+          <LocationMap
+            department={draft.department}
+            city={draft.city}
+            locality={draft.locality}
+            streetAddress={draft.streetAddress}
+            doorNumber={draft.doorNumber}
+          />
+        )}
       </>}
 
       {step === 3 && <>
@@ -306,25 +401,43 @@ export function IntakeReportForm({
         <OptionGrid options={["Alta", "Media", "Baja"]} selected={draft.urgency} onSelect={(value) => update("urgency", value as IntakeDraft["urgency"])} />
         <h3 className="reportSubheading">Privacidad</h3>
         <OptionGrid options={["Anónima", "Confidencial", "Identificada"]} selected={draft.privacy} onSelect={(value) => update("privacy", value)} />
-        <div className="reportContactBlock">
-          <div className="reportContactIntro"><strong>Datos de contacto <em>opcionales</em></strong><span>Podés dejarlos con cualquier opción de privacidad. No son obligatorios.</span></div>
-          <div className="reportFieldGrid">
+        {(draft.privacy === "Identificada" || draft.privacy === "Confidencial") && (
+          <label className="reportField" style={{marginTop: "14px"}}>
+            <span>Nombre completo <em>opcional</em></span>
+            <input value={draft.reporterName} onChange={(event) => update("reporterName", event.target.value)} placeholder="Ej.: Nombre de quien comunica" />
+          </label>
+        )}
+        <h3 className="reportSubheading">Medio de contacto <em>opcional</em></h3>
+        <div className="reportFieldGrid">
+          <label className="reportField"><span>Cómo contactar con seguridad</span><select value={draft.contactMethod} onChange={(event) => update("contactMethod", event.target.value)}><option>Sin contacto</option><option>Llamada</option><option>WhatsApp o SMS</option><option>Correo</option><option>Persona de confianza</option></select></label>
+          {draft.contactMethod !== "Sin contacto" && <label className="reportField"><span>Horario o condición segura <em>opcional</em></span><input value={draft.safeContact} onChange={(event) => update("safeContact", event.target.value)} placeholder="Ej.: después de las 18" /></label>}
+        </div>
+        {showContactFields && <>
+          {draft.privacy === "Anónima" && (
+            <p style={{margin: "12px 0 0", color: "#58718c", fontSize: "0.82rem"}}>
+              Podés dejar el teléfono o correo de una persona de confianza o referente para recibir novedades en forma segura.
+            </p>
+          )}
+          <div className="reportFieldGrid reportContactData">
             <label className="reportField"><span><Phone size={15}/> Celular <em>opcional</em></span><input type="tel" inputMode="tel" autoComplete="tel" value={draft.contactPhone} onChange={(event) => update("contactPhone", event.target.value)} placeholder="Ej.: 099 123 456" /></label>
             <label className="reportField"><span><Mail size={15}/> Correo electrónico <em>opcional</em></span><input type="email" inputMode="email" autoComplete="email" value={draft.contactEmail} onChange={(event) => update("contactEmail", event.target.value)} placeholder="Ej.: nombre@correo.com" /></label>
           </div>
-          <small>Si dejás un correo, intentaremos enviarte allí el código de seguimiento. Igual aparecerá en pantalla al finalizar.</small>
-        </div>
-        <div className="reportFieldGrid"><label className="reportField"><span>Medio seguro <em>opcional</em></span><select value={draft.contactMethod} onChange={(event) => update("contactMethod", event.target.value)}><option>Sin contacto</option><option>Llamada</option><option>WhatsApp o SMS</option><option>Correo</option><option>Persona de confianza</option></select></label><label className="reportField"><span>Horario o condición segura <em>opcional</em></span><input value={draft.safeContact} onChange={(event) => update("safeContact", event.target.value)} placeholder="Ej.: después de las 18" /></label></div>
-        <label className="reportCheckbox"><input type="checkbox" checked={draft.noEarlyContact} onChange={(event) => update("noEarlyContact", event.target.checked)} /><span>No contactar primero a la persona señalada ni al establecimiento.</span></label>
+        </>}
+        {draft.privacy !== "Anónima" && <label className="reportCheckbox"><input type="checkbox" checked={draft.noEarlyContact} onChange={(event) => update("noEarlyContact", event.target.checked)} /><span>No contactar primero a la persona señalada ni al establecimiento.</span></label>}
         {draft.urgency === "Alta" && <div className="reportUrgencyNotice"><ShieldAlert size={21}/><div><strong>Si hay peligro inmediato, llamá al 911, Bomberos o la emergencia médica.</strong><span>Este formulario de demostración no reemplaza una respuesta de urgencia.</span></div></div>}
       </>}
 
       {step === 4 && <>
         <div className="reportSummary">
-          <div><strong>Situación</strong><span>{draft.setting || "No indicada"}</span></div><div><strong>Preocupación</strong><span>{draft.concerns.join(" · ") || "No indicada"}</span></div><div><strong>Lugar</strong><span>{draft.department} · {draft.locationReference}</span></div><div><strong>Urgencia</strong><span>{urgencyLabel(draft.urgency)}</span></div><div><strong>Quién comunica</strong><span>{draft.reporter}</span></div><div><strong>Privacidad</strong><span>{draft.privacy}</span></div>
+          <div><strong>Situación</strong><span>{draft.setting || "No indicada"}</span></div>
+          <div><strong>Preocupación</strong><span>{draft.concerns.join(" · ") || "No indicada"}</span></div>
+          <div><strong>Lugar</strong><span>{draft.department}{locationSummary ? ` · ${locationSummary}` : ""}</span></div>
+          <div><strong>Urgencia</strong><span>{draft.urgency ? urgencyLabel(draft.urgency) : "No indicada"}</span></div>
+          <div><strong>Quién comunica</strong><span>{draft.reporter}{draft.reporterName ? ` (${draft.reporterName})` : ""}</span></div>
+          <div><strong>Privacidad</strong><span>{draft.privacy || "No indicada"}</span></div>
         </div>
         <div className="reportAttachments">
-          <div className="reportAttachmentsHeading"><span><Paperclip size={20}/></span><div><strong>Imágenes o pruebas <em>opcionales</em></strong><small>Desde el celular o la computadora. Hasta 5 archivos de 10 MB cada uno.</small></div></div>
+          <div className="reportAttachmentsHeading"><span><Paperclip size={18}/></span><div><strong>Imágenes o pruebas <em>opcionales</em></strong><small>Desde el celular o la computadora. Hasta 5 archivos de 10 MB cada uno.</small></div></div>
           <label className="reportFilePicker">
             <input type="file" multiple accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf,text/plain,.doc,.docx" onChange={(event) => { addFiles(event.target.files); event.currentTarget.value = ""; }} />
             <Paperclip size={18}/> Elegir archivos
@@ -333,6 +446,7 @@ export function IntakeReportForm({
         </div>
         <label className="reportCheckbox reportConsent"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} /><span>Entiendo que esto es una demostración: se guardará en la base de datos para que el equipo lo vea, pero no se enviará a ningún organismo.</span></label>
       </>}
+
       {message && <div className="reportValidation" role="alert">{message}</div>}
     </div>
 

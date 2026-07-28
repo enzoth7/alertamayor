@@ -41,6 +41,7 @@ export default function StreetMap({ facilities, selectedId, onSelect }: { facili
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -60,6 +61,7 @@ export default function StreetMap({ facilities, selectedId, onSelect }: { facili
     };
   }, []);
 
+  // Re-dibujar marcadores cuando cambia la lista de instalaciones
   useEffect(() => {
     const map = mapRef.current;
     const markers = markersRef.current;
@@ -67,23 +69,39 @@ export default function StreetMap({ facilities, selectedId, onSelect }: { facili
 
     markers.clearLayers();
     facilities.forEach((facility) => {
+      const isSelected = selectedId === facility.id;
       const marker = L.circleMarker([facility.lat, facility.lng], {
-        radius: selectedId === facility.id ? 9 : facility.statusGroup === "verificar" ? 7 : 5,
-        color: "#fff",
-        weight: 2,
+        radius: isSelected ? 10 : facility.statusGroup === "verificar" ? 7 : 6,
+        color: isSelected ? "#155eef" : "#fff",
+        weight: isSelected ? 3 : 2,
         fillColor: colors[facility.statusGroup],
         fillOpacity: 0.92,
       });
-      marker.on("click", () => onSelect(facility.id));
+      marker.on("click", () => {
+        onSelect(facility.id);
+      });
       marker.bindPopup(createPopup(facility));
       marker.addTo(markers);
     });
 
-    if (facilities.length) {
+    // Ajustar límites solo en la carga inicial o al cambiar filtros
+    if (isFirstRender.current && facilities.length) {
+      isFirstRender.current = false;
       const bounds = L.latLngBounds(facilities.map(({ lat, lng }) => [lat, lng]));
       map.fitBounds(bounds, { padding: [28, 28], maxZoom: 14 });
     }
   }, [facilities, onSelect, selectedId]);
+
+  // Zoom in reactivo al seleccionar un residencial
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !selectedId) return;
+
+    const target = facilities.find((f) => f.id === selectedId);
+    if (target) {
+      map.flyTo([target.lat, target.lng], 16, { duration: 1 });
+    }
+  }, [selectedId, facilities]);
 
   return <div ref={containerRef} className="leafletRegistryMap" aria-label="Mapa de residenciales"/>;
 }

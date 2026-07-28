@@ -1,8 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useState } from "react";
-import { Building2, MapPinned, Search } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Building2, ChevronDown, ChevronUp, MapPinned, Search } from "lucide-react";
 import { useResidenciales } from "../hooks/useResidenciales";
 import type { Facility, FacilityStatus, MapMode } from "./map-types";
 
@@ -56,22 +56,32 @@ export default function UruguayRegistry({ onReport }: { onReport: () => void }) 
 
   return <>
     <section className="card registryIntro">
-      <div className="eyebrow">Registro integrado por etapas</div>
+      <div className="eyebrow">Registro de establecimientos</div>
       <h1>¿En qué situación administrativa está cada ELEPEM?</h1>
-      <p className="lead">La vista combina fuentes con fecha de corte y una capa institucional ficticia. Elegí una etapa, un departamento o un punto para ver su ficha.</p>
-      {loading && <div className="notice registryDataStatus" role="status">Cargando residenciales desde Supabase…</div>}
+      <p className="lead">Elegí una categoría, un departamento o seleccioná un punto en el mapa para ver la información.</p>
+      {loading && <div className="notice registryDataStatus" role="status">Cargando residenciales…</div>}
       {error && <div className="notice registryDataStatus registryDataError" role="alert">{error}</div>}
       <div className="stats registryStats">
-        <div className="stat"><b>{visible.length}</b><p>puntos visibles</p><small>Resultado de los filtros activos</small></div>
-        <div className="stat"><b>{totals.habilitado}</b><p>habilitados</p><small>Habilitación final MSP</small></div>
-        <div className="stat"><b>{totals.registro}</b><p>en registro</p><small>Certificado de registro</small></div>
-        <div className="stat"><b>{totals.verificar}</b><p>por verificar</p><small>Capa de demostración</small></div>
-      </div>
-      <div className="stageGrid">
-        <button className={`stageCard stage-green ${status === "habilitado" ? "selected" : ""}`} onClick={() => setStatus(status === "habilitado" ? "" : "habilitado")}><b className="stageNumber">Etapa 3</b><strong><i className="statusDot"/>Habilitación final MSP</strong><small>Corte de datos abiertos 2024.</small></button>
-        <a className="stageCard stage-blue" href="https://www.gub.uy/ministerio-desarrollo-social/etiqueta/otros/establecimientos-larga-estadia-para-personas-mayores-certificado-social" target="_blank" rel="noreferrer"><b className="stageNumber">Etapa 2</b><strong><i className="statusDot"/>Certificado social MIDES</strong><small>Directorio oficial externo 2026.</small></a>
-        <button className={`stageCard stage-amber ${status === "registro" ? "selected" : ""}`} onClick={() => setStatus(status === "registro" ? "" : "registro")}><b className="stageNumber">Etapa 1</b><strong><i className="statusDot"/>Certificado de registro</strong><small>Emitidos durante 2024.</small></button>
-        <button className={`stageCard stage-violet ${status === "verificar" ? "selected" : ""}`} onClick={() => setStatus(status === "verificar" ? "" : "verificar")}><b className="stageNumber">{totals.verificar} DEMO</b><strong><i className="statusDot"/>Dato no conciliado</strong><small>Capa ficticia pendiente de verificación.</small></button>
+        <button type="button" className={`stat statCard-blue ${!status ? "selected" : ""}`} onClick={() => setStatus("")}>
+          <b>{visible.length}</b>
+          <p>puntos visibles</p>
+          <small>Resultado de los filtros</small>
+        </button>
+        <button type="button" className={`stat statCard-green ${status === "habilitado" ? "selected" : ""}`} onClick={() => setStatus(status === "habilitado" ? "" : "habilitado")}>
+          <b>{totals.habilitado}</b>
+          <p>habilitados</p>
+          <small>Habilitación final MSP</small>
+        </button>
+        <button type="button" className={`stat statCard-amber ${status === "registro" ? "selected" : ""}`} onClick={() => setStatus(status === "registro" ? "" : "registro")}>
+          <b>{totals.registro}</b>
+          <p>en registro</p>
+          <small>Certificado de registro</small>
+        </button>
+        <button type="button" className={`stat statCard-violet ${status === "verificar" ? "selected" : ""}`} onClick={() => setStatus(status === "verificar" ? "" : "verificar")}>
+          <b>{totals.verificar}</b>
+          <p>por verificar</p>
+          <small>Capa de demostración</small>
+        </button>
       </div>
       <div className="registryToolbar">
         <label className="searchField"><b>Nombre, calle o localidad</b><div className="registrySearchBox"><Search size={19}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ej.: La Paz, Artigas 1308, hogar"/></div></label>
@@ -80,7 +90,6 @@ export default function UruguayRegistry({ onReport }: { onReport: () => void }) 
         <label><b>Precisión (opcional)</b><select value={precision} onChange={(event) => setPrecision(event.target.value)}><option value="">Todas</option><option value="puerta">Nivel de puerta</option><option value="calle">Nivel de calle</option><option value="referencial">Referencial</option></select></label>
         <button className="secondary resetMapFilters" onClick={resetFilters}>Ver todo</button>
       </div>
-      <div className="notice registryCoverage"><strong>Cobertura visible:</strong> {totals.habilitado + totals.registro} puntos derivados de recursos oficiales y {totals.verificar} alertas ficticias pendientes de verificación. Los puntos violetas pertenecen a una capa institucional de demostración.</div>
       <div className="departmentChips"><button className={!department ? "active" : ""} onClick={() => setDepartment("")}>Todos · {baseWithoutDepartment.length}</button>{departmentCounts.map(([name, count]) => <button className={department === name ? "active" : ""} onClick={() => setDepartment(department === name ? "" : name)} key={name}>{name} · {count}</button>)}</div>
       <div className="mapModes"><strong>Cómo verlos:</strong><button className={mode === "streets" ? "active" : ""} onClick={() => setMode("streets")}><MapPinned size={18}/> Mapa con calles</button><button className={mode === "list" ? "active" : ""} onClick={() => setMode("list")}><Building2 size={18}/> Solo listado</button></div>
     </section>
@@ -88,34 +97,88 @@ export default function UruguayRegistry({ onReport }: { onReport: () => void }) 
     <div className={`registryMapLayout ${mode === "list" ? "mapListOnly" : ""}`}>
       {mode !== "list" && <div className="registryMapColumn">
         <StreetMap facilities={visible} selectedId={selected?.id ?? null} onSelect={setSelectedId}/>
-        <div className="notice overviewSelection">{selected ? <><strong>{selected.name}</strong><p>{selected.address} · {selected.locality} · {selected.department}</p><small>{selected.statusShort} · {selected.sourceLabel}</small></> : <><strong>Sin resultados visibles.</strong><p>Probá limpiar o cambiar los filtros.</p></>}</div>
-        <p className="mapSourceNote">Las coordenadas se derivaron de domicilios publicados y datos de direcciones. La posición no confirma la vigencia administrativa.</p>
       </div>}
 
       <aside className="card registryResults">
         <div className="resultsHead"><div><div className="eyebrow">Registro consultable</div><h2>Resultados</h2></div><output className="resultCount">{visible.length}</output></div>
         <ul className="resultsLegend">
-          <li><i className="dot greenDot"/>Habilitación final · corte 2024</li>
-          <li><i className="dot amberDot"/>Certificado de registro · emitido 2024</li>
-          <li><i className="dot blueDot"/>Certificado social · directorio externo 2026</li>
-          <li><i className="dot violetDot"/>No figura / dato no coincide · DEMO institucional</li>
-          <li><i className="dot redDot"/>Medida oficial, cuando exista una publicación verificable</li>
+          <li><i className="dot greenDot"/>Habilitación final MSP</li>
+          <li><i className="dot amberDot"/>Certificado de registro</li>
+          <li><i className="dot blueDot"/>Certificado social MIDES</li>
+          <li><i className="dot violetDot"/>Pendiente de verificación</li>
         </ul>
-        <p className="resultsMeta">{visible.length} resultados · {totals.habilitado} etapa 3 · {totals.registro} etapa 1 · {totals.verificar} para verificar.</p>
-        <div className="registryResultsScroll">{orderedResults.map((facility) => <FacilityCard facility={facility} selected={selected?.id === facility.id} onSelect={setSelectedId} onReport={onReport} key={facility.id}/>)}</div>
+        <p className="resultsMeta">{visible.length} residenciales encontrados</p>
+        <div className="registryResultsScroll">
+          {orderedResults.map((facility) => (
+            <FacilityAccordionCard
+              facility={facility}
+              isSelected={selected?.id === facility.id}
+              onSelect={setSelectedId}
+              onReport={onReport}
+              key={facility.id}
+            />
+          ))}
+        </div>
       </aside>
     </div>
   </>;
 }
 
-function FacilityCard({ facility, selected, onSelect, onReport }: { facility: Facility; selected: boolean; onSelect: (id: string) => void; onReport: () => void }) {
-  return <article className={`facilityCard facility-${facility.statusGroup} ${selected ? "selected" : ""}`}>
-    <span className={`stagePill pill-${facility.statusGroup}`}>{facility.statusStage}</span>
-    <strong>{facility.name}</strong>
-    <p>{facility.address}</p>
-    <p>{facility.locality} · {facility.department}{facility.places != null ? ` · ${facility.places} plazas` : ""}</p>
-    <small>{facility.sourceLabel}</small>
-    <em>{facility.precisionLabel}</em>
-    <div><button className="secondary" onClick={() => onSelect(facility.id)}>Ver ficha</button><button className="link" onClick={onReport}>Comunicar preocupación</button></div>
-  </article>;
+function FacilityAccordionCard({
+  facility,
+  isSelected,
+  onSelect,
+  onReport,
+}: {
+  facility: Facility;
+  isSelected: boolean;
+  onSelect: (id: string) => void;
+  onReport: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(isSelected);
+  const cardRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (isSelected) {
+      setIsOpen(true);
+      cardRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [isSelected]);
+
+  const toggle = () => {
+    const nextState = !isOpen;
+    setIsOpen(nextState);
+    if (nextState) {
+      onSelect(facility.id);
+    }
+  };
+
+  return (
+    <article ref={cardRef} className={`facilityCard facility-${facility.statusGroup} ${isOpen ? "isOpen" : ""} ${isSelected ? "selected" : ""}`}>
+      <button type="button" className="facilityAccordionHeader" onClick={toggle} aria-expanded={isOpen}>
+        <div className="facilityAccordionTitle">
+          <strong>{facility.name}</strong>
+          <span className="facilityLocation">{facility.locality} · {facility.department}</span>
+        </div>
+        <span className="facilityAccordionChevron">
+          {isOpen ? <ChevronUp size={18}/> : <ChevronDown size={18}/>}
+        </span>
+      </button>
+
+      {isOpen && (
+        <div className="facilityAccordionBody">
+          {facility.address && <p className="facilityAddress"><strong>Dirección:</strong> {facility.address}</p>}
+          {facility.places != null && <p className="facilityPlaces"><strong>Capacidad:</strong> {facility.places} plazas</p>}
+          <small className="facilitySource">{facility.sourceLabel}</small>
+          {facility.precisionLabel && <em className="facilityPrecision">{facility.precisionLabel}</em>}
+          
+          <div className="facilityAccordionActions">
+            <button className="reportContinue facilityReportBtn" onClick={onReport}>
+              Comunicar preocupación
+            </button>
+          </div>
+        </div>
+      )}
+    </article>
+  );
 }

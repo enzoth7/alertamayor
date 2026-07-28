@@ -16,16 +16,21 @@ import type { Facility } from "./map-types";
 
 export type View = "inicio" | "denuncia" | "seguimiento" | "residenciales" | "equipos" | "fuentes";
 type AccessMode = "loading" | "chooser" | "person" | "organization";
+export type Portal = "person" | "organization";
 
 const ACCESS_SESSION_KEY = "alerta-mayor-access";
 
-const viewPaths: Record<View, string> = {
-  inicio: "/",
-  denuncia: "/denuncia",
-  seguimiento: "/seguimiento",
-  residenciales: "/residenciales",
-  equipos: "/equipos",
-  fuentes: "/fuentes",
+const personViewPaths: Partial<Record<View, string>> = {
+  inicio: "/personas",
+  denuncia: "/personas/denuncia",
+  seguimiento: "/personas/seguimiento",
+  residenciales: "/personas/residenciales",
+};
+
+const orgViewPaths: Partial<Record<View, string>> = {
+  residenciales: "/organizacion/residenciales",
+  equipos: "/organizacion/equipos",
+  fuentes: "/organizacion/fuentes",
 };
 
 const choices = [
@@ -35,10 +40,19 @@ const choices = [
   ["?", "No lo sé", "La persona que consulta no conoce el tipo de lugar."],
 ];
 
-export function AppShell({ initialView }: { initialView: View }) {
+export function AppShell({ initialView, portal }: { initialView: View; portal?: Portal }) {
   const router = useRouter();
   const view = initialView;
-  const [accessMode, setAccessMode] = useState<AccessMode>("loading");
+  const [accessMode, setAccessMode] = useState<AccessMode>(() => {
+    if (portal === "person") return "person";
+    if (typeof window !== "undefined") {
+      try {
+        const savedMode = window.sessionStorage.getItem(ACCESS_SESSION_KEY);
+        if (savedMode === "person") return "person";
+      } catch {}
+    }
+    return portal === "organization" ? "loading" : "chooser";
+  });
   const [organizationLogin, setOrganizationLogin] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -49,20 +63,52 @@ export function AppShell({ initialView }: { initialView: View }) {
 
   useEffect(() => {
     let active = true;
+
+    // Portal personas: establece modo person inmediatamente
+    if (portal === "person") {
+      try { window.sessionStorage.setItem(ACCESS_SESSION_KEY, "person"); } catch {}
+      setAccessMode("person");
+      return;
+    }
+
+    // Portal organización: verifica sesión; si no hay, muestra login de org
+    if (portal === "organization") {
+      const restoreOrg = async () => {
+        try {
+          const savedMode = window.sessionStorage.getItem(ACCESS_SESSION_KEY);
+          if (savedMode === "organization") {
+            const response = await fetch("/api/team/session", { cache: "no-store" });
+            const data: unknown = await response.json().catch(() => null);
+            const authenticated = Boolean(data && typeof data === "object" && "authenticated" in data && data.authenticated === true);
+            if (!active) return;
+            if (authenticated) { setAccessMode("organization"); return; }
+          }
+          if (!active) return;
+          window.sessionStorage.removeItem(ACCESS_SESSION_KEY);
+          setOrganizationLogin(true);
+          setAccessMode("chooser");
+        } catch {
+          if (active) { setOrganizationLogin(true); setAccessMode("chooser"); }
+        }
+      };
+      void restoreOrg();
+      return () => { active = false; };
+    }
+
+    // Chooser raíz (/): muestra el chooser salvo que haya sesión de org
     const restoreAccess = async () => {
       try {
         const savedMode = window.sessionStorage.getItem(ACCESS_SESSION_KEY);
         if (savedMode !== "organization") {
-          if (active) setAccessMode(savedMode === "person" ? "person" : "chooser");
+          if (active) setAccessMode("chooser");
           return;
         }
-
         const response = await fetch("/api/team/session", { cache: "no-store" });
         const data: unknown = await response.json().catch(() => null);
         const authenticated = Boolean(data && typeof data === "object" && "authenticated" in data && data.authenticated === true);
         if (!active) return;
         if (authenticated) {
-          setAccessMode("organization");
+          router.replace("/organizacion/equipos");
         } else {
           window.sessionStorage.removeItem(ACCESS_SESSION_KEY);
           setAccessMode("chooser");
@@ -73,7 +119,7 @@ export function AppShell({ initialView }: { initialView: View }) {
     };
     void restoreAccess();
     return () => { active = false; };
-  }, []);
+  }, [portal, router]);
 
   const personBlockedView = view === "equipos" || view === "fuentes";
   const organizationBlockedView = view === "denuncia" || view === "seguimiento";
@@ -83,8 +129,8 @@ export function AppShell({ initialView }: { initialView: View }) {
     : [["inicio", "Inicio"], ["residenciales", "Residenciales"]];
 
   useEffect(() => {
-    if (accessMode === "person" && personBlockedView) router.replace("/");
-    if (accessMode === "organization" && organizationBlockedView) router.replace("/equipos");
+    if (accessMode === "person" && personBlockedView) router.replace("/personas");
+    if (accessMode === "organization" && organizationBlockedView) router.replace("/organizacion/equipos");
   }, [accessMode, organizationBlockedView, personBlockedView, router]);
 
   const saveAccessMode = (mode: "person" | "organization") => {
@@ -101,7 +147,7 @@ export function AppShell({ initialView }: { initialView: View }) {
     setPassword("");
     setLoginError("");
     setMenu(false);
-    if (view !== "inicio") router.push("/");
+    router.push("/");
   };
 
   const submitOrganizationLogin = async (event: FormEvent<HTMLFormElement>) => {
@@ -122,6 +168,8 @@ export function AppShell({ initialView }: { initialView: View }) {
       setLoginError("");
       setPassword("");
       saveAccessMode("organization");
+      // Redirigir al portal de organización
+      router.push("/organizacion/equipos");
     } catch (error) {
       setLoginError(error instanceof Error ? error.message : "No se pudo ingresar.");
     } finally {
@@ -131,15 +179,20 @@ export function AppShell({ initialView }: { initialView: View }) {
 
   const go = (next: View) => {
     setMenu(false);
-    if ((next === "equipos" || next === "fuentes") && !isOrganization) {
-      router.push("/");
+    if (portal === "organization" || isOrganization) {
+      if (next === "denuncia" || next === "seguimiento") {
+        router.push("/organizacion/equipos");
+        return;
+      }
+      router.push(orgViewPaths[next] ?? "/organizacion/equipos");
       return;
     }
-    if ((next === "denuncia" || next === "seguimiento") && isOrganization) {
-      router.push("/equipos");
+    // Portal personas
+    if (next === "equipos" || next === "fuentes") {
+      router.push("/personas");
       return;
     }
-    router.push(viewPaths[next]);
+    router.push(personViewPaths[next] ?? "/personas");
   };
 
   if (accessMode === "loading") return <main className="accessGate accessGateLoading" aria-label="Cargando acceso"><img src="/alertamayor.png" alt="Alerta mayor"/></main>;
@@ -154,7 +207,7 @@ export function AppShell({ initialView }: { initialView: View }) {
     loginError={loginError}
     setLoginError={setLoginError}
     isLoggingIn={isLoggingIn}
-    onPerson={() => saveAccessMode("person")}
+    onPerson={() => { saveAccessMode("person"); router.push("/personas"); }}
     onOrganizationLogin={submitOrganizationLogin}
   />;
 

@@ -1,4 +1,3 @@
-import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -42,6 +41,21 @@ function phone(value: unknown): string | null {
   return /^[+()0-9\s.-]{6,24}$/.test(normalized) ? normalized : null;
 }
 
+function getRandomHex(bytesCount: number): string {
+  const bytes = new Uint8Array(bytesCount);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("").toUpperCase();
+}
+
+function getRandomBase64Url(bytesCount: number): string {
+  const bytes = new Uint8Array(bytesCount);
+  crypto.getRandomValues(bytes);
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
 function buildReportPayload(value: unknown): JsonRecord | null {
   if (!isRecord(value)) return null;
 
@@ -60,7 +74,7 @@ function buildReportPayload(value: unknown): JsonRecord | null {
   const submittedPhone = phone(value.contactPhone);
 
   const hasSituationInformation = Boolean(setting || selectedConcerns.length || narrative);
-  if (!hasSituationInformation || !reporter || !department || !locationReference || !risks.length || !privacy) return null;
+  if (!hasSituationInformation || !reporter || !department || !locationReference || !privacy) return null;
   if (text(value.contactEmail, 254) && !submittedEmail) return null;
   if (text(value.contactPhone, 24) && !submittedPhone) return null;
 
@@ -96,7 +110,7 @@ function buildReportPayload(value: unknown): JsonRecord | null {
     concerns: selectedConcerns.length ? selectedConcerns : ["No indicada"],
     allegedRelation: optionalText(value.allegedRelation),
     narrative: narrative || "Sin relato adicional.",
-    risks,
+    risks: risks.length ? risks : ["No especificado"],
     privacy,
     contactEmail: submittedEmail,
     contactPhone: submittedPhone,
@@ -110,7 +124,7 @@ function buildReportPayload(value: unknown): JsonRecord | null {
 
 function newCaseCode(): string {
   const date = new Date().toISOString().slice(0, 10).replaceAll("-", "");
-  return `AM-${date}-${randomBytes(4).toString("hex").toUpperCase()}`;
+  return `AM-${date}-${getRandomHex(4)}`;
 }
 
 function supabaseHeaders(publishableKey: string): Record<string, string> {
@@ -143,74 +157,79 @@ async function requestTrackingEmail(supabaseUrl: string, publishableKey: string,
 }
 
 export async function POST(request: Request) {
-  const declaredLength = Number(request.headers.get("content-length") || 0);
-  if (declaredLength > MAX_REQUEST_BYTES) {
-    return NextResponse.json({ error: "La comunicación es demasiado extensa." }, { status: 413 });
-  }
-
-  let body: unknown;
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "No se pudo leer la comunicación." }, { status: 400 });
-  }
+    const declaredLength = Number(request.headers.get("content-length") || 0);
+    if (declaredLength > MAX_REQUEST_BYTES) {
+      return NextResponse.json({ error: "La comunicación es demasiado extensa." }, { status: 413 });
+    }
 
-  const payload = buildReportPayload(isRecord(body) ? body.report : null);
-  if (!payload) {
-    return NextResponse.json({ error: "Faltan datos requeridos para guardar la comunicación." }, { status: 400 });
-  }
-
-  if (JSON.stringify(payload).length > MAX_REQUEST_BYTES) {
-    return NextResponse.json({ error: "La comunicación es demasiado extensa." }, { status: 413 });
-  }
-
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-  if (!supabaseUrl || !publishableKey) {
-    console.error("Supabase is not configured for intake reports.");
-    return NextResponse.json({ error: "El guardado no está configurado todavía." }, { status: 503 });
-  }
-
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const caseCode = newCaseCode();
-    const uploadToken = randomBytes(24).toString("base64url");
-    let response: Response;
+    let body: unknown;
     try {
-      response = await fetch(`${supabaseUrl}/rest/v1/intake_reports`, {
-        method: "POST",
-        headers: {
-          ...supabaseHeaders(publishableKey),
-          "Content-Type": "application/json",
-          Prefer: "return=minimal",
-        },
-        body: JSON.stringify({
-          case_code: caseCode,
-          source: "web",
-          priority: payload.preliminaryPriority,
-          department: payload.location && isRecord(payload.location) ? payload.location.department : null,
-          report_payload: { ...payload, evidenceUploadToken: uploadToken },
-        }),
-        cache: "no-store",
-      });
-    } catch (error) {
-      console.error("Supabase intake report request failed.", { message: error instanceof Error ? error.message : "Unknown error" });
-      return NextResponse.json({ error: "No se pudo conectar con la base de datos. Intentá nuevamente." }, { status: 502 });
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "No se pudo leer la comunicación." }, { status: 400 });
     }
 
-    if (response.ok) {
-      const contactEmail = typeof payload.contactEmail === "string" ? payload.contactEmail : "";
-      const emailNotification = contactEmail
-        ? await requestTrackingEmail(supabaseUrl, publishableKey, caseCode, contactEmail, uploadToken)
-        : null;
-      return NextResponse.json({ caseCode, uploadToken, emailNotification }, { status: 201 });
+    const payload = buildReportPayload(isRecord(body) ? body.report : null);
+    if (!payload) {
+      return NextResponse.json({ error: "Faltan datos requeridos para guardar la comunicación." }, { status: 400 });
     }
 
-    if (response.status !== 409 || attempt === 2) {
-      console.error("Supabase intake report insert failed.", { status: response.status });
-      return NextResponse.json({ error: "No se pudo guardar la comunicación. Intentá nuevamente." }, { status: 502 });
+    if (JSON.stringify(payload).length > MAX_REQUEST_BYTES) {
+      return NextResponse.json({ error: "La comunicación es demasiado extensa." }, { status: 413 });
     }
+
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+    if (!supabaseUrl || !publishableKey) {
+      console.error("Supabase is not configured for intake reports.");
+      return NextResponse.json({ error: "El guardado no está configurado todavía." }, { status: 503 });
+    }
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const caseCode = newCaseCode();
+      const uploadToken = getRandomBase64Url(24);
+      let response: Response;
+      try {
+        response = await fetch(`${supabaseUrl}/rest/v1/intake_reports`, {
+          method: "POST",
+          headers: {
+            ...supabaseHeaders(publishableKey),
+            "Content-Type": "application/json",
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({
+            case_code: caseCode,
+            source: "web",
+            priority: payload.preliminaryPriority,
+            department: payload.location && isRecord(payload.location) ? payload.location.department : null,
+            report_payload: { ...payload, evidenceUploadToken: uploadToken },
+          }),
+          cache: "no-store",
+        });
+      } catch (error) {
+        console.error("Supabase intake report request failed.", { message: error instanceof Error ? error.message : "Unknown error" });
+        return NextResponse.json({ error: "No se pudo conectar con la base de datos. Intentá nuevamente." }, { status: 502 });
+      }
+
+      if (response.ok) {
+        const contactEmail = typeof payload.contactEmail === "string" ? payload.contactEmail : "";
+        const emailNotification = contactEmail
+          ? await requestTrackingEmail(supabaseUrl, publishableKey, caseCode, contactEmail, uploadToken)
+          : null;
+        return NextResponse.json({ caseCode, uploadToken, emailNotification }, { status: 201 });
+      }
+
+      if (response.status !== 409 || attempt === 2) {
+        console.error("Supabase intake report insert failed.", { status: response.status });
+        return NextResponse.json({ error: "No se pudo guardar la comunicación. Intentá nuevamente." }, { status: 502 });
+      }
+    }
+
+    return NextResponse.json({ error: "No se pudo generar un código de expediente." }, { status: 503 });
+  } catch (error) {
+    console.error("Unhandled error in intake-reports API handler:", error);
+    return NextResponse.json({ error: "Ocurrió un error inesperado al procesar la comunicación." }, { status: 500 });
   }
-
-  return NextResponse.json({ error: "No se pudo generar un código de expediente." }, { status: 503 });
 }

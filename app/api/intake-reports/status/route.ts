@@ -6,36 +6,36 @@ export const runtime = "nodejs";
 const CASE_CODE_PATTERN = /^AM-\d{8}-[A-F0-9]{8}$/;
 
 export async function GET(request: NextRequest) {
-  const code = (request.nextUrl.searchParams.get("code") || "").trim().toUpperCase();
-
-  if (code === "DEM-2401") {
-    return NextResponse.json({
-      caseCode: code,
-      receivedAt: "2026-07-28T12:40:00.000Z",
-      currentStatus: "in_review",
-      events: [
-        {
-          status: "received",
-          title: "Comunicación recibida",
-          description: "La comunicación quedó registrada y está disponible para la revisión inicial.",
-          createdAt: "2026-07-28T12:40:00.000Z",
-        },
-        {
-          status: "in_review",
-          title: "Revisión inicial completada",
-          description: "El equipo revisó la información y definió el próximo paso.",
-          createdAt: "2026-07-28T15:10:00.000Z",
-        },
-      ],
-      demo: true,
-    }, { headers: { "Cache-Control": "no-store" } });
-  }
-
-  if (!CASE_CODE_PATTERN.test(code)) {
-    return NextResponse.json({ error: "El código no tiene el formato esperado." }, { status: 400 });
-  }
-
   try {
+    const code = (request.nextUrl.searchParams.get("code") || "").trim().toUpperCase();
+
+    if (code === "DEM-2401") {
+      return NextResponse.json({
+        caseCode: code,
+        receivedAt: "2026-07-28T12:40:00.000Z",
+        currentStatus: "in_review",
+        events: [
+          {
+            status: "received",
+            title: "Comunicación recibida",
+            description: "La comunicación quedó registrada y está disponible para la revisión inicial.",
+            createdAt: "2026-07-28T12:40:00.000Z",
+          },
+          {
+            status: "in_review",
+            title: "Revisión inicial completada",
+            description: "El equipo revisó la información y definió el próximo paso.",
+            createdAt: "2026-07-28T15:10:00.000Z",
+          },
+        ],
+        demo: true,
+      }, { headers: { "Cache-Control": "no-store" } });
+    }
+
+    if (!CASE_CODE_PATTERN.test(code)) {
+      return NextResponse.json({ error: "El código no tiene el formato esperado." }, { status: 400 });
+    }
+
     const rows = await querySupabaseDatabase<{ id: string; case_code: string; created_at: string; current_status: string }>(
       `SELECT id, case_code, created_at, current_status
        FROM public.intake_reports
