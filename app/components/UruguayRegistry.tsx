@@ -15,7 +15,7 @@ function normalize(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
-export default function UruguayRegistry({ onReport }: { onReport: () => void }) {
+export default function UruguayRegistry({ onReport }: { onReport: (facility?: Facility) => void }) {
   const { facilities, loading, error } = useResidenciales();
   const [query, setQuery] = useState("");
   const [department, setDepartment] = useState("");
@@ -134,7 +134,7 @@ function FacilityAccordionCard({
   facility: Facility;
   isSelected: boolean;
   onSelect: (id: string) => void;
-  onReport: () => void;
+  onReport: (facility?: Facility) => void;
 }) {
   const [isOpen, setIsOpen] = useState(isSelected);
   const cardRef = useRef<HTMLElement | null>(null);
@@ -174,7 +174,14 @@ function FacilityAccordionCard({
           {facility.precisionLabel && <em className="facilityPrecision">{facility.precisionLabel}</em>}
           
           <div className="facilityAccordionActions">
-            <button className="reportContinue facilityReportBtn" onClick={onReport}>
+            <button className="reportContinue facilityReportBtn" onClick={() => {
+              if (facility) {
+                try {
+                  window.sessionStorage.setItem("alerta-mayor-preselected-facility", JSON.stringify(facility));
+                } catch {}
+              }
+              onReport(facility);
+            }}>
               Comunicar preocupación
             </button>
           </div>

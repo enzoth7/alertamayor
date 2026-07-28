@@ -21,22 +21,17 @@ function formattedDate(value: string): string {
   return Number.isNaN(date.getTime()) ? "Fecha no disponible" : new Intl.DateTimeFormat("es-UY", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
-export function ReportStatusLookup({ onHome }: { onHome: () => void }) {
-  const [code, setCode] = useState("");
+export function ReportStatusLookup({ onHome, initialCode = "" }: { onHome: () => void; initialCode?: string }) {
+  const [code, setCode] = useState(initialCode);
   const [result, setResult] = useState<StatusResult | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const normalized = code.trim().toUpperCase();
+  const fetchStatus = async (targetCode: string) => {
+    const normalized = targetCode.trim().toUpperCase();
+    if (!normalized) return;
     setMessage("");
     setResult(null);
-    if (!normalized) {
-      setMessage("Ingresá el código que recibiste al enviar la comunicación.");
-      return;
-    }
-
     setLoading(true);
     try {
       const response = await fetch(`/api/intake-reports/status?code=${encodeURIComponent(normalized)}`, { cache: "no-store" });
@@ -51,6 +46,18 @@ export function ReportStatusLookup({ onHome }: { onHome: () => void }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    if (initialCode) {
+      setCode(initialCode);
+      void fetchStatus(initialCode);
+    }
+  }, [initialCode]);
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    await fetchStatus(code);
   };
 
   return <section className="statusLookup">

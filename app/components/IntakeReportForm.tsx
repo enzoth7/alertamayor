@@ -2,6 +2,7 @@
 
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, Copy, Mail, MapPin, Mic, Paperclip, Phone, ShieldAlert, Square, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import type { Facility } from "./map-types";
 
 type IntakeDraft = {
   setting: string;
@@ -57,6 +58,13 @@ const concerns = [
   "Necesidad de cuidados o apoyos",
   "Riesgo o irregularidad en un residencial",
   "No sé cómo clasificarlo",
+];
+
+const URGENCY_OPTIONS = [
+  { label: "Hay peligro inmediato o necesita atención médica urgente", value: "Alta" as const },
+  { label: "Necesita atención pronto, aunque no parece una emergencia", value: "Media" as const },
+  { label: "No parece haber urgencia inmediata", value: "Baja" as const },
+  { label: "No lo sé", value: "Baja" as const },
 ];
 const reporters = ["La propia persona", "Familiar o referente", "Vecino/a o amistad", "Cuidador/a", "Profesional", "Otra persona"];
 const departments = ["Artigas", "Canelones", "Cerro Largo", "Colonia", "Durazno", "Flores", "Florida", "Lavalleja", "Maldonado", "Montevideo", "Paysandú", "Río Negro", "Rivera", "Rocha", "Salto", "San José", "Soriano", "Tacuarembó", "Treinta y Tres", "No se conoce"];
@@ -288,15 +296,22 @@ export function IntakeReportForm({
   onFollow,
   initialConcerns = [],
   initialNarrative = "",
+  initialFacility = null,
 }: {
   onHome: () => void;
-  onFollow?: () => void;
+  onFollow?: (code?: string) => void;
   initialConcerns?: string[];
   initialNarrative?: string;
+  initialFacility?: Facility | null;
 }) {
   const [step, setStep] = useState(1);
   const [draft, setDraft] = useState<IntakeDraft>(() => ({
     ...initialDraft,
+    setting: initialFacility ? "En un residencial / ELEPEM" : initialDraft.setting,
+    facilityName: initialFacility ? initialFacility.name : initialDraft.facilityName,
+    department: initialFacility ? initialFacility.department : initialDraft.department,
+    locality: initialFacility ? initialFacility.locality : initialDraft.locality,
+    streetAddress: initialFacility ? initialFacility.address : initialDraft.streetAddress,
     concerns: initialConcerns.filter((concern) => concerns.includes(concern)),
     narrative: initialNarrative,
   }));
@@ -309,6 +324,7 @@ export function IntakeReportForm({
   const [attachmentState, setAttachmentState] = useState<"idle" | "uploading" | "complete" | "partial">("idle");
   const [uploadedFileCount, setUploadedFileCount] = useState(0);
   const [emailNotice, setEmailNotice] = useState("");
+  const [selectedUrgencyText, setSelectedUrgencyText] = useState("");
   
   // Sugerencias de dirección ricas en tiempo real
   type AddressSuggestionItem = {
@@ -482,7 +498,7 @@ export function IntakeReportForm({
             contactMethod: draft.contactMethod,
             safeContact: draft.safeContact,
             noEarlyContact: draft.noEarlyContact,
-            preliminaryPriority: "Baja",
+            preliminaryPriority: draft.urgency || "Baja",
             suggestedRoute: [],
           },
         }),
@@ -536,6 +552,7 @@ export function IntakeReportForm({
     setAttachmentState("idle");
     setUploadedFileCount(0);
     setEmailNotice("");
+    setSelectedUrgencyText("");
     setStep(1);
   };
 
@@ -582,8 +599,13 @@ export function IntakeReportForm({
     {attachmentState === "complete" && <p className="reportSuccessNotice isComplete"><Check size={17}/>{uploadedFileCount} {uploadedFileCount === 1 ? "archivo guardado" : "archivos guardados"} como evidencia privada.</p>}
     {attachmentState === "partial" && <p className="reportSuccessNotice isWarning"><ShieldAlert size={17}/>La comunicación se guardó, pero sólo se pudieron adjuntar {uploadedFileCount} de {files.length} archivos.</p>}
     
-    <div className="reportSuccessSingleAction">
-      <button className="reportContinue" onClick={onHome}>
+    <div className="reportSuccessSingleAction" style={{display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap", marginTop: "24px"}}>
+      {onFollow && (
+        <button type="button" className="reportBack" onClick={() => onFollow(caseCode)}>
+          Consultar el estado ahora
+        </button>
+      )}
+      <button type="button" className="reportContinue" onClick={onHome}>
         Volver al inicio <ArrowRight size={17}/>
       </button>
     </div>
@@ -614,6 +636,29 @@ export function IntakeReportForm({
     <div className="reportStage">
       {step === 1 && <>
         <p className="reportStageHelp">Elegí al menos una preocupación o contá brevemente qué está pasando. No es necesario completar ambas cosas.</p>
+        <h3 className="reportSubheading">¿Hay riesgo ahora?</h3>
+        <div className="reportOptionGrid isCompact">
+          {URGENCY_OPTIONS.map((opt) => {
+            const isSelected = selectedUrgencyText === opt.label;
+            return (
+              <button
+                key={opt.label}
+                type="button"
+                className={`reportOption ${isSelected ? "isSelected" : ""}`}
+                aria-pressed={isSelected}
+                onClick={() => {
+                  setSelectedUrgencyText(opt.label);
+                  update("urgency", opt.value);
+                }}
+              >
+                <span className="reportOptionCopy"><strong>{opt.label}</strong></span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="privacyNotice privacyNotice-gray" style={{ marginTop: "10px", marginBottom: "18px" }}>
+          En una emergencia llamá al 911, a Bomberos o a una emergencia médica. Este formulario no sustituye una respuesta inmediata.
+        </div>
         <h3 className="reportSubheading">Ámbito</h3>
         <OptionGrid options={places} selected={draft.setting} onSelect={(value) => update("setting", value)} />
         <h3 className="reportSubheading">Preocupación</h3>
@@ -861,10 +906,6 @@ export function IntakeReportForm({
             </label>
           </>
         )}
-
-        <p style={{marginTop: "22px", color: "#5c6e82", fontSize: "0.82rem", lineHeight: "1.4"}}>
-          Tu elección se refiere a tus datos como persona que comunica. Elegir una modalidad anónima, confidencial o con identidad registrada no cambia la prioridad de la comunicación ni la evaluación de la urgencia.
-        </p>
       </>}
 
       {step === 4 && <>
@@ -876,6 +917,15 @@ export function IntakeReportForm({
           <div><strong>Privacidad</strong><span>{draft.privacy || "No indicada"}</span></div>
           <div><strong>Pruebas / Imágenes</strong><span>{files.length > 0 ? `${files.length} ${files.length === 1 ? "archivo adjunto" : "archivos adjuntos"}` : "Sin archivos adjuntos"}</span></div>
         </div>
+        {draft.privacy === "Anónima" ? (
+          <div className="privacyNotice privacyNotice-gray" style={{ marginTop: "16px", marginBottom: "16px" }}>
+            Vas a enviar una comunicación anónima. Se guardará la información sobre la situación, el lugar y los archivos. No se guardarán tu nombre, teléfono ni correo. El equipo no podrá contactarte.
+          </div>
+        ) : (
+          <div className="privacyNotice privacyNotice-yellow" style={{ marginTop: "16px", marginBottom: "16px" }}>
+            Vas a enviar una comunicación confidencial / registrada. El equipo podrá contactarte mediante los canales que indicaste.
+          </div>
+        )}
         <label className="reportCheckbox reportConsent"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} /><span>Entiendo que esto es una demostración: se guardará en la base de datos para que el equipo lo vea, pero no se enviará a ningún organismo.</span></label>
       </>}
 

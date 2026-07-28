@@ -104,17 +104,24 @@ export async function POST(request: NextRequest) {
 
   const rawChecks = record(input.checks);
   const checks = Object.fromEntries(REVIEW_KEYS.map((key) => [key, rawChecks[key] === true]));
+  const scopeStatus = text(input.scopeStatus, 32) || (checks.scope ? "in_scope" : "pending");
   const urgency = text(input.urgency, 32) || "Por evaluar";
   const route = text(input.route, 240) || "Equipo especializado / Inmayores";
   const referral = text(input.referral, 240);
   const note = text(input.note, 4_000);
-  const isInScope = checks.scope === true;
-  const status = isInScope ? "in_review" : "referred";
-  const publicTitle = isInScope ? "Revisión inicial completada" : "Comunicación derivada";
-  const publicDescription = isInScope
+
+  const status = scopeStatus === "out_of_scope" ? "referred" : scopeStatus === "in_scope" ? "in_review" : "triage";
+  const publicTitle = scopeStatus === "out_of_scope"
+    ? "Comunicación derivada"
+    : scopeStatus === "in_scope"
+    ? "Revisión inicial completada"
+    : "Revisión en proceso";
+  const publicDescription = scopeStatus === "out_of_scope"
+    ? "El equipo revisó la información y definió una derivación al servicio correspondiente."
+    : scopeStatus === "in_scope"
     ? "El equipo revisó la información y está definiendo el próximo paso."
-    : "El equipo revisó la información y definió una derivación al servicio correspondiente.";
-  const eventData = { checks, urgency, route, referral: isInScope ? "" : referral };
+    : "El equipo está evaluando la comunicación recibida.";
+  const eventData = { checks, scopeStatus, urgency, route, referral: scopeStatus === "out_of_scope" ? referral : "" };
 
   try {
     const rows = await querySupabaseDatabase<{
@@ -129,7 +136,7 @@ export async function POST(request: NextRequest) {
     }>(
       `WITH updated_report AS (
          UPDATE public.intake_reports
-         SET current_status = $2, updated_at = now()
+         SET current_status = $2, priority = $3, updated_at = now()
          WHERE id = $1
          RETURNING id
        )
@@ -142,10 +149,10 @@ export async function POST(request: NextRequest) {
          event_data,
          actor
        )
-       SELECT id, $2, $3, $4, NULLIF($5, ''), $6::jsonb, 'organization'
+       SELECT id, $2, $4, $5, NULLIF($6, ''), $7::jsonb, 'organization'
        FROM updated_report
        RETURNING id, status, public_title, public_description, internal_note, event_data, actor, created_at`,
-      [reportId, status, publicTitle, publicDescription, note, JSON.stringify(eventData)],
+      [reportId, status, urgency, publicTitle, publicDescription, note, JSON.stringify(eventData)],
     );
     const event = rows[0];
     if (!event) return NextResponse.json({ error: "No se encontró la comunicación." }, { status: 404 });

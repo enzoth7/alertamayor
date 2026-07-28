@@ -60,6 +60,8 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [menu, setMenu] = useState(false);
   const [largeText, setLargeText] = useState(false);
+  const [preselectedFacility, setPreselectedFacility] = useState<Facility | null>(null);
+  const [followCode, setFollowCode] = useState<string>("");
 
   useEffect(() => {
     let active = true;
@@ -224,10 +226,18 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
     <div className="shell">
       <div className="banner"><ShieldAlert size={20}/><span><strong>PROTOTIPO ACADÉMICO</strong> · Usá sólo datos de demostración. Las comunicaciones se guardan para que el equipo las vea en su bandeja, pero no se envían a ningún organismo ni representan un servicio oficial.</span></div>
       {view === "inicio" && <HomeView go={go} isOrganization={isOrganization}/>}
-      {view === "denuncia" && <IntakeReportForm onHome={() => go("inicio")} onFollow={() => go("seguimiento")}/>}
-      {view === "seguimiento" && <ReportStatusLookup onHome={() => go("inicio")}/>}
-      {view === "residenciales" && <UruguayRegistry onReport={() => go("denuncia")}/>} 
-      {isOrganization && view === "equipos" && <Team/>}
+      {view === "denuncia" && <IntakeReportForm onHome={() => go("inicio")} onFollow={(code) => { if (code) setFollowCode(code); go("seguimiento"); }} initialFacility={preselectedFacility}/>}
+      {view === "seguimiento" && <ReportStatusLookup onHome={() => go("inicio")} initialCode={followCode}/>}
+      {view === "residenciales" && <UruguayRegistry onReport={(facility) => {
+        if (facility) {
+          try {
+            window.sessionStorage.setItem("alerta-mayor-preselected-facility", JSON.stringify(facility));
+          } catch {}
+          setPreselectedFacility(facility);
+        }
+        go(isOrganization ? "equipos" : "denuncia");
+      }}/>} 
+      {isOrganization && view === "equipos" && <Team initialFacility={preselectedFacility}/>}
       {isOrganization && view === "fuentes" && <Sources/>}
     </div>
   </main>;
@@ -575,8 +585,8 @@ function Report({ step, setStep, setting, setSetting, sent, setSent, go }: { ste
 
 type TeamTask = "cases" | "visits" | "measures" | "license";
 
-function Team() {
-  return <TeamIntakeInbox/>;
+function Team({ initialFacility }: { initialFacility?: Facility | null }) {
+  return <TeamIntakeInbox initialFacility={initialFacility}/>;
 }
 
 function TeamLegacy() {
@@ -799,7 +809,7 @@ function Sources() {
       <p className="lead">El prototipo diferencia información administrativa, antecedentes verificables y alertas pendientes de revisión. Cada dato muestra su fuente y fecha para que pueda verificarse de forma independiente.</p>
     </section>
 
-    <SourceAccordion title="Fuentes principales" icon="📋" defaultOpen={true} delay={100}>
+    <SourceAccordion title="Fuentes principales" icon="📋" defaultOpen={false} delay={100}>
       <div className="grid three sourceCards">
         <div className="sourceCard">
           <span className="sourceBadge sourceBadge-green">ETAPA 3 · MSP</span>
