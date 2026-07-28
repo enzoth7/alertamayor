@@ -17,5 +17,4 @@ export type Facility = {
   sourceLabel: string;
 };
 
-export type MapMode = "overview" | "streets" | "list";
-
+export type MapMode = "streets" | "list";

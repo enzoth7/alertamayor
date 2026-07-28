@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
-import { Building2, ChevronDown, Map, MapPinned, Search, ShieldAlert } from "lucide-react";
+import { Building2, ChevronDown, MapPinned, Search, ShieldAlert } from "lucide-react";
 import facilityData from "../data/facilities.json";
 import type { Facility, FacilityStatus, MapMode } from "./map-types";
 
@@ -25,25 +25,6 @@ const StreetMap = dynamic(() => import("./StreetMap"), {
 });
 
 const facilities = facilityData as Facility[];
-const colors: Record<FacilityStatus, string> = {
-  habilitado: "#087443",
-  registro: "#d97706",
-  verificar: "#6941c6",
-};
-
-const uruguayOutline = [
-  [-57.62513342958296,-30.21629485445426],[-56.976025763564735,-30.109686374636127],[-55.97324459494094,-30.883075860316303],[-55.601510179249345,-30.853878676071393],[-54.57245154480512,-31.494511407193748],[-53.78795162618219,-32.047242526987624],[-53.209588995971544,-32.727666110974724],[-53.6505439927181,-33.20200408298183],[-53.373661668498244,-33.768377780900764],[-53.806425950726535,-34.39681487400223],[-54.93586605489773,-34.952646579733624],[-55.67408972840329,-34.75265878676407],[-56.21529700379607,-34.85983570733742],[-57.1396850246331,-34.430456231424245],[-57.81786068381551,-34.4625472958775],[-58.42707414410439,-33.909454441057576],[-58.349611172098875,-33.26318897881541],[-58.13264767112145,-33.040566908502015],[-58.14244035504076,-32.044503676076154],[-57.87493730328188,-31.016556084926208],[-57.62513342958296,-30.21629485445426],
-];
-
-const countryBounds = { minLng: -58.6, maxLng: -53, minLat: -35.15, maxLat: -29.9 };
-const montevideoBounds = { minLng: -56.25, maxLng: -56.02, minLat: -34.95, maxLat: -34.78 };
-const mainBox = { x: 18, y: 42, w: 530, h: 585 };
-const insetBox = { x: 590, y: 102, w: 305, h: 310 };
-
-function project(lng: number, lat: number, bounds: typeof countryBounds, box: typeof mainBox) {
-  return [box.x + (lng - bounds.minLng) / (bounds.maxLng - bounds.minLng) * box.w, box.y + (bounds.maxLat - lat) / (bounds.maxLat - bounds.minLat) * box.h];
-}
-
 function normalize(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
@@ -58,7 +39,7 @@ export default function UruguayRegistry({ onReport }: { onReport: () => void }) 
 
   useEffect(() => {
     const requestedMode = new URLSearchParams(window.location.search).get("map") as MapMode | null;
-    if (requestedMode && ["overview", "streets", "list"].includes(requestedMode)) setMode(requestedMode);
+    if (requestedMode && ["streets", "list"].includes(requestedMode)) setMode(requestedMode);
   }, []);
 
   const baseWithoutDepartment = useMemo(() => facilities.filter((facility) => {
@@ -80,10 +61,6 @@ export default function UruguayRegistry({ onReport }: { onReport: () => void }) 
     if (!selected && selectedId) setSelectedId(null);
   }, [selected, selectedId]);
 
-  const outlinePath = uruguayOutline.map(([lng, lat], index) => {
-    const [x, y] = project(lng, lat, countryBounds, mainBox);
-    return `${index ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`;
-  }).join(" ") + " Z";
   const orderedResults = selected ? [selected, ...visible.filter((facility) => facility.id !== selected.id)] : visible;
 
   function resetFilters() {
@@ -131,28 +108,12 @@ export default function UruguayRegistry({ onReport }: { onReport: () => void }) 
       </div>
       <div className="notice registryCoverage"><strong>Cobertura visible:</strong> {totals.habilitado + totals.registro} puntos derivados de recursos oficiales y {totals.verificar} alertas ficticias pendientes de verificación. <span>Los puntos violetas pertenecen a una capa institucional de demostración.</span></div>
       <div className="departmentChips"><button className={!department ? "active" : ""} onClick={() => setDepartment("")}>Todos · {baseWithoutDepartment.length}</button>{departmentCounts.map(([name, count]) => <button className={department === name ? "active" : ""} onClick={() => setDepartment(department === name ? "" : name)} key={name}>{name} · {count}</button>)}</div>
-      <div className="mapModes"><strong>Cómo verlos:</strong><button className={mode === "streets" ? "active" : ""} onClick={() => setMode("streets")}><MapPinned size={18}/> Mapa con calles</button><button className={mode === "overview" ? "active" : ""} onClick={() => setMode("overview")}><Map size={18}/> Vista general</button><button className={mode === "list" ? "active" : ""} onClick={() => setMode("list")}><Building2 size={18}/> Solo listado</button></div>
+      <div className="mapModes"><strong>Cómo verlos:</strong><button className={mode === "streets" ? "active" : ""} onClick={() => setMode("streets")}><MapPinned size={18}/> Mapa con calles</button><button className={mode === "list" ? "active" : ""} onClick={() => setMode("list")}><Building2 size={18}/> Solo listado</button></div>
     </section>
 
     <div className={`registryMapLayout ${mode === "list" ? "mapListOnly" : ""}`}>
       {mode !== "list" && <div className="registryMapColumn">
-        {mode === "overview" ? <div className="uruguayOverview">
-          <svg viewBox="0 0 920 670" role="img" aria-label={`Uruguay con ${visible.length} puntos visibles`}>
-            <rect width="920" height="670" fill="#eef6fb"/>
-            <text x="18" y="25" className="mapTitle">Uruguay · {visible.length} puntos visibles</text>
-            <path d={outlinePath} fill="#fff" stroke="#708090" strokeWidth="2"/>
-            <text x="605" y="78" className="mapInsetTitle">Ampliación de Montevideo</text>
-            <rect x={insetBox.x} y={insetBox.y} width={insetBox.w} height={insetBox.h} rx="10" fill="#fff" stroke="#708090" strokeWidth="1.5"/>
-            <line x1={insetBox.x} y1={insetBox.y + insetBox.h / 2} x2={insetBox.x + insetBox.w} y2={insetBox.y + insetBox.h / 2} stroke="#e5e7eb"/>
-            <line x1={insetBox.x + insetBox.w / 2} y1={insetBox.y} x2={insetBox.x + insetBox.w / 2} y2={insetBox.y + insetBox.h} stroke="#e5e7eb"/>
-            {visible.map((facility) => <OverviewPoint facility={facility} selected={selected?.id === facility.id} bounds={countryBounds} box={mainBox} onSelect={setSelectedId} key={`uy-${facility.id}`}/>) }
-            {visible.filter((facility) => facility.department === "Montevideo").map((facility) => <OverviewPoint facility={facility} selected={selected?.id === facility.id} bounds={montevideoBounds} box={insetBox} onSelect={setSelectedId} key={`mvd-${facility.id}`}/>) }
-            <text x="590" y="438" className="mapNote">Los puntos violetas son alertas ficticias pendientes de verificación.</text>
-            <text x="590" y="458" className="mapNote">La ubicación exacta sería protegida en un sistema real.</text>
-            <g transform="translate(590 500)" className="mapLegendSvg"><circle cx="6" cy="6" r="5" fill={colors.habilitado}/><text x="17" y="10">habilitación final ({totals.habilitado})</text><circle cx="6" cy="30" r="5" fill={colors.registro}/><text x="17" y="34">certificado de registro ({totals.registro})</text><circle cx="6" cy="54" r="6" fill={colors.verificar}/><text x="17" y="58">dato no conciliado ({totals.verificar} DEMO)</text></g>
-          </svg>
-          <div className="overviewDisclaimer">Verde y naranja provienen de recursos oficiales con fecha de corte. Violeta es una capa institucional ficticia.</div>
-        </div> : <StreetMap facilities={visible} selectedId={selected?.id ?? null} onSelect={setSelectedId}/>} 
+        <StreetMap facilities={visible} selectedId={selected?.id ?? null} onSelect={setSelectedId}/>
         <div className="notice overviewSelection">{selected ? <><strong>{selected.name}</strong><span>{selected.address} · {selected.locality} · {selected.department}</span><small>{selected.statusShort} · {selected.sourceLabel}</small></> : <><strong>Sin resultados visibles.</strong><span>Probá limpiar o cambiar los filtros.</span></>}</div>
         <p className="mapSourceNote">Las coordenadas se derivaron de domicilios publicados y datos de direcciones. La posición no confirma la vigencia administrativa.</p>
       </div>}
@@ -171,18 +132,6 @@ export default function UruguayRegistry({ onReport }: { onReport: () => void }) 
       </aside>
     </div>
   </>;
-}
-
-function OverviewPoint({ facility, selected, bounds, box, onSelect }: { facility: Facility; selected: boolean; bounds: typeof countryBounds; box: typeof mainBox; onSelect: (id: string) => void }) {
-  const [cx, cy] = project(facility.lng, facility.lat, bounds, box);
-  return <circle
-    className={`overviewPoint ${selected ? "selected" : ""}`}
-    cx={cx.toFixed(1)} cy={cy.toFixed(1)} r={selected ? 6 : facility.statusGroup === "verificar" ? 4.3 : 2.8}
-    fill={colors[facility.statusGroup]} opacity=".9" tabIndex={0} role="button"
-    aria-label={`${facility.name}: ${facility.statusShort}`}
-    onClick={() => onSelect(facility.id)}
-    onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") onSelect(facility.id); }}
-  ><title>{facility.name} · {facility.statusShort} · {facility.address}</title></circle>;
 }
 
 function FacilityCard({ facility, selected, onSelect, onReport }: { facility: Facility; selected: boolean; onSelect: (id: string) => void; onReport: () => void }) {

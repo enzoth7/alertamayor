@@ -1,16 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, CheckCircle2, ChevronDown, ClipboardCheck, Contrast, ExternalLink, FileCheck2, FilePlus2, HeartHandshake, Landmark, MapPin, MapPinned, Menu, ShieldAlert, ShieldCheck, Sparkles, Users, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, CheckCircle2, ChevronDown, ClipboardCheck, ExternalLink, FileCheck2, FilePlus2, HeartHandshake, Landmark, LockKeyhole, LogOut, MapPin, MapPinned, Menu, ShieldAlert, ShieldCheck, Sparkles, UserRound, Users, X } from "lucide-react";
 import UruguayRegistry from "./UruguayRegistry";
 import { TeamCasesWorkflow } from "./team/TeamCasesWorkflow";
 import { TeamLicenseWorkflow } from "./team/TeamLicenseWorkflow";
 import { TeamMeasuresWorkflow } from "./team/TeamMeasuresWorkflow";
 import { TeamVisitsWorkflow } from "./team/TeamVisitsWorkflow";
+import { IntakeReportForm } from "./IntakeReportForm";
+import { TeamIntakeInbox } from "./team/TeamIntakeInbox";
 import facilityData from "../data/facilities.json";
 
-export type View = "inicio" | "orientacion" | "denuncia" | "residenciales" | "equipos" | "aprendizajes" | "fuentes";
+export type View = "inicio" | "orientacion" | "denuncia" | "residenciales" | "equipos" | "fuentes";
+type AccessMode = "loading" | "chooser" | "person" | "organization";
+
+const ACCESS_SESSION_KEY = "alerta-mayor-access";
 
 const viewPaths: Record<View, string> = {
   inicio: "/",
@@ -18,7 +23,6 @@ const viewPaths: Record<View, string> = {
   denuncia: "/denuncia",
   residenciales: "/residenciales",
   equipos: "/equipos",
-  aprendizajes: "/aprendizajes",
   fuentes: "/fuentes",
 };
 
@@ -32,60 +36,194 @@ const choices = [
 export function AppShell({ initialView }: { initialView: View }) {
   const router = useRouter();
   const view = initialView;
+  const [accessMode, setAccessMode] = useState<AccessMode>("loading");
+  const [organizationLogin, setOrganizationLogin] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [menu, setMenu] = useState(false);
-  const [contrast, setContrast] = useState(false);
   const [largeText, setLargeText] = useState(false);
-  const [step, setStep] = useState(1);
-  const [setting, setSetting] = useState("");
   const [story, setStory] = useState("");
-  const [sent, setSent] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const restoreAccess = async () => {
+      try {
+        const savedMode = window.sessionStorage.getItem(ACCESS_SESSION_KEY);
+        if (savedMode !== "organization") {
+          if (active) setAccessMode(savedMode === "person" ? "person" : "chooser");
+          return;
+        }
+
+        const response = await fetch("/api/team/session", { cache: "no-store" });
+        const data: unknown = await response.json().catch(() => null);
+        const authenticated = Boolean(data && typeof data === "object" && "authenticated" in data && data.authenticated === true);
+        if (!active) return;
+        if (authenticated) {
+          setAccessMode("organization");
+        } else {
+          window.sessionStorage.removeItem(ACCESS_SESSION_KEY);
+          setAccessMode("chooser");
+        }
+      } catch {
+        if (active) setAccessMode("chooser");
+      }
+    };
+    void restoreAccess();
+    return () => { active = false; };
+  }, []);
+
+  const organizationOnlyView = view === "equipos" || view === "fuentes";
+  const isOrganization = accessMode === "organization";
+  const navItems: [View, string][] = isOrganization
+    ? [["orientacion", "Orientación"], ["residenciales", "Residenciales"], ["equipos", "Equipos"], ["fuentes", "Fuentes"]]
+    : [["inicio", "Inicio"], ["orientacion", "Orientación"], ["residenciales", "Residenciales"]];
+
+  useEffect(() => {
+    if (accessMode === "person" && organizationOnlyView) router.replace("/");
+  }, [accessMode, organizationOnlyView, router]);
+
+  const saveAccessMode = (mode: "person" | "organization") => {
+    try { window.sessionStorage.setItem(ACCESS_SESSION_KEY, mode); } catch {}
+    setAccessMode(mode);
+  };
+
+  const resetAccess = () => {
+    if (accessMode === "organization") void fetch("/api/team/session", { method: "DELETE" }).catch(() => undefined);
+    try { window.sessionStorage.removeItem(ACCESS_SESSION_KEY); } catch {}
+    setAccessMode("chooser");
+    setOrganizationLogin(false);
+    setUsername("");
+    setPassword("");
+    setLoginError("");
+    setMenu(false);
+    if (view !== "inicio") router.push("/");
+  };
+
+  const submitOrganizationLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsLoggingIn(true);
+    setLoginError("");
+    try {
+      const response = await fetch("/api/team/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      if (!response.ok) {
+        const data: unknown = await response.json().catch(() => null);
+        const message = data && typeof data === "object" && "error" in data && typeof data.error === "string" ? data.error : "No se pudo ingresar.";
+        throw new Error(message);
+      }
+      setLoginError("");
+      setPassword("");
+      saveAccessMode("organization");
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : "No se pudo ingresar.");
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
   const go = (next: View) => {
     setMenu(false);
+    if ((next === "equipos" || next === "fuentes") && !isOrganization) {
+      router.push("/");
+      return;
+    }
     router.push(viewPaths[next]);
   };
 
-  return <main className={`site ${contrast ? "contrast" : ""} ${largeText ? "largeText" : ""}`}>
+  if (accessMode === "loading") return <main className="accessGate accessGateLoading" aria-label="Cargando acceso"><img src="/alertamayor.png" alt="Alerta mayor"/></main>;
+
+  if (accessMode === "chooser") return <AccessGateway
+    organizationLogin={organizationLogin}
+    setOrganizationLogin={setOrganizationLogin}
+    username={username}
+    setUsername={setUsername}
+    password={password}
+    setPassword={setPassword}
+    loginError={loginError}
+    setLoginError={setLoginError}
+    isLoggingIn={isLoggingIn}
+    onPerson={() => saveAccessMode("person")}
+    onOrganizationLogin={submitOrganizationLogin}
+  />;
+
+  if (accessMode === "person" && organizationOnlyView) return <main className="accessGate accessGateLoading"><span>Volviendo al inicio…</span></main>;
+
+  return <main className={`site ${accessMode === "person" ? "personSite" : "organizationSite"} ${largeText ? "largeText" : ""}`}>
     <header className="top"><div className="topin">
       <button className="brand" onClick={() => go("inicio")}><img src="/alertamayor.png" alt="Alerta mayor" className="brandLogo" /><span>Alerta mayor</span></button>
-      <nav className={menu ? "nav open" : "nav"}>{([ ["inicio", "Inicio"], ["orientacion", "Orientación"], ["residenciales", "Residenciales"], ["equipos", "Equipos"], ["aprendizajes", "Aprendizajes"], ["fuentes", "Fuentes"] ] as [View, string][]).map(([key, label]) => <button key={key} className={view === key ? "active" : ""} onClick={() => go(key)}>{label}</button>)}</nav>
-      <div className="tools"><button className="menuToggle" onClick={() => setMenu(!menu)} aria-label="Abrir menú"><Menu size={17}/> Menú</button><button onClick={() => setLargeText(!largeText)}>A+ Texto</button><button onClick={() => setContrast(!contrast)} aria-label="Alternar contraste"><Contrast size={17}/></button></div>
+      <nav className={menu ? "nav open" : "nav"}>{navItems.map(([key, label]) => <button key={key} className={view === key ? "active" : ""} onClick={() => go(key)}>{label}</button>)}</nav>
+      <div className="tools"><button className="menuToggle" onClick={() => setMenu(!menu)} aria-label="Abrir menú"><Menu size={17}/> Menú</button><button onClick={() => setLargeText(!largeText)}>A+ Texto</button><button onClick={resetAccess}><LogOut size={16}/> {isOrganization ? "Salir" : "Cambiar perfil"}</button></div>
     </div></header>
     <div className="shell">
-      <div className="banner"><ShieldAlert size={20}/><span><strong>PROTOTIPO ACADÉMICO</strong> · No recibe ni envía denuncias reales. Los casos, alertas, tareas y aportes son ficticios. Los datos históricos y administrativos muestran su fuente y fecha. No representa un servicio oficial.</span></div>
-      {view === "inicio" && <HomeView go={go}/>} 
+      <div className="banner"><ShieldAlert size={20}/><span><strong>PROTOTIPO ACADÉMICO</strong> · Usá sólo datos de demostración. Las comunicaciones se guardan para que el equipo las vea en su bandeja, pero no se envían a ningún organismo ni representan un servicio oficial.</span></div>
+      {view === "inicio" && <HomeView go={go} isOrganization={isOrganization}/>}
       {view === "orientacion" && <Orientation story={story} setStory={setStory} go={go}/>} 
-      {view === "denuncia" && <Report step={step} setStep={setStep} setting={setting} setSetting={setSetting} sent={sent} setSent={setSent} go={go}/>} 
+      {view === "denuncia" && <IntakeReportForm onHome={() => go("inicio")}/>}
       {view === "residenciales" && <UruguayRegistry onReport={() => go("denuncia")}/>} 
-      {view === "equipos" && <Team/>}
-      {view === "aprendizajes" && <Learning/>}
-      {view === "fuentes" && <Sources/>}
+      {isOrganization && view === "equipos" && <Team/>}
+      {isOrganization && view === "fuentes" && <Sources/>}
     </div>
-    <button className="floatingReportBtn" onClick={() => go("denuncia")} aria-label="Denunciar">
-      <ShieldAlert size={20}/>
-      <strong>Denunciar</strong>
-    </button>
   </main>;
 }
 
-function HomeView({ go }: { go: (view: View) => void }) {
+function AccessGateway({ organizationLogin, setOrganizationLogin, username, setUsername, password, setPassword, loginError, setLoginError, isLoggingIn, onPerson, onOrganizationLogin }: { organizationLogin: boolean; setOrganizationLogin: (value: boolean) => void; username: string; setUsername: (value: string) => void; password: string; setPassword: (value: string) => void; loginError: string; setLoginError: (value: string) => void; isLoggingIn: boolean; onPerson: () => void; onOrganizationLogin: (event: FormEvent<HTMLFormElement>) => void }) {
+  return <main className="accessGate">
+    <div className={`accessGatePanel ${organizationLogin ? "isLogin" : ""}`}>
+      <img src="/alertamayor.png" alt="Alerta mayor" className="accessGateLogo"/>
+      <h1>Alerta mayor</h1>
+      {!organizationLogin ? <>
+        <p className="accessGateLead">Elegí cómo querés ingresar</p>
+        <div className="accessChoiceGrid">
+          <button type="button" className="accessChoiceCard accessChoicePerson" onClick={onPerson}>
+            <span className="accessChoiceIcon"><UserRound size={42}/></span>
+            <strong>Soy una persona</strong>
+            <small>Orientación, consultas y comunicación de preocupaciones</small>
+          </button>
+          <button type="button" className="accessChoiceCard accessChoiceOrganization" onClick={() => { setLoginError(""); setOrganizationLogin(true); }}>
+            <span className="accessChoiceIcon"><Building2 size={42}/></span>
+            <strong>Soy de la organización</strong>
+            <small>Acceso a equipos, gestión institucional y fuentes</small>
+          </button>
+        </div>
+      </> : <>
+        <p className="accessGateLead">Ingreso de organización</p>
+        <form className="organizationLoginForm" onSubmit={onOrganizationLogin}>
+          <label><span>Usuario</span><div className="accessInput"><UserRound size={19}/><input value={username} onChange={(event) => { setUsername(event.target.value); setLoginError(""); }} autoComplete="username" autoFocus/></div></label>
+          <label><span>Contraseña</span><div className="accessInput"><LockKeyhole size={19}/><input type="password" value={password} onChange={(event) => { setPassword(event.target.value); setLoginError(""); }} autoComplete="current-password"/></div></label>
+          {loginError && <div className="accessLoginError" role="alert">{loginError}</div>}
+          <button className="accessLoginSubmit" type="submit" disabled={isLoggingIn}>{isLoggingIn ? "Ingresando…" : "Ingresar"} <ArrowRight size={18}/></button>
+          <p className="accessDemoCredentials">Credenciales de prueba: <strong>user</strong> / <strong>password</strong></p>
+        </form>
+        <button type="button" className="accessLoginBack" onClick={() => { setOrganizationLogin(false); setLoginError(""); setPassword(""); }}><ArrowLeft size={17}/> Volver</button>
+      </>}
+    </div>
+  </main>;
+}
+
+function HomeView({ go, isOrganization }: { go: (view: View) => void; isOrganization: boolean }) {
   return <>
     <section className="card hero homeHero">
       <h1>¿En qué podemos ayudarte?</h1>
       <div className="grid actionsGrid homeActions">
-        <button className="action action-amber" onClick={() => go("orientacion")}>
-          <div className="actionIcon"><HeartHandshake size={28}/></div>
-          <div className="actionCopy">
-            <strong>Orientación o apoyo</strong>
-            <p>Saber por dónde empezar o buscar el canal adecuado</p>
-          </div>
-          <ArrowRight className="actionArrow" size={22}/>
-        </button>
-
         <button className="action action-red" onClick={() => go("denuncia")}>
           <div className="actionIcon"><ShieldAlert size={28}/></div>
           <div className="actionCopy">
             <strong>Comunicar o denunciar</strong>
             <p>Alerta o preocupación para revisión humana</p>
+          </div>
+          <ArrowRight className="actionArrow" size={22}/>
+        </button>
+
+        <button className="action action-amber" onClick={() => go("orientacion")}>
+          <div className="actionIcon"><HeartHandshake size={28}/></div>
+          <div className="actionCopy">
+            <strong>Orientación o apoyo</strong>
+            <p>Saber por dónde empezar o buscar el canal adecuado</p>
           </div>
           <ArrowRight className="actionArrow" size={22}/>
         </button>
@@ -99,26 +237,24 @@ function HomeView({ go }: { go: (view: View) => void }) {
           <ArrowRight className="actionArrow" size={22}/>
         </button>
 
-        <button className="action action-violet" onClick={() => go("equipos")}>
+        {isOrganization && <button className="action action-violet" onClick={() => go("equipos")}>
           <div className="actionIcon"><Users size={28}/></div>
           <div className="actionCopy">
             <strong>Equipos y organización</strong>
             <p>Gestión institucional y derivaciones</p>
           </div>
           <ArrowRight className="actionArrow" size={22}/>
-        </button>
+        </button>}
       </div>
 
-      <div className="actions compactActions">
-        <button className="secondary" onClick={() => go("aprendizajes")}>Aprendizajes y participación</button>
+      {isOrganization && <div className="actions compactActions">
         <button className="link" onClick={() => go("fuentes")}>Fuentes y límites de datos</button>
-      </div>
+      </div>}
     </section>
 
-    <div className="grid three principles simplePrinciples">
+    <div className="grid two principles simplePrinciples">
       <Info tone="rose" icon="?" title="No hace falta saber si es maltrato" text="Podés comunicar cualquier preocupación. Un equipo humano evaluará la situación."/>
       <Info tone="amber" icon="🤝" title="Respuesta humana garantizada" text="La tecnología ordena la información, pero la atención y decisiones quedan en manos de personas."/>
-      <Info tone="blue" icon="📊" title="Aprendizaje continuo" text="Los datos anonimizados ayudan a mejorar las respuestas institucionales."/>
     </div>
   </>;
 }
@@ -165,8 +301,8 @@ const reportSettings: ReportOption[] = [
   { value: "No sabe", icon: "❓", title: "No lo sé", detail: "La persona que consulta no conoce con certeza el tipo de lugar." },
 ];
 
-const reportReporters = ["La propia persona", "Familiar o referente", "Vecino/a o amigo/a", "Cuidador/a remunerado/a", "Cuidador/a no remunerado/a", "Profesional", "Trabajador/a o extrabajador/a", "Otra persona"];
-const reportNeeds = ["Alimentación e hidratación", "Higiene y vestirse", "Moverse o ir al baño", "Tomar medicamentos", "Compras y trámites", "Manejo de dinero", "Comunicarse", "Supervisión para estar segura"];
+const reportReporters = ["La propia persona", "Familiar o referente", "Vecino/a o amigo/a", "Cuidador", "Profesional", "Trabajador/a o extrabajador/a", "Otra persona"];
+const reportNeeds = ["Alimentación e hidratación", "Higiene y vestirse", "Moverse o ir al baño", "Tomar medicamentos", "Compras y trámites", "Manejo de dinero", "Comunicarse", "Supervisión para estar segura", "Otro"];
 const reportConcerns = ["Estoy preocupada/o pero no sé si es maltrato", "Maltrato psicológico o amenazas", "Violencia física", "Abuso sexual", "Uso indebido de dinero o documentos", "Negligencia o abandono", "Medicación, contención o encierro", "Autonegligencia o extrema vulnerabilidad", "Falta de cuidados o de red", "Accidente o lesión", "Riesgo edilicio o incendio", "Falla institucional o de acceso a servicios", "Quiero plantear una preocupación o propuesta sobre la vida cotidiana", "No se consulta a la persona sobre decisiones que la afectan"];
 const reportRisks = ["Peligro o violencia en curso", "Lesión grave o persona inconsciente", "Sin comida, agua o medicación esencial", "Abandono o vive con quien podría agredirla", "Amenazas de muerte o represalias", "Posible abuso sexual", "No hay una forma segura de contactarla", "No se observan señales de urgencia inmediata"];
 const reportDepartments = ["Artigas", "Canelones", "Cerro Largo", "Colonia", "Durazno", "Flores", "Florida", "Lavalleja", "Maldonado", "Montevideo", "Paysandú", "Río Negro", "Rivera", "Rocha", "Salto", "San José", "Soriano", "Tacuarembó", "Treinta y Tres", "Otro"];
@@ -192,6 +328,7 @@ function Report({ step, setStep, setting, setSetting, sent, setSent, go }: { ste
   const [dependency, setDependency] = useState("No sabe o no fue valorada");
   const [livingWith, setLivingWith] = useState("No sabe");
   const [needs, setNeeds] = useState<string[]>([]);
+  const [otherNeed, setOtherNeed] = useState("");
   const [requestAssessment, setRequestAssessment] = useState(false);
   const [department, setDepartment] = useState("Montevideo");
   const [locationReference, setLocationReference] = useState("");
@@ -213,6 +350,7 @@ function Report({ step, setStep, setting, setSetting, sent, setSent, go }: { ste
   const [demoConsent, setDemoConsent] = useState(false);
   const [validationMessage, setValidationMessage] = useState("");
   const [caseCode, setCaseCode] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const stage = reportStages[step - 1];
   const facilityMatches = facilityName.trim().length < 2 ? [] : reportFacilities.filter((facility) => facility.statusGroup !== "verificar" && `${facility.name} ${facility.address} ${facility.locality} ${facility.department} ${facility.statusShort}`.toLocaleLowerCase("es-UY").includes(facilityName.trim().toLocaleLowerCase("es-UY"))).slice(0, 12);
 
@@ -236,23 +374,91 @@ function Report({ step, setStep, setting, setSetting, sent, setSent, go }: { ste
   ].filter(Boolean))];
 
   const clearValidation = () => setValidationMessage("");
+  const submitReport = async () => {
+    setIsSubmitting(true);
+    clearValidation();
+
+    try {
+      const response = await fetch("/api/intake-reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          report: {
+            setting,
+            reporter,
+            channel,
+            ageRange,
+            dependency,
+            livingWith,
+            needs,
+            otherNeed,
+            requestAssessment,
+            location: {
+              department,
+              reference: locationReference,
+              privateAddress,
+              unknownArea,
+              unknownAddress,
+              unknownNote,
+            },
+            facility: {
+              id: selectedFacility?.id,
+              name: selectedFacility?.name || facilityName,
+              address: selectedFacility?.address,
+              locality: selectedFacility?.locality,
+              department: selectedFacility?.department,
+              searchStatus: facilitySearchStatus,
+            },
+            concerns,
+            allegedRelation,
+            narrative,
+            risks,
+            privacy,
+            contactMethod,
+            safeContact,
+            noEarlyContact,
+            preliminaryPriority,
+            suggestedRoute,
+          },
+        }),
+      });
+      const data: unknown = await response.json().catch(() => null);
+
+      if (!response.ok || !data || typeof data !== "object" || !("caseCode" in data) || typeof data.caseCode !== "string") {
+        const message = data && typeof data === "object" && "error" in data && typeof data.error === "string"
+          ? data.error
+          : "No se pudo guardar la comunicación. Intentá nuevamente.";
+        throw new Error(message);
+      }
+
+      setCaseCode(data.caseCode);
+      setSent(true);
+    } catch (error) {
+      setValidationMessage(error instanceof Error ? error.message : "No se pudo guardar la comunicación. Intentá nuevamente.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   const advance = () => {
     if (step === 1 && !setting) { setValidationMessage("Elegí dónde vive o está habitualmente la persona para continuar."); return; }
     if (step === 2 && !reporter) { setValidationMessage("Elegí quién comunica y cómo llegó la alerta para conservar su origen."); return; }
     if (step === reportStages.length) {
       if (!demoConsent) { setValidationMessage("Confirmá que entendés que esta es una demostración antes de crear el expediente ficticio."); return; }
-      setCaseCode(`DEMO-${Math.floor(100000 + Math.random() * 900000)}`);
-      setSent(true);
+      void submitReport();
       return;
     }
     clearValidation();
     setStep(step + 1);
   };
   const restart = () => {
-    setStep(1); setSetting(""); setReporter(""); setChannel("Formulario web / app"); setAgeRange("No sabe"); setDependency("No sabe o no fue valorada"); setLivingWith("No sabe"); setNeeds([]); setRequestAssessment(false); setDepartment("Montevideo"); setLocationReference(""); setPrivateAddress(""); setFacilityName(""); setSelectedFacility(null); setFacilitySearchStatus("Todavía no se buscó en las fuentes"); setUnknownArea(""); setUnknownAddress(""); setUnknownNote(""); setConcerns([]); setAllegedRelation("No sabe / no hay una persona identificada"); setNarrative(""); setRisks([]); setPrivacy("Confidencial"); setContactMethod("Sin contacto / anónimo"); setSafeContact(""); setNoEarlyContact(false); setDemoConsent(false); setValidationMessage(""); setCaseCode(""); setSent(false);
+    setStep(1); setSetting(""); setReporter(""); setChannel("Formulario web / app"); setAgeRange("No sabe"); setDependency("No sabe o no fue valorada"); setLivingWith("No sabe"); setNeeds([]); setOtherNeed(""); setRequestAssessment(false); setDepartment("Montevideo"); setLocationReference(""); setPrivateAddress(""); setFacilityName(""); setSelectedFacility(null); setFacilitySearchStatus("Todavía no se buscó en las fuentes"); setUnknownArea(""); setUnknownAddress(""); setUnknownNote(""); setConcerns([]); setAllegedRelation("No sabe / no hay una persona identificada"); setNarrative(""); setRisks([]); setPrivacy("Confidencial"); setContactMethod("Sin contacto / anónimo"); setSafeContact(""); setNoEarlyContact(false); setDemoConsent(false); setValidationMessage(""); setCaseCode(""); setSent(false);
   };
 
-  if (sent) return <section className="reportFlow reportSuccess"><div className="reportSuccessMark"><CheckCircle2 size={32}/></div><div className="eyebrow">Comunicación recibida</div><h1>Expediente ficticio creado</h1><p>El código de demostración es <strong>{caseCode || "DEMO-48291"}</strong>. No se envió información a ningún organismo.</p><div className="reportSuccessActions"><button className="reportBack" onClick={restart}>Nueva simulación</button><button className="reportContinue" onClick={() => { restart(); go("inicio"); }}>Volver al inicio <ArrowRight size={17}/></button></div></section>;
+  if (sent) return <section className="reportFlow reportSuccess"><div className="reportSuccessMark"><CheckCircle2 size={32}/></div><div className="eyebrow">Comunicación guardada</div><h1>Expediente de demostración creado</h1><p>El código de seguimiento es <strong>{caseCode || "AM-PENDIENTE"}</strong>. El ejercicio se guardó para esta demostración y no se envió a ningún organismo.</p><div className="reportSuccessActions"><button className="reportBack" onClick={restart}>Nueva simulación</button><button className="reportContinue" onClick={() => { restart(); go("inicio"); }}>Volver al inicio <ArrowRight size={17}/></button></div></section>;
+
+  const needsSummary = needs
+    .map((need) => need === "Otro" && otherNeed.trim() ? `Otro: ${otherNeed.trim()}` : need)
+    .join("; ");
 
   let stageContent: React.ReactNode;
   if (step === 1) {
@@ -260,7 +466,27 @@ function Report({ step, setStep, setting, setSetting, sent, setSent, go }: { ste
   } else if (step === 2) {
     stageContent = <><p className="reportStageHelp">La fuente y el canal se conservan para no perder el recorrido previo de la información.</p><ReportOptionGrid options={reportReporters} selected={reporter} onSelect={(value) => { setReporter(value); clearValidation(); }} compact /><div className="reportFieldGrid reportFieldGridOne"><label className="reportField"><span>Canal de entrada</span><select value={channel} onChange={(event) => setChannel(event.target.value)}><option>Formulario web / app</option><option>Teléfono</option><option>WhatsApp o SMS</option><option>Atención presencial</option><option>Derivación de un equipo de salud o social</option><option>Policía, Bomberos u otra autoridad</option></select></label></div></>;
   } else if (step === 3) {
-    stageContent = <><p className="reportStageHelp">Esto no sustituye el baremo oficial ni obliga a elegir un grado. Sirve para no perder una necesidad de cuidados detrás de la situación de violencia.</p><div className="reportFieldGrid reportFieldGridThree"><label className="reportField"><span>Edad aproximada</span><select value={ageRange} onChange={(event) => setAgeRange(event.target.value)}>{["No sabe", "60 a 64 años", "65 a 69 años", "70 a 74 años", "75 a 79 años", "80 a 84 años", "85 a 89 años", "90 años o más"].map((option) => <option key={option}>{option}</option>)}</select></label><label className="reportField"><span>¿Tiene una valoración oficial de dependencia?</span><select value={dependency} onChange={(event) => setDependency(event.target.value)}>{["No sabe o no fue valorada", "Sin dependencia reconocida", "Dependencia leve", "Dependencia moderada", "Dependencia severa"].map((option) => <option key={option}>{option}</option>)}</select></label><label className="reportField"><span>¿Con quién vive?</span><select value={livingWith} onChange={(event) => setLivingWith(event.target.value)}>{["No sabe", "Vive sola", "Con hijo/a u otro familiar", "Con pareja", "Con cuidador/a remunerado/a", "Con cuidador/a no remunerado/a", "En un establecimiento"].map((option) => <option key={option}>{option}</option>)}</select></label></div><h3 className="reportSubheading">Necesita ayuda para…</h3><ReportOptionGrid options={reportNeeds} selected={needs} onSelect={(value) => toggle(value, needs, setNeeds)} multiple compact /><label className="reportCheckbox"><input type="checkbox" checked={requestAssessment} onChange={(event) => setRequestAssessment(event.target.checked)}/><span>Puede necesitar una valoración formal de dependencia y acceso a apoyos.</span></label></>;
+    stageContent = <>
+      <p className="reportStageHelp">Esto no sustituye el baremo oficial ni obliga a elegir un grado. Sirve para no perder una necesidad de cuidados detrás de la situación de violencia.</p>
+      <div className="reportFieldGrid reportFieldGridThree">
+        <label className="reportField"><span>Edad aproximada de la/s persona/s afectada/s</span><select value={ageRange} onChange={(event) => setAgeRange(event.target.value)}>{["No sabe", "60 a 64 años", "65 a 69 años", "70 a 74 años", "75 a 79 años", "80 a 84 años", "85 a 89 años", "90 años o más"].map((option) => <option key={option}>{option}</option>)}</select></label>
+        <label className="reportField"><span>¿Tiene una valoración oficial de dependencia?</span><select value={dependency} onChange={(event) => setDependency(event.target.value)}>{["No sabe o no fue valorada", "Sin dependencia reconocida", "Dependencia leve", "Dependencia moderada", "Dependencia severa"].map((option) => <option key={option}>{option}</option>)}</select></label>
+        <label className="reportField"><span>¿Con quién vive?</span><select value={livingWith} onChange={(event) => setLivingWith(event.target.value)}>{["No sabe", "Vive sola", "Con hijo/a u otro familiar", "Con pareja", "Con cuidador", "En un establecimiento"].map((option) => <option key={option}>{option}</option>)}</select></label>
+      </div>
+      <h3 className="reportSubheading">Necesita ayuda para…</h3>
+      <ReportOptionGrid
+        options={reportNeeds}
+        selected={needs}
+        onSelect={(value) => {
+          toggle(value, needs, setNeeds);
+          if (value === "Otro" && needs.includes(value)) setOtherNeed("");
+        }}
+        multiple
+        compact
+      />
+      {needs.includes("Otro") && <label className="reportField"><span>Especificá qué otra ayuda necesita</span><input value={otherNeed} onChange={(event) => setOtherNeed(event.target.value)} placeholder="Describí la ayuda que necesita"/></label>}
+      <label className="reportCheckbox"><input type="checkbox" checked={requestAssessment} onChange={(event) => setRequestAssessment(event.target.checked)}/><span>Puede necesitar una valoración formal de dependencia y acceso a apoyos.</span></label>
+    </>;
   } else if (step === 4) {
     stageContent = setting === "ELEPEM" ? <>
       <div className="reportLocationNotice"><strong>Primero se busca en las fuentes integradas.</strong><span>Si no hay coincidencia, se registra como “no figura / dato no coincide: pendiente de verificación”; no se publica automáticamente como clandestino.</span></div>
@@ -269,27 +495,34 @@ function Report({ step, setStep, setting, setSetting, sent, setSent, go }: { ste
       {selectedFacility && <div className="reportSelectedFacility"><strong>{selectedFacility.name}</strong><span>{selectedFacility.address} · {selectedFacility.locality} · {selectedFacility.department}</span><small>{selectedFacility.statusShort}</small></div>}
       {facilitySearchStatus === "No aparece, cambió de dirección o usa otro nombre" && <div className="reportUnknownPlace"><h3>Lugar pendiente de verificación</h3><div className="reportFieldGrid"><label className="reportField"><span>Departamento</span><select value={department} onChange={(event) => setDepartment(event.target.value)}>{reportDepartments.map((option) => <option key={option}>{option}</option>)}</select></label><label className="reportField"><span>Barrio, localidad o zona</span><input value={unknownArea} onChange={(event) => setUnknownArea(event.target.value)} placeholder="Ubicación aproximada"/></label><label className="reportField"><span>Dirección o referencia exacta</span><input value={unknownAddress} onChange={(event) => setUnknownAddress(event.target.value)} placeholder="Quedaría protegida"/></label><label className="reportField"><span>¿Qué hace pensar que es un residencial o anexo?</span><input value={unknownNote} onChange={(event) => setUnknownNote(event.target.value)} placeholder="Solo datos ficticios"/></label></div></div>}
     </> : <>
-      <div className="reportFieldGrid"><label className="reportField"><span>Departamento</span><select value={department} onChange={(event) => setDepartment(event.target.value)}>{reportDepartments.map((option) => <option key={option}>{option}</option>)}</select></label><label className="reportField"><span>Barrio, localidad o referencia</span><input value={locationReference} onChange={(event) => setLocationReference(event.target.value)} placeholder="Ej.: Municipio D, La Paz, Pando"/></label></div>
+      <div className="reportFieldGrid">
+        <label className="reportField"><span>Departamento</span><select value={department} onChange={(event) => setDepartment(event.target.value)}>{reportDepartments.map((option) => <option key={option}>{option}</option>)}</select></label>
+        <label className="reportField"><span>Barrio, localidad o referencia</span><input value={locationReference} onChange={(event) => setLocationReference(event.target.value)} placeholder="Ej.: Municipio D, La Paz, Pando"/></label>
+      </div>
       <label className="reportField"><span>Dirección exacta <em>opcional y protegida</em></span><input value={privateAddress} onChange={(event) => setPrivateAddress(event.target.value)} placeholder="No aparecería en mapas públicos"/></label>
-      <div className="reportLocationNotice"><strong>Privacidad geográfica.</strong><span>Un domicilio particular solo sería visible para equipos autorizados; las estadísticas públicas mostrarían zonas agregadas.</span></div>
+      <div className="reportLocationNotice"><strong>Privacidad geográfica.</strong><span>La ubicación se ingresa manualmente y se puede corregir antes de continuar. Un domicilio particular solo sería visible para equipos autorizados; las estadísticas públicas mostrarían zonas agregadas.</span></div>
     </>;
   } else if (step === 5) {
-    stageContent = <><p className="reportStageHelp">Se puede elegir más de una opción. “Reportado” no significa “confirmado”.</p><ReportOptionGrid options={reportConcerns} selected={concerns} onSelect={(value) => toggle(value, concerns, setConcerns)} multiple compact /><div className="reportFieldGrid"><label className="reportField"><span>Relación de la persona presuntamente responsable</span><select value={allegedRelation} onChange={(event) => setAllegedRelation(event.target.value)}>{["No sabe / no hay una persona identificada", "Hijo o hija", "Pareja", "Otro familiar", "Cuidador/a remunerado/a", "Cuidador/a no remunerado/a", "Vecino/a", "Personal o responsable de un servicio", "Otra persona no familiar"].map((option) => <option key={option}>{option}</option>)}</select></label><label className="reportField"><span>¿Qué ocurrió?</span><textarea value={narrative} onChange={(event) => setNarrative(event.target.value)} placeholder="Caso ficticio únicamente. No incluyas datos personales reales."/></label></div></>;
+    stageContent = <><p className="reportStageHelp">Se puede elegir más de una opción. “Reportado” no significa “confirmado”.</p><ReportOptionGrid options={reportConcerns} selected={concerns} onSelect={(value) => toggle(value, concerns, setConcerns)} multiple compact /><div className="reportFieldGrid"><label className="reportField"><span>Relación de la persona presuntamente responsable</span><select value={allegedRelation} onChange={(event) => setAllegedRelation(event.target.value)}>{["No sabe / no hay una persona identificada", "Hijo o hija", "Pareja", "Otro familiar", "Cuidador", "Vecino/a", "Personal o responsable de un servicio", "Otra persona no familiar"].map((option) => <option key={option}>{option}</option>)}</select></label><label className="reportField"><span>¿Qué ocurrió?</span><textarea value={narrative} onChange={(event) => setNarrative(event.target.value)} placeholder="Caso ficticio únicamente. No incluyas datos personales reales."/></label></div></>;
   } else if (step === 6) {
     stageContent = <><ReportOptionGrid options={reportRisks} selected={risks} onSelect={(value) => toggle(value, risks, setRisks)} multiple compact /><div className="reportUrgencyNotice"><ShieldAlert size={21}/><div><strong>En una emergencia real:</strong><span>llamar al 911, a Bomberos o al servicio de emergencia médica. Un formulario no puede sustituir esa respuesta.</span></div></div></>;
   } else if (step === 7) {
     stageContent = <><ReportOptionGrid options={["Anónima", "Confidencial", "Identificada"]} selected={privacy} onSelect={setPrivacy} compact /><div className="reportFieldGrid"><label className="reportField"><span>Medio seguro</span><select value={contactMethod} onChange={(event) => setContactMethod(event.target.value)}>{["Sin contacto / anónimo", "Llamada", "WhatsApp o SMS", "Correo", "Persona de confianza"].map((option) => <option key={option}>{option}</option>)}</select></label><label className="reportField"><span>Horario o condición segura</span><input value={safeContact} onChange={(event) => setSafeContact(event.target.value)} placeholder="Ej.: llamar después de las 18; no dejar mensaje"/></label></div><label className="reportCheckbox"><input type="checkbox" checked={noEarlyContact} onChange={(event) => setNoEarlyContact(event.target.checked)}/><span>No contactar primero a la persona señalada ni al establecimiento.</span></label></>;
   } else {
-    const summary = [["Ámbito", setting || "No indicado"], ["Origen de la alerta", `${reporter || "No indicado"} · ${channel}`], ["Lugar", place], ["Edad aproximada", ageRange], ["Dependencia", dependency], ["Con quién vive", livingWith], ["Apoyos necesarios", needs.join("; ") || "No indicados"], ["Preocupaciones", concerns.join("; ") || "Consulta general"], ["Presunta relación", allegedRelation], ["Riesgo preliminar", preliminaryPriority], ["Identidad", privacy], ["Contacto seguro", `${contactMethod}${safeContact ? ` · ${safeContact}` : ""}`], ["No contactar primero", noEarlyContact ? "Sí" : "No indicado"]];
-    stageContent = <><div className="reportSummary">{summary.map(([label, value]) => <div key={label}><strong>{label}</strong><span>{value}</span></div>)}</div><div className="reportRoutePanel"><span><Sparkles size={20}/></span><div><strong>Ruta sugerida para evaluación humana</strong><div className="reportRouteTags">{suggestedRoute.map((route) => <span key={route}>{route}</span>)}</div></div></div><label className="reportCheckbox reportConsent"><input type="checkbox" checked={demoConsent} onChange={(event) => { setDemoConsent(event.target.checked); clearValidation(); }}/><span>Entiendo que este es un prototipo y no enviará información.</span></label></>;
+    const summary = [["Ámbito", setting || "No indicado"], ["Origen de la alerta", `${reporter || "No indicado"} · ${channel}`], ["Lugar", place], ["Edad aproximada", ageRange], ["Dependencia", dependency], ["Con quién vive", livingWith], ["Apoyos necesarios", needsSummary || "No indicados"], ["Preocupaciones", concerns.join("; ") || "Consulta general"], ["Presunta relación", allegedRelation], ["Riesgo preliminar", preliminaryPriority], ["Identidad", privacy], ["Contacto seguro", `${contactMethod}${safeContact ? ` · ${safeContact}` : ""}`], ["No contactar primero", noEarlyContact ? "Sí" : "No indicado"]];
+    stageContent = <><div className="reportSummary">{summary.map(([label, value]) => <div key={label}><strong>{label}</strong><span>{value}</span></div>)}</div><div className="reportRoutePanel"><span><Sparkles size={20}/></span><div><strong>Ruta sugerida para evaluación humana</strong><div className="reportRouteTags">{suggestedRoute.map((route) => <span key={route}>{route}</span>)}</div></div></div><label className="reportCheckbox reportConsent"><input type="checkbox" checked={demoConsent} onChange={(event) => { setDemoConsent(event.target.checked); clearValidation(); }}/><span>Entiendo que este es un prototipo: el ejercicio se guardará para la demostración y no se enviará a ningún organismo.</span></label></>;
   }
 
-  return <section className="reportFlow"><header className="reportFlowHeader"><div className="eyebrow">Consulta, alerta o denuncia</div><h1>Comunicar una preocupación</h1><p className="lead">No hace falta saber si es delito, maltrato o falta de cuidados. La herramienta registra lo observado, protege el contacto y prepara una evaluación humana.</p></header><nav className="reportStepper" aria-label="Etapas de la comunicación">{reportStages.map((item, index) => { const stageNumber = index + 1; const current = stageNumber === step; const complete = stageNumber < step; return <button key={item.label} type="button" className={`reportStep ${current ? "isCurrent" : ""} ${complete ? "isComplete" : ""}`} onClick={() => complete && setStep(stageNumber)} disabled={!complete} aria-current={current ? "step" : undefined}><span className="reportStepNumber">{complete ? <CheckCircle2 size={15}/> : stageNumber}</span><span className="reportStepLabel">{item.label}</span></button>; })}</nav><div className="reportStage" key={step}><div className="reportStageIntro"><span>Etapa {String(step).padStart(2, "0")} · {stage.label}</span><h2>{stage.title}</h2></div>{stageContent}{validationMessage && <div className="reportValidation" role="alert">{validationMessage}</div>}</div><footer className="reportActions"><button className="reportBack" disabled={step === 1} onClick={() => { clearValidation(); setStep(step - 1); }}>← Volver</button><span>Etapa {step} de {reportStages.length}</span><button className="reportContinue" onClick={advance}>{step === reportStages.length ? "Crear expediente ficticio" : "Continuar"}<ArrowRight size={17}/></button></footer></section>;
+  return <section className="reportFlow"><header className="reportFlowHeader"><div className="eyebrow">Consulta, alerta o denuncia</div><h1>Comunicar una preocupación</h1><p className="lead">No hace falta saber si es delito, maltrato o falta de cuidados. La herramienta registra lo observado, protege el contacto y prepara una evaluación humana.</p></header><nav className="reportStepper" aria-label="Etapas de la comunicación">{reportStages.map((item, index) => { const stageNumber = index + 1; const current = stageNumber === step; const complete = stageNumber < step; return <button key={item.label} type="button" className={`reportStep ${current ? "isCurrent" : ""} ${complete ? "isComplete" : ""}`} onClick={() => complete && setStep(stageNumber)} disabled={!complete || isSubmitting} aria-current={current ? "step" : undefined}><span className="reportStepNumber">{complete ? <CheckCircle2 size={15}/> : stageNumber}</span><span className="reportStepLabel">{item.label}</span></button>; })}</nav><div className="reportStage" key={step}><div className="reportStageIntro"><span>Etapa {String(step).padStart(2, "0")} · {stage.label}</span><h2>{stage.title}</h2></div>{stageContent}{validationMessage && <div className="reportValidation" role="alert">{validationMessage}</div>}</div><footer className="reportActions"><button className="reportBack" disabled={step === 1 || isSubmitting} onClick={() => { clearValidation(); setStep(step - 1); }}>← Volver</button><span>Etapa {step} de {reportStages.length}</span><button className="reportContinue" disabled={isSubmitting} onClick={advance}>{step === reportStages.length ? (isSubmitting ? "Guardando…" : "Guardar expediente de demostración") : "Continuar"}<ArrowRight size={17}/></button></footer></section>;
 }
 
 type TeamTask = "cases" | "visits" | "measures" | "license";
 
 function Team() {
+  return <TeamIntakeInbox/>;
+}
+
+function TeamLegacy() {
   const [task, setTask] = useState<TeamTask | null>(null);
   if (task) return <TeamWorkspace task={task} back={() => setTask(null)}/>;
   const cards: [TeamTask, string, string, string][] = [
@@ -490,59 +723,6 @@ function TeamWorkspace({ task, back }: { task: TeamTask; back: () => void }) {
   </div>;
 }
 
-function Learning(){
-  const [gapSaved, setGapSaved] = useState(false);
-  const [contributionSaved, setContributionSaved] = useState(false);
-  const kpis = [
-    ["47,7%", "de las consultas del informe IM–CIEn fueron realizadas por terceras personas."],
-    ["26,8%", "fue clasificado inicialmente como riesgo alto."],
-    ["28,5%", "no correspondió finalmente a violencia o no cumplió criterios del servicio."],
-    ["17,0%", "de las formas declaradas correspondió a negligencia o abandono."],
-  ];
-  const levels = [
-    ["Expediente personal", "Solo el equipo responsable y los organismos autorizados."],
-    ["Gestión institucional", "La información mínima que cada rol necesita para actuar."],
-    ["Investigación autorizada", "Datos anonimizados, con protocolo, propósito y control de acceso."],
-    ["Información pública", "Indicadores agregados, fuentes, tiempos y resultados no identificables."],
-  ];
-
-  return <>
-    <section className="card learningHeader">
-      <div className="eyebrow">Datos agregados, participación y mejora</div>
-      <h1>¿Qué podemos aprender sin exponer a las personas?</h1>
-      <p className="lead">La información operativa no se publica como expediente. Solo datos anonimizados y agregados pueden utilizarse para investigar, mejorar respuestas y devolver resultados a la sociedad.</p>
-      <div className="learningKpis">{kpis.map(([value, label], index) => <article className={`learningKpi learningKpi-${index + 1}`} key={value}><b>{value}</b><span>{label}</span></article>)}</div>
-    </section>
-
-    <div className="learningForms">
-      <form className="card learningForm" onSubmit={(event) => { event.preventDefault(); setGapSaved(true); }}>
-        <h2>Registrar una brecha sin respuesta</h2>
-        <p className="muted">Para equipos y organizaciones: deja constancia de un problema estructural sin convertirlo automáticamente en un caso individual.</p>
-        <label>Tipo de barrera<select><option>No hay servicio disponible</option><option>El servicio no tiene cupos</option><option>Ningún organismo acepta la competencia</option><option>La derivación no tuvo respuesta</option><option>Falta transporte o acompañamiento</option><option>No existe un contacto seguro</option><option>Otra barrera</option></select></label>
-        <label>Territorio o ámbito<input placeholder="Ej.: Pando; domicilio; ELEPEM; Montevideo"/></label>
-        <label>Descripción breve, sin datos personales<textarea placeholder="Explicá qué impidió la respuesta."/></label>
-        <button className="primary" type="submit">Guardar brecha ficticia</button>
-        {gapSaved && <div className="learningSuccess" aria-live="polite"><CheckCircle2 size={18}/> Brecha ficticia guardada para análisis agregado.</div>}
-      </form>
-
-      <form className="card learningForm" onSubmit={(event) => { event.preventDefault(); setContributionSaved(true); }}>
-        <h2>Aporte colectivo</h2>
-        <p className="muted">Personas mayores, residentes, familiares u organizaciones pueden plantear un tema común, una propuesta o una dificultad repetida.</p>
-        <label>Quién aporta<select><option>Grupo de personas mayores</option><option>Residentes de un ELEPEM</option><option>Familiares</option><option>Organización social</option><option>Equipo territorial</option><option>Otro colectivo</option></select></label>
-        <label>Tema<select><option>Participación y decisiones cotidianas</option><option>Acceso a cuidados</option><option>Derechos en ELEPEM</option><option>Servicios y territorio</option><option>Inclusión digital</option><option>Información y comunicación</option><option>Otro</option></select></label>
-        <label>Aporte o propuesta<textarea placeholder="Ejemplo ficticio: queremos poder hablar en privado con el profesional social y participar en la organización de las visitas."/></label>
-        <button className="primary" type="submit">Guardar aporte ficticio</button>
-        {contributionSaved && <div className="learningSuccess" aria-live="polite"><CheckCircle2 size={18}/> Aporte ficticio guardado para devolución colectiva.</div>}
-      </form>
-    </div>
-
-    <section className="card learningLevels">
-      <h2>Cuatro niveles de información</h2>
-      <div className="dataLevels">{levels.map(([title, text]) => <article key={title}><strong>{title}</strong><p>{text}</p></article>)}</div>
-      <div className="learningRoute">{["Experiencia", "Anonimización", "Análisis", "Devolución pública", "Mejora"].map((label, index, items) => <span className="learningRouteStep" key={label}>{label}{index < items.length - 1 && <b>→</b>}</span>)}</div>
-    </section>
-  </>;
-}
 function SourceAccordion({ title, icon, defaultOpen, delay, children }: { title: string; icon: string; defaultOpen?: boolean; delay?: number; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen ?? false);
   return <div className={`sourcesSection accordion ${open ? "accordionOpen" : ""}`} style={{ animationDelay: `${delay || 0}ms` }}>
