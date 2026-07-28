@@ -60,33 +60,65 @@ export function AppShell({ initialView }: { initialView: View }) {
       {view === "aprendizajes" && <Learning/>}
       {view === "fuentes" && <Sources/>}
     </div>
-    <button className="quickExit" onClick={() => go("inicio")}><X size={17}/> Salida rápida</button>
+    <button className="floatingReportBtn" onClick={() => go("denuncia")} aria-label="Denunciar">
+      <ShieldAlert size={20}/>
+      <strong>Denunciar</strong>
+    </button>
   </main>;
 }
 
 function HomeView({ go }: { go: (view: View) => void }) {
-  const actions: [React.ReactNode, string, string, View, string][] = [
-    [<HeartHandshake key="support"/>, "Necesito orientación o apoyo", "No sé por dónde empezar, faltan cuidados o quiero encontrar el canal adecuado.", "orientacion", "amber"],
-    [<ShieldAlert key="report"/>, "Quiero comunicar una preocupación", "Puede hacerlo la propia persona, un familiar, vecino, cuidador, trabajador o profesional.", "denuncia", "violet"],
-    [<MapPin key="map"/>, "Quiero consultar un residencial", "Ver la etapa administrativa conocida, la fecha de la fuente y antecedentes verificables.", "residenciales", "rose"],
-    [<Users key="team"/>, "Trabajo en un equipo u organización", "Registrar entradas, organizar tareas, preparar visitas, derivar y dar seguimiento.", "equipos", "blue"],
-  ];
-
   return <>
     <section className="card hero homeHero">
-      <div className="eyebrow">Una entrada sencilla, distintas respuestas</div>
-      <h1>¿Qué necesitás hacer?</h1>
-      <p className="lead">La herramienta empieza por la necesidad de la persona. Puede orientar, recibir una preocupación, consultar un residencial o ayudar a un equipo a organizar la respuesta.</p>
-      <div className="grid actionsGrid homeActions">{actions.map(([icon, title, text, target, tone]) =>
-        <button className={`action action-${tone}`} key={title} onClick={() => go(target)}>
-          <span className="actionIcon">{icon}</span><span className="actionCopy"><strong>{title}</strong><span>{text}</span></span><ArrowRight className="actionArrow" size={19}/>
-        </button>)}</div>
-      <div className="actions compactActions"><button className="secondary" onClick={() => go("aprendizajes")}>Ver aprendizajes y participación</button><button className="link" onClick={() => go("fuentes")}>Cómo se usan los datos y las fuentes</button></div>
+      <h1>¿En qué podemos ayudarte?</h1>
+      <div className="grid actionsGrid homeActions">
+        <button className="action action-amber" onClick={() => go("orientacion")}>
+          <div className="actionIcon"><HeartHandshake size={28}/></div>
+          <div className="actionCopy">
+            <strong>Orientación o apoyo</strong>
+            <p>Saber por dónde empezar o buscar el canal adecuado</p>
+          </div>
+          <ArrowRight className="actionArrow" size={22}/>
+        </button>
+
+        <button className="action action-red" onClick={() => go("denuncia")}>
+          <div className="actionIcon"><ShieldAlert size={28}/></div>
+          <div className="actionCopy">
+            <strong>Comunicar o denunciar</strong>
+            <p>Alerta o preocupación para revisión humana</p>
+          </div>
+          <ArrowRight className="actionArrow" size={22}/>
+        </button>
+
+        <button className="action action-blue" onClick={() => go("residenciales")}>
+          <div className="actionIcon"><MapPin size={28}/></div>
+          <div className="actionCopy">
+            <strong>Consultar un residencial</strong>
+            <p>Habilitación, estado y datos de ELEPEM</p>
+          </div>
+          <ArrowRight className="actionArrow" size={22}/>
+        </button>
+
+        <button className="action action-violet" onClick={() => go("equipos")}>
+          <div className="actionIcon"><Users size={28}/></div>
+          <div className="actionCopy">
+            <strong>Equipos y organización</strong>
+            <p>Gestión institucional y derivaciones</p>
+          </div>
+          <ArrowRight className="actionArrow" size={22}/>
+        </button>
+      </div>
+
+      <div className="actions compactActions">
+        <button className="secondary" onClick={() => go("aprendizajes")}>Aprendizajes y participación</button>
+        <button className="link" onClick={() => go("fuentes")}>Fuentes y límites de datos</button>
+      </div>
     </section>
+
     <div className="grid three principles simplePrinciples">
-      <Info tone="rose" icon="?" title="No hace falta saber si es maltrato" text="La persona puede comunicar lo que le preocupa. Un equipo humano distingue después entre violencia, falta de cuidados, riesgo o necesidad de orientación."/>
-      <Info tone="amber" icon="🤝" title="La tecnología no reemplaza la respuesta" text="La herramienta ordena información, pero el contacto, la protección y las decisiones siguen en manos de personas responsables."/>
-      <Info tone="blue" icon="📊" title="La experiencia vuelve como aprendizaje" text="Solo datos agregados y anonimizados pueden ayudar a investigar barreras y mejorar los servicios."/>
+      <Info tone="rose" icon="?" title="No hace falta saber si es maltrato" text="Podés comunicar cualquier preocupación. Un equipo humano evaluará la situación."/>
+      <Info tone="amber" icon="🤝" title="Respuesta humana garantizada" text="La tecnología ordena la información, pero la atención y decisiones quedan en manos de personas."/>
+      <Info tone="blue" icon="📊" title="Aprendizaje continuo" text="Los datos anonimizados ayudan a mejorar las respuestas institucionales."/>
     </div>
   </>;
 }

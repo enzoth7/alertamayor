@@ -272,76 +272,81 @@ p {
   background: var(--surface);
   color: var(--text);
   border: 2px solid var(--line);
-  border-radius: 16px;
-  padding: 16px;
-  min-height: 130px;
-  transition: .15s;
+  border-radius: 18px;
+  padding: 22px;
+  min-height: 140px;
+  transition: transform .18s cubic-bezier(.16,1,.3,1), box-shadow .18s, border-color .18s;
   position: relative;
   display: flex;
   align-items: flex-start;
-  gap: 15px;
+  gap: 18px;
   overflow: hidden;
 }
 
 .action:hover, .choice:hover, .choice.selected {
   border-color: var(--blue);
-  box-shadow: 0 14px 26px rgba(20,35,55,.11);
-  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(20,35,55,.12);
+  transform: translateY(-3px);
 }
 
 .action:after {
   content: "";
   position: absolute;
   inset: auto -25px -40px auto;
-  width: 110px;
-  height: 110px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   background: currentColor;
   opacity: .035;
 }
 
 .actionIcon {
-  width: 46px;
-  height: 46px;
+  width: 52px;
+  height: 52px;
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  border-radius: 13px;
+  border-radius: 15px;
 }
 
 .actionIcon svg {
-  width: 23px;
-  height: 23px;
+  width: 28px;
+  height: 28px;
 }
 
 .actionCopy {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   padding-top: 2px;
 }
 
 .actionCopy strong, .choice strong {
   display: block;
-  font-size: 1.02rem;
-  margin: 0 0 6px;
+  font-size: 1.15rem;
+  font-weight: 850;
+  color: var(--text);
 }
 
-.actionCopy > span {
+.actionCopy p {
   display: block;
+  font-size: 0.92rem;
   color: var(--muted);
-  line-height: 1.55;
+  line-height: 1.45;
+  margin: 0;
 }
 
 .actionArrow {
   position: absolute;
-  right: 16px;
-  top: 16px;
+  right: 20px;
+  top: 20px;
   opacity: 0;
   transform: translateX(-5px);
-  transition: .16s;
+  transition: opacity .18s, transform .18s;
 }
 
 .action:hover .actionArrow {
-  opacity: .65;
+  opacity: .75;
   transform: none;
 }
 
@@ -349,6 +354,36 @@ p {
 .action-violet .actionIcon { background: var(--violetbg); color: var(--violet); }
 .action-rose .actionIcon { background: #fff0f5; color: #d6336c; }
 .action-blue .actionIcon { background: var(--bluebg); color: var(--blue); }
+.action-red .actionIcon { background: var(--redbg); color: var(--red); }
+
+/* Floating "Denunciar" button in bottom-left corner */
+.floatingReportBtn {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 14px 22px;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 850;
+  box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4);
+  transition: transform .18s cubic-bezier(.16,1,.3,1), box-shadow .18s;
+}
+
+.floatingReportBtn:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 12px 32px rgba(220, 38, 38, 0.55);
+}
+
+.floatingReportBtn:active {
+  transform: translateY(0) scale(0.98);
+}
 
 .icon {
   display: block;
