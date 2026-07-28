@@ -15,6 +15,15 @@ const ALLOWED_MIME_TYPES = new Set([
   "text/plain",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "audio/webm",
+  "audio/ogg",
+  "audio/mp4",
+  "audio/wav",
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/aac",
+  "audio/m4a",
+  "audio/x-m4a",
 ]);
 
 function supabaseHeaders(publishableKey: string): Record<string, string> {
@@ -50,7 +59,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
   if (!file.size || file.size > MAX_FILE_BYTES) {
     return NextResponse.json({ error: "Cada archivo puede pesar hasta 10 MB." }, { status: 413 });
   }
-  if (!ALLOWED_MIME_TYPES.has(file.type)) {
+  const cleanType = file.type.split(";")[0].trim().toLowerCase();
+  if (!ALLOWED_MIME_TYPES.has(cleanType)) {
     return NextResponse.json({ error: "Ese tipo de archivo no está permitido." }, { status: 415 });
   }
 
@@ -59,6 +69,29 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
   if (!supabaseUrl || !publishableKey) {
     return NextResponse.json({ error: "La carga de archivos no está configurada." }, { status: 503 });
   }
+
+  const extensionMap: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/heic": "heic",
+    "image/heif": "heif",
+    "application/pdf": "pdf",
+    "text/plain": "txt",
+    "application/msword": "doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+    "audio/webm": "webm",
+    "audio/ogg": "ogg",
+    "audio/mp4": "mp4",
+    "audio/wav": "wav",
+    "audio/mpeg": "mp3",
+    "audio/mp3": "mp3",
+    "audio/aac": "aac",
+    "audio/m4a": "m4a",
+    "audio/x-m4a": "m4a",
+  };
+
+  const extension = extensionMap[cleanType] || file.name.split(".").pop() || "bin";
 
   const forwarded = new FormData();
   forwarded.set("caseCode", caseCode);
@@ -72,16 +105,96 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
       body: forwarded,
       cache: "no-store",
     });
+    
     const result: unknown = await response.json().catch(() => null);
-    if (!response.ok) {
-      const error = result && typeof result === "object" && "error" in result && typeof result.error === "string"
-        ? result.error
-        : "No se pudo guardar el archivo.";
-      return NextResponse.json({ error }, { status: response.status });
+
+    if (response.ok && result) {
+      return NextResponse.json(result, { status: 201 });
     }
-    return NextResponse.json(result, { status: 201 });
+
+    // FALLBACK DIRECTO: Si la Edge Function en la nube responde error (ej 415), subir directo por REST/Storage API
+    console.warn(`Edge Function error ${response.status}. Executing direct Supabase storage upload fallback for ${cleanType}...`);
+
+    let reportRes = await fetch(
+      `${supabaseUrl}/rest/v1/intake_reports?case_code=eq.${encodeURIComponent(caseCode)}&select=id,report_payload`,
+      { headers: supabaseHeaders(publishableKey), cache: "no-store" }
+    );
+    let reports = (await reportRes.json().catch(() => [])) as Array<Record<string, unknown>>;
+    let report = reports[0];
+
+    if (!report || typeof report.id !== "string") {
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      reportRes = await fetch(
+        `${supabaseUrl}/rest/v1/intake_reports?case_code=eq.${encodeURIComponent(caseCode)}&select=id,report_payload`,
+        { headers: supabaseHeaders(publishableKey), cache: "no-store" }
+      );
+      reports = (await reportRes.json().catch(() => [])) as Array<Record<string, unknown>>;
+      report = reports[0];
+    }
+
+    if (!report || typeof report.id !== "string") {
+      return NextResponse.json({ error: "No se encontró la comunicación." }, { status: 404 });
+    }
+
+    const attachmentId = crypto.randomUUID();
+    const objectPath = `${report.id}/${attachmentId}.${extension}`;
+    const fileBuffer = await file.arrayBuffer();
+
+    const storageRes = await fetch(`${supabaseUrl}/storage/v1/object/intake-evidence/${objectPath}`, {
+      method: "POST",
+      headers: {
+        ...supabaseHeaders(publishableKey),
+        "Content-Type": cleanType,
+        "Cache-Control": "3600",
+        "x-upsert": "false",
+      },
+      body: fileBuffer,
+      cache: "no-store",
+    });
+
+    if (!storageRes.ok) {
+      const storageErr = await storageRes.json().catch(() => null);
+      console.error("Direct storage upload failed", storageErr);
+      return NextResponse.json({ error: "No se pudo guardar el archivo en el almacenamiento." }, { status: 502 });
+    }
+
+    const cleanName = (file.name || "archivo").normalize("NFKC").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 240);
+    const metaRes = await fetch(`${supabaseUrl}/rest/v1/intake_report_attachments`, {
+      method: "POST",
+      headers: {
+        ...supabaseHeaders(publishableKey),
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify({
+        id: attachmentId,
+        report_id: report.id,
+        bucket_id: "intake-evidence",
+        object_path: objectPath,
+        file_name: cleanName,
+        mime_type: cleanType,
+        size_bytes: file.size,
+      }),
+    });
+
+    if (!metaRes.ok) {
+      await fetch(`${supabaseUrl}/storage/v1/object/intake-evidence/${objectPath}`, {
+        method: "DELETE",
+        headers: supabaseHeaders(publishableKey),
+      }).catch(() => undefined);
+      return NextResponse.json({ error: "No se pudo registrar la información del archivo." }, { status: 502 });
+    }
+
+    return NextResponse.json({
+      attachment: {
+        id: attachmentId,
+        fileName: cleanName,
+        mimeType: cleanType,
+        sizeBytes: file.size,
+      },
+    }, { status: 201 });
   } catch (error) {
-    console.error("Evidence Edge Function request failed.", { message: error instanceof Error ? error.message : "Unknown error" });
+    console.error("Evidence upload processing failed.", { message: error instanceof Error ? error.message : "Unknown error" });
     return NextResponse.json({ error: "No se pudo conectar con el almacenamiento." }, { status: 502 });
   }
 }

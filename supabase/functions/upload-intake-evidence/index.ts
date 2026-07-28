@@ -16,6 +16,15 @@ const ALLOWED_MIME_TYPES = new Set([
   "text/plain",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "audio/webm",
+  "audio/ogg",
+  "audio/mp4",
+  "audio/wav",
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/aac",
+  "audio/m4a",
+  "audio/x-m4a",
 ]);
 
 const EXTENSIONS: Record<string, string> = {
@@ -28,6 +37,15 @@ const EXTENSIONS: Record<string, string> = {
   "text/plain": "txt",
   "application/msword": "doc",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+  "audio/webm": "webm",
+  "audio/ogg": "ogg",
+  "audio/mp4": "mp4",
+  "audio/wav": "wav",
+  "audio/mpeg": "mp3",
+  "audio/mp3": "mp3",
+  "audio/aac": "aac",
+  "audio/m4a": "m4a",
+  "audio/x-m4a": "m4a",
 };
 
 function json(body: unknown, status = 200) {
@@ -64,7 +82,9 @@ export default {
     if (!fileValue.size || fileValue.size > MAX_FILE_BYTES) {
       return json({ error: "El archivo debe pesar entre 1 byte y 10 MB." }, 413);
     }
-    if (!ALLOWED_MIME_TYPES.has(fileValue.type)) {
+
+    const cleanType = fileValue.type.split(";")[0].trim().toLowerCase();
+    if (!ALLOWED_MIME_TYPES.has(cleanType)) {
       return json({ error: "Ese tipo de archivo no está permitido." }, 415);
     }
 
@@ -90,13 +110,14 @@ export default {
       return json({ error: "La comunicación ya alcanzó el máximo de 5 archivos." }, 409);
     }
 
-    const attachmentId = crypto.randomUUID();
-    const objectPath = `${report.id}/${attachmentId}.${EXTENSIONS[fileValue.type]}`;
     const cleanName = cleanFileName(fileValue.name);
+    const extension = EXTENSIONS[cleanType] || cleanName.split(".").pop() || "bin";
+    const attachmentId = crypto.randomUUID();
+    const objectPath = `${report.id}/${attachmentId}.${extension}`;
     const { error: uploadError } = await ctx.supabaseAdmin.storage
       .from(BUCKET)
       .upload(objectPath, fileValue, {
-        contentType: fileValue.type,
+        contentType: cleanType,
         cacheControl: "3600",
         upsert: false,
       });

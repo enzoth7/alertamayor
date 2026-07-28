@@ -3141,3 +3141,198 @@ textarea {
     animation: none !important;
   }
 }
+
+/* Grabación de Audio 2 Columnas */
+.reportNarrativeColumns {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+@media (min-width: 720px) {
+  .reportNarrativeColumns {
+    grid-template-columns: 1.1fr 0.9fr;
+  }
+}
+
+.reportAudioBox {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px;
+  border: 2px dashed #cbd9e7;
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.reportAudioHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.reportAudioHeaderIcon {
+  color: #1768d3;
+}
+
+.reportAudioHeader strong {
+  display: block;
+  font-size: 0.92rem;
+  color: #1e3a5f;
+}
+
+.reportAudioHeader small {
+  display: block;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.reportAudioAction {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 0;
+}
+
+.reportMicButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border: 0;
+  border-radius: 50%;
+  background: #25d366;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(37, 211, 102, 0.35);
+  transition: transform 0.18s, background-color 0.18s;
+}
+
+.reportMicButton:hover {
+  transform: scale(1.06);
+  background: #20bd5a;
+}
+
+.reportMicHelp {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.reportAudioAction.isRecording {
+  position: relative;
+}
+
+.reportMicPulse {
+  position: absolute;
+  top: 10px;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.25);
+  animation: pulseRecording 1.4s infinite;
+}
+
+@keyframes pulseRecording {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.25); opacity: 0.3; }
+  100% { transform: scale(0.9); opacity: 0.8; }
+}
+
+.reportStopButton {
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border: 0;
+  border-radius: 50%;
+  background: #ef4444;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+}
+
+.reportRecordingStatus {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.reportRecDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: blinkDot 1s infinite;
+}
+
+@keyframes blinkDot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+.reportRecordingStatus strong {
+  color: #b91c1c;
+  font-size: 0.92rem;
+}
+
+.reportRecordingStatus small {
+  color: #64748b;
+  font-size: 0.76rem;
+}
+
+.reportAudioResult {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reportAudioSuccessNotice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.86rem;
+  color: #15803d;
+}
+
+.reportAudioPlayer {
+  width: 100%;
+  height: 38px;
+  border-radius: 8px;
+}
+
+.reportAudioDeleteButton {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.reportAudioDeleteButton:hover {
+  background: #fee2e2;
+}
+
+.reportMicError {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: #dc2626;
+}
+

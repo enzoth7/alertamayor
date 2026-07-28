@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, Copy, Mail, MapPin, Paperclip, Phone, ShieldAlert, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, Copy, Mail, MapPin, Mic, Paperclip, Phone, ShieldAlert, Square, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type IntakeDraft = {
@@ -142,6 +142,139 @@ function LocationMap({ department, city, locality, streetAddress, doorNumber }: 
       <small>
         <MapPin size={12}/> {exactCoords ? `Ubicación exacta encontrada: ${locationText}` : isGeocoding ? "Buscando dirección exacta..." : `Referencia aproximada · ${department}, Uruguay`}
       </small>
+    </div>
+  );
+}
+
+function AudioRecorder({ onAudioRecorded, onAudioCleared }: { onAudioRecorded: (file: File) => void; onAudioCleared: () => void }) {
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [micError, setMicError] = useState("");
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isRecording) {
+      timer = setInterval(() => setRecordingTime((prev) => prev + 1), 1000);
+    } else {
+      setRecordingTime(0);
+    }
+    return () => clearInterval(timer);
+  }, [isRecording]);
+
+  const startRecording = async () => {
+    setMicError("");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      const supportedType = typeof MediaRecorder !== "undefined" && (
+        MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" :
+        MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" :
+        MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4" :
+        MediaRecorder.isTypeSupported("audio/ogg") ? "audio/ogg" : ""
+      );
+
+      const recorder = new MediaRecorder(stream, supportedType ? { mimeType: supportedType } : undefined);
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        const rawType = recorder.mimeType || "audio/webm";
+        const cleanType = rawType.split(";")[0] || "audio/webm";
+        const extension = cleanType.includes("mp4") ? "mp4" : cleanType.includes("ogg") ? "ogg" : "webm";
+        
+        const blob = new Blob(chunks, { type: cleanType });
+        const url = URL.createObjectURL(blob);
+        setAudioUrl(url);
+        
+        const audioFile = new File([blob], `relato_voz_${Date.now()}.${extension}`, { type: cleanType });
+        onAudioRecorded(audioFile);
+
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+    } catch {
+      setMicError("No se pudo acceder al micrófono. Verificá los permisos de tu navegador.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const clearAudio = () => {
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+    }
+    setAudioUrl(null);
+    onAudioCleared();
+  };
+
+  const formatSeconds = (sec: number) => {
+    const mins = Math.floor(sec / 60);
+    const remainderSecs = sec % 60;
+    return `${String(mins).padStart(2, "0")}:${String(remainderSecs).padStart(2, "0")}`;
+  };
+
+  return (
+    <div className="reportAudioBox">
+      <div className="reportAudioHeader">
+        <Mic size={20} className="reportAudioHeaderIcon" />
+        <div>
+          <strong>Grabá un mensaje de voz</strong>
+          <small>Si preferís hablar antes que escribir, grabá tu relato acá.</small>
+        </div>
+      </div>
+
+      {!audioUrl && !isRecording && (
+        <div className="reportAudioAction">
+          <button type="button" className="reportMicButton" onClick={startRecording} aria-label="Iniciar grabación de voz">
+            <Mic size={30} />
+          </button>
+          <span className="reportMicHelp">Tocá para grabar</span>
+        </div>
+      )}
+
+      {isRecording && (
+        <div className="reportAudioAction isRecording">
+          <div className="reportMicPulse" />
+          <button type="button" className="reportStopButton" onClick={stopRecording} aria-label="Detener grabación">
+            <Square size={22} fill="currentColor" />
+          </button>
+          <div className="reportRecordingStatus">
+            <span className="reportRecDot" />
+            <strong>Grabando… {formatSeconds(recordingTime)}</strong>
+            <small>Tocá el cuadrado para finalizar</small>
+          </div>
+        </div>
+      )}
+
+      {audioUrl && !isRecording && (
+        <div className="reportAudioResult">
+          <div className="reportAudioSuccessNotice">
+            <CheckCircle2 size={18} color="#16a34a" />
+            <span><strong>Tu audio quedó registrado</strong></span>
+          </div>
+
+          <audio src={audioUrl} controls className="reportAudioPlayer" />
+
+          <button type="button" className="reportAudioDeleteButton" onClick={clearAudio}>
+            <Trash2 size={15} /> Borrar audio
+          </button>
+        </div>
+      )}
+
+      {micError && <p className="reportMicError" role="alert">{micError}</p>}
     </div>
   );
 }
@@ -485,13 +618,51 @@ export function IntakeReportForm({
         <OptionGrid options={places} selected={draft.setting} onSelect={(value) => update("setting", value)} />
         <h3 className="reportSubheading">Preocupación</h3>
         <OptionGrid options={concerns} selected={draft.concerns} onSelect={toggleConcern} multiple />
-        <label className="reportField">
-          <span>
-            Contá brevemente qué está pasando
-            {draft.concerns.includes("No sé cómo clasificarlo") && <em style={{color: "#d97706", fontStyle: "normal", marginLeft: "6px"}}>(Obligatorio para "No sé cómo clasificarlo")</em>}
-          </span>
-          <textarea value={draft.narrative} onChange={(event) => update("narrative", event.target.value)} placeholder="Si preferís, escribí un resumen breve de la situación." />
-        </label>
+        <div className="reportNarrativeColumns">
+          <label className="reportField">
+            <span>
+              Contá brevemente qué está pasando
+              {draft.concerns.includes("No sé cómo clasificarlo") && <em style={{color: "#d97706", fontStyle: "normal", marginLeft: "6px"}}>(Obligatorio para "No sé cómo clasificarlo")</em>}
+            </span>
+            <textarea value={draft.narrative} onChange={(event) => update("narrative", event.target.value)} placeholder="Si preferís, escribí un resumen breve de la situación." />
+          </label>
+
+          <AudioRecorder
+            onAudioRecorded={(audioFile) => {
+              setFiles((current) => [...current.filter((f) => !f.name.startsWith("relato_voz_")), audioFile]);
+            }}
+            onAudioCleared={() => {
+              setFiles((current) => current.filter((f) => !f.name.startsWith("relato_voz_")));
+            }}
+          />
+        </div>
+
+        {/* Imágenes o pruebas adjuntas en el Paso 1 */}
+        <div className="reportAttachments" style={{marginTop: "20px"}}>
+          <div className="reportAttachmentsHeading">
+            <span><Paperclip size={18}/></span>
+            <div>
+              <strong>Imágenes o pruebas</strong>
+              <small>Desde el celular o la computadora. Hasta 5 archivos de 10 MB cada uno.</small>
+            </div>
+          </div>
+          <label className="reportFilePicker">
+            <input type="file" multiple accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf,text/plain,.doc,.docx,audio/*" onChange={(event) => { addFiles(event.target.files); event.currentTarget.value = ""; }} />
+            <Paperclip size={18}/> Elegir archivos
+          </label>
+          {files.length > 0 && (
+            <ul className="reportFileList">
+              {files.map((file, index) => (
+                <li key={`${file.name}-${file.lastModified}-${index}`}>
+                  <span><strong>{file.name}</strong><small>{(file.size / 1024 / 1024).toFixed(2)} MB</small></span>
+                  <button type="button" aria-label={`Quitar ${file.name}`} onClick={() => setFiles((current) => current.filter((_, fileIndex) => fileIndex !== index))}>
+                    <Trash2 size={16}/>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </>}
 
       {step === 2 && <>
@@ -703,14 +874,7 @@ export function IntakeReportForm({
           <div><strong>Lugar</strong><span>{draft.department}{locationSummary ? ` · ${locationSummary}` : ""}</span></div>
           <div><strong>Quién comunica</strong><span>{draft.reporter}{draft.reporterName ? ` (${draft.reporterName})` : ""}</span></div>
           <div><strong>Privacidad</strong><span>{draft.privacy || "No indicada"}</span></div>
-        </div>
-        <div className="reportAttachments">
-          <div className="reportAttachmentsHeading"><span><Paperclip size={18}/></span><div><strong>Imágenes o pruebas <em>opcionales</em></strong><small>Desde el celular o la computadora. Hasta 5 archivos de 10 MB cada uno.</small></div></div>
-          <label className="reportFilePicker">
-            <input type="file" multiple accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf,text/plain,.doc,.docx" onChange={(event) => { addFiles(event.target.files); event.currentTarget.value = ""; }} />
-            <Paperclip size={18}/> Elegir archivos
-          </label>
-          {files.length > 0 && <ul className="reportFileList">{files.map((file, index) => <li key={`${file.name}-${file.lastModified}-${index}`}><span><strong>{file.name}</strong><small>{(file.size / 1024 / 1024).toFixed(2)} MB</small></span><button type="button" aria-label={`Quitar ${file.name}`} onClick={() => setFiles((current) => current.filter((_, fileIndex) => fileIndex !== index))}><Trash2 size={16}/></button></li>)}</ul>}
+          <div><strong>Pruebas / Imágenes</strong><span>{files.length > 0 ? `${files.length} ${files.length === 1 ? "archivo adjunto" : "archivos adjuntos"}` : "Sin archivos adjuntos"}</span></div>
         </div>
         <label className="reportCheckbox reportConsent"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} /><span>Entiendo que esto es una demostración: se guardará en la base de datos para que el equipo lo vea, pero no se enviará a ningún organismo.</span></label>
       </>}
