@@ -2,21 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ArrowRight, Building2, CheckCircle2, Search } from "lucide-react";
-import facilityData from "../../data/facilities.json";
-
-type Facility = {
-  id: string;
-  name: string;
-  department: string;
-  locality: string;
-  address: string;
-  places: number | null;
-  statusStage: string;
-  statusShort: string;
-  sourceLabel: string;
-};
-
-const facilities = facilityData as Facility[];
+import { useResidenciales } from "../../hooks/useResidenciales";
 
 const stages = [
   {
@@ -59,6 +45,7 @@ const connectedInformation = [
 ];
 
 export function TeamLicenseWorkflow({ onSaved }: { onSaved: (message: string) => void }) {
+  const { facilities, loading, error } = useResidenciales();
   const [query, setQuery] = useState("");
   const [searched, setSearched] = useState(false);
   const [selectedId, setSelectedId] = useState("");
@@ -71,7 +58,7 @@ export function TeamLicenseWorkflow({ onSaved }: { onSaved: (message: string) =>
     return facilities
       .filter((facility) => !normalized || `${facility.name} ${facility.address} ${facility.statusShort}`.toLocaleLowerCase("es-UY").includes(normalized))
       .slice(0, 15);
-  }, [query, searched]);
+  }, [facilities, query, searched]);
 
   const selected = facilities.find((facility) => facility.id === selectedId);
   const stage = stages.find((item) => item.number === activeStage) ?? stages[0];
@@ -91,7 +78,7 @@ export function TeamLicenseWorkflow({ onSaved }: { onSaved: (message: string) =>
       </div>
 
       {searched && <div className="teamFacilityResults" aria-live="polite">
-        {results.length ? results.map((facility) => <button type="button" className={selectedId === facility.id ? "isSelected" : ""} onClick={() => setSelectedId(facility.id)} key={facility.id}>
+        {loading ? <div className="teamEmptyState">Consultando residenciales en Supabase…</div> : error ? <div className="teamEmptyState">{error}</div> : results.length ? results.map((facility) => <button type="button" className={selectedId === facility.id ? "isSelected" : ""} onClick={() => setSelectedId(facility.id)} key={facility.id}>
           <span className="teamFacilityIcon"><Building2 size={19}/></span>
           <span><strong>{facility.name}</strong><small>{facility.address} · {facility.department}{facility.places != null ? ` · ${facility.places} plazas` : ""}</small><em>{facility.sourceLabel}</em></span>
           <span className="teamStagePill">{facility.statusStage}</span>

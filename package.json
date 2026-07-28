@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:import:residenciales": "node --env-file=.env.local scripts/import-residenciales.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
-import type { LatLngBoundsExpression } from "leaflet";
+import { useEffect, useRef } from "react";
+import L from "leaflet";
 import type { Facility } from "./map-types";
 
 const colors = {
@@ -11,33 +10,80 @@ const colors = {
   verificar: "#6941c6",
 };
 
-function FitToResults({ facilities }: { facilities: Facility[] }) {
-  const map = useMap();
+function createPopup(facility: Facility) {
+  const popup = document.createElement("div");
+  popup.className = "mapPopup";
 
-  useEffect(() => {
-    if (!facilities.length) return;
-    const bounds = facilities.map(({ lat, lng }) => [lat, lng]) as LatLngBoundsExpression;
-    map.fitBounds(bounds, { padding: [28, 28], maxZoom: 14 });
-  }, [facilities, map]);
+  const name = document.createElement("strong");
+  name.textContent = facility.name;
+  popup.appendChild(name);
 
-  return null;
+  const address = document.createElement("p");
+  address.textContent = facility.address;
+  popup.appendChild(address);
+
+  const location = document.createElement("p");
+  location.textContent = `${facility.locality} · ${facility.department}`;
+  popup.appendChild(location);
+
+  const status = document.createElement("b");
+  status.textContent = facility.statusShort;
+  popup.appendChild(status);
+
+  const source = document.createElement("small");
+  source.textContent = facility.sourceLabel;
+  popup.appendChild(source);
+
+  return popup;
 }
 
 export default function StreetMap({ facilities, selectedId, onSelect }: { facilities: Facility[]; selectedId: string | null; onSelect: (id: string) => void }) {
-  return <MapContainer className="leafletRegistryMap" center={[-32.8, -56]} zoom={6} scrollWheelZoom>
-    <TileLayer
-      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-    />
-    <FitToResults facilities={facilities}/>
-    {facilities.map((facility) => <CircleMarker
-      key={facility.id}
-      center={[facility.lat, facility.lng]}
-      radius={selectedId === facility.id ? 9 : facility.statusGroup === "verificar" ? 7 : 5}
-      pathOptions={{ color: "#fff", weight: 2, fillColor: colors[facility.statusGroup], fillOpacity: .92 }}
-      eventHandlers={{ click: () => onSelect(facility.id) }}
-    >
-      <Popup><div className="mapPopup"><strong>{facility.name}</strong><span>{facility.address}</span><span>{facility.locality} · {facility.department}</span><b>{facility.statusShort}</b><small>{facility.sourceLabel}</small></div></Popup>
-    </CircleMarker>)}
-  </MapContainer>;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const markersRef = useRef<L.LayerGroup | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+
+    const map = L.map(containerRef.current, { scrollWheelZoom: true }).setView([-32.8, -56], 6);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(map);
+
+    mapRef.current = map;
+    markersRef.current = L.layerGroup().addTo(map);
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      markersRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const markers = markersRef.current;
+    if (!map || !markers) return;
+
+    markers.clearLayers();
+    facilities.forEach((facility) => {
+      const marker = L.circleMarker([facility.lat, facility.lng], {
+        radius: selectedId === facility.id ? 9 : facility.statusGroup === "verificar" ? 7 : 5,
+        color: "#fff",
+        weight: 2,
+        fillColor: colors[facility.statusGroup],
+        fillOpacity: 0.92,
+      });
+      marker.on("click", () => onSelect(facility.id));
+      marker.bindPopup(createPopup(facility));
+      marker.addTo(markers);
+    });
+
+    if (facilities.length) {
+      const bounds = L.latLngBounds(facilities.map(({ lat, lng }) => [lat, lng]));
+      map.fitBounds(bounds, { padding: [28, 28], maxZoom: 14 });
+    }
+  }, [facilities, onSelect, selectedId]);
+
+  return <div ref={containerRef} className="leafletRegistryMap" aria-label="Mapa de residenciales"/>;
 }

@@ -30,6 +30,18 @@ function optionalText(value: unknown, maxLength = 240): string | null {
   return normalized || null;
 }
 
+function email(value: unknown): string | null {
+  const normalized = text(value, 254).toLowerCase();
+  if (!normalized) return null;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized) ? normalized : null;
+}
+
+function phone(value: unknown): string | null {
+  const normalized = text(value, 24);
+  if (!normalized) return null;
+  return /^[+()0-9\s.-]{6,24}$/.test(normalized) ? normalized : null;
+}
+
 function buildReportPayload(value: unknown): JsonRecord | null {
   if (!isRecord(value)) return null;
 
@@ -44,14 +56,19 @@ function buildReportPayload(value: unknown): JsonRecord | null {
   const narrative = text(value.narrative, 6_000);
   const risks = textList(value.risks);
   const privacy = text(value.privacy, 80);
+  const submittedEmail = email(value.contactEmail);
+  const submittedPhone = phone(value.contactPhone);
 
-  if (!setting || !reporter || !department || !locationReference || !selectedConcerns.length || !narrative || !risks.length || !privacy) return null;
+  const hasSituationInformation = Boolean(setting || selectedConcerns.length || narrative);
+  if (!hasSituationInformation || !reporter || !department || !locationReference || !risks.length || !privacy) return null;
+  if (text(value.contactEmail, 254) && !submittedEmail) return null;
+  if (text(value.contactPhone, 24) && !submittedPhone) return null;
 
   return {
     version: 1,
     submittedAt: new Date().toISOString(),
     source: "web",
-    setting,
+    setting: setting || "No indicado",
     reporter,
     channel: optionalText(value.channel),
     ageRange: optionalText(value.ageRange),
@@ -76,11 +93,13 @@ function buildReportPayload(value: unknown): JsonRecord | null {
       department: optionalText(facility.department, 100),
       searchStatus: optionalText(facility.searchStatus, 200),
     },
-    concerns: selectedConcerns,
+    concerns: selectedConcerns.length ? selectedConcerns : ["No indicada"],
     allegedRelation: optionalText(value.allegedRelation),
-    narrative,
+    narrative: narrative || "Sin relato adicional.",
     risks,
     privacy,
+    contactEmail: submittedEmail,
+    contactPhone: submittedPhone,
     contactMethod: optionalText(value.contactMethod, 120),
     safeContact: optionalText(value.safeContact, 1_000),
     noEarlyContact: value.noEarlyContact === true,
@@ -92,6 +111,35 @@ function buildReportPayload(value: unknown): JsonRecord | null {
 function newCaseCode(): string {
   const date = new Date().toISOString().slice(0, 10).replaceAll("-", "");
   return `AM-${date}-${randomBytes(4).toString("hex").toUpperCase()}`;
+}
+
+function supabaseHeaders(publishableKey: string): Record<string, string> {
+  return {
+    apikey: publishableKey,
+    ...(publishableKey.split(".").length === 3 ? { Authorization: `Bearer ${publishableKey}` } : {}),
+  };
+}
+
+async function requestTrackingEmail(supabaseUrl: string, publishableKey: string, caseCode: string, contactEmail: string, capabilityToken: string) {
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/notify-intake-code`, {
+      method: "POST",
+      headers: {
+        ...supabaseHeaders(publishableKey),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ caseCode, email: contactEmail, capabilityToken }),
+      cache: "no-store",
+    });
+    const result: unknown = await response.json().catch(() => null);
+    return {
+      sent: response.ok && Boolean(result && typeof result === "object" && "sent" in result && result.sent === true),
+      configured: Boolean(result && typeof result === "object" && "configured" in result && result.configured === true),
+    };
+  } catch (error) {
+    console.error("Tracking email function request failed.", { message: error instanceof Error ? error.message : "Unknown error" });
+    return { sent: false, configured: false };
+  }
 }
 
 export async function POST(request: Request) {
@@ -126,13 +174,13 @@ export async function POST(request: Request) {
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const caseCode = newCaseCode();
+    const uploadToken = randomBytes(24).toString("base64url");
     let response: Response;
     try {
       response = await fetch(`${supabaseUrl}/rest/v1/intake_reports`, {
         method: "POST",
         headers: {
-          apikey: publishableKey,
-          Authorization: `Bearer ${publishableKey}`,
+          ...supabaseHeaders(publishableKey),
           "Content-Type": "application/json",
           Prefer: "return=minimal",
         },
@@ -141,7 +189,7 @@ export async function POST(request: Request) {
           source: "web",
           priority: payload.preliminaryPriority,
           department: payload.location && isRecord(payload.location) ? payload.location.department : null,
-          report_payload: payload,
+          report_payload: { ...payload, evidenceUploadToken: uploadToken },
         }),
         cache: "no-store",
       });
@@ -151,7 +199,11 @@ export async function POST(request: Request) {
     }
 
     if (response.ok) {
-      return NextResponse.json({ caseCode }, { status: 201 });
+      const contactEmail = typeof payload.contactEmail === "string" ? payload.contactEmail : "";
+      const emailNotification = contactEmail
+        ? await requestTrackingEmail(supabaseUrl, publishableKey, caseCode, contactEmail, uploadToken)
+        : null;
+      return NextResponse.json({ caseCode, uploadToken, emailNotification }, { status: 201 });
     }
 
     if (response.status !== 409 || attempt === 2) {

@@ -2,25 +2,27 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Building2, CheckCircle2, ChevronDown, ClipboardCheck, ExternalLink, FileCheck2, FilePlus2, HeartHandshake, Landmark, LockKeyhole, LogOut, MapPin, MapPinned, Menu, ShieldAlert, ShieldCheck, Sparkles, UserRound, Users, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, CheckCircle2, ChevronDown, ClipboardCheck, ExternalLink, FileCheck2, FilePlus2, Landmark, LockKeyhole, LogOut, MapPin, MapPinned, Menu, ShieldAlert, ShieldCheck, Sparkles, UserRound, Users, X } from "lucide-react";
 import UruguayRegistry from "./UruguayRegistry";
 import { TeamCasesWorkflow } from "./team/TeamCasesWorkflow";
 import { TeamLicenseWorkflow } from "./team/TeamLicenseWorkflow";
 import { TeamMeasuresWorkflow } from "./team/TeamMeasuresWorkflow";
 import { TeamVisitsWorkflow } from "./team/TeamVisitsWorkflow";
 import { IntakeReportForm } from "./IntakeReportForm";
+import { ReportStatusLookup } from "./ReportStatusLookup";
 import { TeamIntakeInbox } from "./team/TeamIntakeInbox";
-import facilityData from "../data/facilities.json";
+import { useResidenciales } from "../hooks/useResidenciales";
+import type { Facility } from "./map-types";
 
-export type View = "inicio" | "orientacion" | "denuncia" | "residenciales" | "equipos" | "fuentes";
+export type View = "inicio" | "denuncia" | "seguimiento" | "residenciales" | "equipos" | "fuentes";
 type AccessMode = "loading" | "chooser" | "person" | "organization";
 
 const ACCESS_SESSION_KEY = "alerta-mayor-access";
 
 const viewPaths: Record<View, string> = {
   inicio: "/",
-  orientacion: "/orientacion",
   denuncia: "/denuncia",
+  seguimiento: "/seguimiento",
   residenciales: "/residenciales",
   equipos: "/equipos",
   fuentes: "/fuentes",
@@ -44,7 +46,6 @@ export function AppShell({ initialView }: { initialView: View }) {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [menu, setMenu] = useState(false);
   const [largeText, setLargeText] = useState(false);
-  const [story, setStory] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -74,15 +75,17 @@ export function AppShell({ initialView }: { initialView: View }) {
     return () => { active = false; };
   }, []);
 
-  const organizationOnlyView = view === "equipos" || view === "fuentes";
+  const personBlockedView = view === "equipos" || view === "fuentes";
+  const organizationBlockedView = view === "denuncia" || view === "seguimiento";
   const isOrganization = accessMode === "organization";
   const navItems: [View, string][] = isOrganization
-    ? [["orientacion", "Orientación"], ["residenciales", "Residenciales"], ["equipos", "Equipos"], ["fuentes", "Fuentes"]]
-    : [["inicio", "Inicio"], ["orientacion", "Orientación"], ["residenciales", "Residenciales"]];
+    ? [["residenciales", "Residenciales"], ["equipos", "Equipos"], ["fuentes", "Fuentes"]]
+    : [["inicio", "Inicio"], ["residenciales", "Residenciales"]];
 
   useEffect(() => {
-    if (accessMode === "person" && organizationOnlyView) router.replace("/");
-  }, [accessMode, organizationOnlyView, router]);
+    if (accessMode === "person" && personBlockedView) router.replace("/");
+    if (accessMode === "organization" && organizationBlockedView) router.replace("/equipos");
+  }, [accessMode, organizationBlockedView, personBlockedView, router]);
 
   const saveAccessMode = (mode: "person" | "organization") => {
     try { window.sessionStorage.setItem(ACCESS_SESSION_KEY, mode); } catch {}
@@ -132,6 +135,10 @@ export function AppShell({ initialView }: { initialView: View }) {
       router.push("/");
       return;
     }
+    if ((next === "denuncia" || next === "seguimiento") && isOrganization) {
+      router.push("/equipos");
+      return;
+    }
     router.push(viewPaths[next]);
   };
 
@@ -151,19 +158,21 @@ export function AppShell({ initialView }: { initialView: View }) {
     onOrganizationLogin={submitOrganizationLogin}
   />;
 
-  if (accessMode === "person" && organizationOnlyView) return <main className="accessGate accessGateLoading"><span>Volviendo al inicio…</span></main>;
+  if ((accessMode === "person" && personBlockedView) || (accessMode === "organization" && organizationBlockedView)) {
+    return <main className="accessGate accessGateLoading"><span>Abriendo la vista correspondiente…</span></main>;
+  }
 
   return <main className={`site ${accessMode === "person" ? "personSite" : "organizationSite"} ${largeText ? "largeText" : ""}`}>
     <header className="top"><div className="topin">
-      <button className="brand" onClick={() => go("inicio")}><img src="/alertamayor.png" alt="Alerta mayor" className="brandLogo" /><span>Alerta mayor</span></button>
+      <button className="brand" onClick={resetAccess} aria-label="Volver a elegir entre persona y organización"><img src="/alertamayor.png" alt="Alerta mayor" className="brandLogo" /><span>Alerta mayor</span></button>
       <nav className={menu ? "nav open" : "nav"}>{navItems.map(([key, label]) => <button key={key} className={view === key ? "active" : ""} onClick={() => go(key)}>{label}</button>)}</nav>
-      <div className="tools"><button className="menuToggle" onClick={() => setMenu(!menu)} aria-label="Abrir menú"><Menu size={17}/> Menú</button><button onClick={() => setLargeText(!largeText)}>A+ Texto</button><button onClick={resetAccess}><LogOut size={16}/> {isOrganization ? "Salir" : "Cambiar perfil"}</button></div>
+      <div className="tools"><button className="menuToggle" onClick={() => setMenu(!menu)} aria-label="Abrir menú"><Menu size={17}/> Menú</button><button onClick={() => setLargeText(!largeText)}>A+ Texto</button><button className="profileReset" onClick={resetAccess} aria-label={isOrganization ? "Salir de la organización" : "Cambiar perfil"}><LogOut size={16}/><span>{isOrganization ? "Salir" : "Cambiar perfil"}</span></button></div>
     </div></header>
     <div className="shell">
       <div className="banner"><ShieldAlert size={20}/><span><strong>PROTOTIPO ACADÉMICO</strong> · Usá sólo datos de demostración. Las comunicaciones se guardan para que el equipo las vea en su bandeja, pero no se envían a ningún organismo ni representan un servicio oficial.</span></div>
       {view === "inicio" && <HomeView go={go} isOrganization={isOrganization}/>}
-      {view === "orientacion" && <Orientation story={story} setStory={setStory} go={go}/>} 
-      {view === "denuncia" && <IntakeReportForm onHome={() => go("inicio")}/>}
+      {view === "denuncia" && <IntakeReportForm onHome={() => go("inicio")} onFollow={() => go("seguimiento")}/>}
+      {view === "seguimiento" && <ReportStatusLookup onHome={() => go("inicio")}/>}
       {view === "residenciales" && <UruguayRegistry onReport={() => go("denuncia")}/>} 
       {isOrganization && view === "equipos" && <Team/>}
       {isOrganization && view === "fuentes" && <Sources/>}
@@ -206,59 +215,54 @@ function AccessGateway({ organizationLogin, setOrganizationLogin, username, setU
 }
 
 function HomeView({ go, isOrganization }: { go: (view: View) => void; isOrganization: boolean }) {
-  return <>
-    <section className="card hero homeHero">
-      <h1>¿En qué podemos ayudarte?</h1>
-      <div className="grid actionsGrid homeActions">
-        <button className="action action-red" onClick={() => go("denuncia")}>
-          <div className="actionIcon"><ShieldAlert size={28}/></div>
-          <div className="actionCopy">
-            <strong>Comunicar o denunciar</strong>
-            <p>Alerta o preocupación para revisión humana</p>
-          </div>
-          <ArrowRight className="actionArrow" size={22}/>
-        </button>
-
-        <button className="action action-amber" onClick={() => go("orientacion")}>
-          <div className="actionIcon"><HeartHandshake size={28}/></div>
-          <div className="actionCopy">
-            <strong>Orientación o apoyo</strong>
-            <p>Saber por dónde empezar o buscar el canal adecuado</p>
-          </div>
-          <ArrowRight className="actionArrow" size={22}/>
-        </button>
-
-        <button className="action action-blue" onClick={() => go("residenciales")}>
-          <div className="actionIcon"><MapPin size={28}/></div>
-          <div className="actionCopy">
-            <strong>Consultar un residencial</strong>
-            <p>Habilitación, estado y datos de ELEPEM</p>
-          </div>
-          <ArrowRight className="actionArrow" size={22}/>
-        </button>
-
-        {isOrganization && <button className="action action-violet" onClick={() => go("equipos")}>
-          <div className="actionIcon"><Users size={28}/></div>
-          <div className="actionCopy">
-            <strong>Equipos y organización</strong>
-            <p>Gestión institucional y derivaciones</p>
-          </div>
-          <ArrowRight className="actionArrow" size={22}/>
-        </button>}
-      </div>
-
-      {isOrganization && <div className="actions compactActions">
-        <button className="link" onClick={() => go("fuentes")}>Fuentes y límites de datos</button>
-      </div>}
-    </section>
-
-    <div className="grid two principles simplePrinciples">
-      <Info tone="rose" icon="?" title="No hace falta saber si es maltrato" text="Podés comunicar cualquier preocupación. Un equipo humano evaluará la situación."/>
-      <Info tone="amber" icon="🤝" title="Respuesta humana garantizada" text="La tecnología ordena la información, pero la atención y decisiones quedan en manos de personas."/>
+  if (isOrganization) return <section className="card hero homeHero">
+    <div className="eyebrow">Acceso institucional</div>
+    <h1>Herramientas de la organización</h1>
+    <p className="lead">Elegí una de las tres áreas disponibles para trabajar en el prototipo.</p>
+    <div className="grid three actionsGrid homeActions organizationHomeActions">
+      <button className="action action-blue" onClick={() => go("residenciales")}>
+        <div className="actionIcon"><MapPin size={28}/></div>
+        <div className="actionCopy"><strong>Residenciales</strong><p>Registro, habilitación y datos de ELEPEM</p></div>
+        <ArrowRight className="actionArrow" size={22}/>
+      </button>
+      <button className="action action-violet" onClick={() => go("equipos")}>
+        <div className="actionIcon"><Users size={28}/></div>
+        <div className="actionCopy"><strong>Equipos</strong><p>Comunicaciones recibidas y gestión institucional</p></div>
+        <ArrowRight className="actionArrow" size={22}/>
+      </button>
+      <button className="action action-amber" onClick={() => go("fuentes")}>
+        <div className="actionIcon"><FileCheck2 size={28}/></div>
+        <div className="actionCopy"><strong>Fuentes</strong><p>Origen, fecha y límites de los datos</p></div>
+        <ArrowRight className="actionArrow" size={22}/>
+      </button>
     </div>
-  </>;
+  </section>;
+
+  return <section className="personHome">
+    <header className="personHomeHeader">
+      <div className="eyebrow">Personas y familias</div>
+      <h1>¿Qué necesitás hoy?</h1>
+      <p>Elegí una opción para empezar.</p>
+    </header>
+    <div className="personHomeGrid">
+      <button className="personHomeOption optionConcern" onClick={() => go("denuncia")}>
+        <ShieldAlert size={37}/>
+        <strong>Comunicar una preocupación</strong>
+        <p>Contá una situación sobre vos o sobre otra persona mayor.</p>
+      </button>
+      <button className="personHomeOption optionResidential" onClick={() => go("residenciales")}>
+        <MapPin size={37}/>
+        <strong>Consultar residenciales</strong>
+        <p>Buscá un ELEPEM y revisá su situación administrativa.</p>
+      </button>
+      <button className="personHomeOption optionFollow" onClick={() => go("seguimiento")}>
+        <ClipboardCheck size={37}/>
+        <strong>Seguir el trámite</strong>
+        <p>Ingresá tu código y comprobá si la comunicación fue recibida.</p>
+      </button>
+    </div>
+  </section>;
 }
-function Orientation({ story, setStory, go }: { story:string; setStory:(s:string)=>void; go:(v:View)=>void }) { const [result, setResult] = useState(""); return <><section className="card"><div className="eyebrow">Orientación inicial</div><h1>¿Qué está pasando?</h1><p className="lead">Elegí la opción más cercana. No hace falta conocer términos jurídicos ni tener una valoración formal de dependencia.</p><div className="grid"><button className="action danger" onClick={() => setResult("En una emergencia real llamá al 911, Bomberos o al servicio de emergencia médica.")}><span className="icon">🚨</span><strong>Hay peligro ahora</strong>Violencia en curso, incendio, lesión grave o falta inmediata de medicación esencial.</button><button className="action" onClick={() => go("denuncia")}><span className="icon">?</span><strong>No sé si esto es maltrato</strong>Quiero contar lo que veo y que una persona me oriente.</button><button className="action" onClick={() => go("denuncia")}><span className="icon">🦶</span><strong>Faltan cuidados o apoyos</strong>La persona necesita ayuda para alimentarse, moverse o tomar medicación.</button><button className="action" onClick={() => setResult("Podés revisar los recursos disponibles y registrar una consulta para evaluación humana.")}><span className="icon">🔎</span><strong>Busco un servicio o apoyo</strong>Necesito saber qué recurso podría corresponder.</button></div>{result && <div className="notice dangerNotice">{result}</div>}</section><div className="grid two gap"><section className="card"><h2>También puedo contarlo con mis palabras</h2><p className="muted">Esta demostración ordena un relato, pero no toma decisiones.</p><label>Escribí o simulá un relato de voz</label><textarea value={story} onChange={e => setStory(e.target.value)} placeholder="Ejemplo ficticio: mi vecina vive sola y no tiene quién la ayude."/><div className="actions"><button className="secondary" onClick={() => setStory("Mi vecina vive sola, se cayó y necesita apoyo con comida y medicación.")}>Simular relato</button><button className="primary" onClick={() => setResult(story ? "Se registraron posibles necesidades de apoyo, alimentación y medicación para revisión humana." : "Primero escribí un relato breve.")}>Ordenar lo que conté</button></div></section><section className="card"><h2>Seguir una comunicación</h2><p className="muted">En un sistema real, el código permite ver si la entrada fue recibida.</p><label>Código de demostración</label><input placeholder="Ej.: DEM-2401"/><button className="primary full">Consultar estado</button></section></div></> }
 function ReportLegacy({ step, setStep, setting, setSetting, sent, setSent, go }: { step:number; setStep:(n:number)=>void; setting:string; setSetting:(s:string)=>void; sent:boolean; setSent:(b:boolean)=>void; go:(v:View)=>void }) { if(sent) return <section className="card success"><CheckCircle2/><div className="eyebrow">Comunicación recibida</div><h1>Expediente ficticio creado</h1><p>El código de demostración es <strong>DEM-48291</strong>. No se envió información a ningún organismo.</p><button className="primary" onClick={() => {setSent(false); setStep(1); go("inicio")}}>Volver al inicio</button></section>; const titles = ["Dónde vive o está habitualmente la persona", "Quién comunica y cómo llegó la alerta", "Apoyos para la vida diaria", "Ubicación", "Qué preocupa", "Señales de urgencia", "Identidad y contacto seguro", "Revisión"]; return <section className="card report"><div className="eyebrow">Consulta, alerta o denuncia</div><h1>Comunicar una preocupación</h1><p className="lead">No hace falta saber si es delito o maltrato. La herramienta prepara una evaluación humana.</p><div className="steps">{titles.map((_, i) => <span className={step === i + 1 ? "current" : step > i + 1 ? "done" : ""} key={i}>{i + 1}</span>)}</div><h2>{titles[step - 1]}</h2>{step === 1 ? <div className="grid two">{choices.map(([icon, title, text]) => <button key={title} className={`choice ${setting === title ? "selected" : ""}`} onClick={() => setSetting(title)}><span>{icon}</span><strong>{title}</strong>{text}</button>)}</div> : step === 5 ? <><p className="muted">Se puede elegir más de una opción. “Reportado” no significa “confirmado”.</p><textarea placeholder="Contá brevemente qué ocurrió. Solo datos ficticios."/></> : step === 8 ? <div className="notice"><strong>Ruta sugerida para evaluación humana</strong><p>Entrada → Revisión humana → Responsable → Tareas y derivaciones</p></div> : <div className="grid two"><div><label>Información para esta etapa</label><input placeholder="Completá si lo conocés"/></div><div><label>Detalle adicional</label><input placeholder="Opcional"/></div></div>}<div className="actions"><button className="secondary" disabled={step === 1} onClick={() => setStep(step - 1)}>Volver</button><button className="primary" disabled={step === 1 && !setting} onClick={() => step === 8 ? setSent(true) : setStep(step + 1)}>{step === 8 ? "Crear expediente ficticio" : <>Continuar <ArrowRight size={17}/></>}</button></div></section> }
 
 const reportStages = [
@@ -291,8 +295,7 @@ function ReportVisualLegacy({ step, setStep, setting, setSetting, sent, setSent,
   </section>;
 }
 type ReportOption = { value: string; title?: string; detail?: string; icon?: string };
-type ReportFacility = { id: string; name: string; department: string; locality: string; address: string; statusShort: string; statusGroup: string };
-const reportFacilities = facilityData as ReportFacility[];
+type ReportFacility = Pick<Facility, "id" | "name" | "department" | "locality" | "address" | "statusShort" | "statusGroup">;
 
 const reportSettings: ReportOption[] = [
   { value: "Domicilio o comunidad", icon: "🏠", title: "En su casa o en la comunidad", detail: "Vive sola, con familiares, con una persona cuidadora o con otras personas." },
@@ -316,12 +319,14 @@ function ReportOptionGrid({ options, selected, onSelect, multiple = false, compa
   })}</div>;
 }
 
-function ReportFacilityResults({ matches, onSelect }: { matches: ReportFacility[]; onSelect: (facility: ReportFacility) => void }) {
+function ReportFacilityResults({ matches, loading, onSelect }: { matches: ReportFacility[]; loading: boolean; onSelect: (facility: ReportFacility) => void }) {
+  if (loading) return <div className="reportFacilityResults reportFacilityEmpty">Consultando residenciales en Supabase…</div>;
   if (!matches.length) return <div className="reportFacilityResults reportFacilityEmpty">No hay coincidencias en las fuentes integradas. La ausencia no prueba que el lugar sea clandestino.</div>;
   return <div className="reportFacilityResults">{matches.map((facility) => <button type="button" key={facility.id} onClick={() => onSelect(facility)}><span><strong>{facility.name}</strong><small>{facility.address} · {facility.locality} · {facility.department}</small></span><em>{facility.statusShort}</em><ArrowRight size={17}/></button>)}</div>;
 }
 
 function Report({ step, setStep, setting, setSetting, sent, setSent, go }: { step:number; setStep:(n:number)=>void; setting:string; setSetting:(s:string)=>void; sent:boolean; setSent:(b:boolean)=>void; go:(v:View)=>void }) {
+  const { facilities: reportFacilities, loading: facilitiesLoading } = useResidenciales();
   const [reporter, setReporter] = useState("");
   const [channel, setChannel] = useState("Formulario web / app");
   const [ageRange, setAgeRange] = useState("No sabe");
@@ -491,7 +496,7 @@ function Report({ step, setStep, setting, setSetting, sent, setSent, go }: { ste
     stageContent = setting === "ELEPEM" ? <>
       <div className="reportLocationNotice"><strong>Primero se busca en las fuentes integradas.</strong><span>Si no hay coincidencia, se registra como “no figura / dato no coincide: pendiente de verificación”; no se publica automáticamente como clandestino.</span></div>
       <div className="reportFieldGrid"><label className="reportField"><span>Nombre o dirección</span><input value={facilityName} onChange={(event) => { setFacilityName(event.target.value); setSelectedFacility(null); setFacilitySearchStatus("Todavía no se buscó en las fuentes"); }} placeholder="Buscar residencial"/></label><label className="reportField"><span>Resultado de la búsqueda</span><select value={facilitySearchStatus} onChange={(event) => { setFacilitySearchStatus(event.target.value); if (event.target.value === "No aparece, cambió de dirección o usa otro nombre") setSelectedFacility(null); }}><option>Todavía no se buscó en las fuentes</option><option>Se encontró una coincidencia</option><option>No aparece, cambió de dirección o usa otro nombre</option></select></label></div>
-      {facilityName.trim().length >= 2 && facilitySearchStatus !== "No aparece, cambió de dirección o usa otro nombre" && <ReportFacilityResults matches={facilityMatches} onSelect={(facility) => { setSelectedFacility(facility); setFacilityName(facility.name); setDepartment(facility.department); setLocationReference(`${facility.address} · ${facility.locality}`); setFacilitySearchStatus("Se encontró una coincidencia"); }} />}
+      {facilityName.trim().length >= 2 && facilitySearchStatus !== "No aparece, cambió de dirección o usa otro nombre" && <ReportFacilityResults matches={facilityMatches} loading={facilitiesLoading} onSelect={(facility) => { setSelectedFacility(facility); setFacilityName(facility.name); setDepartment(facility.department); setLocationReference(`${facility.address} · ${facility.locality}`); setFacilitySearchStatus("Se encontró una coincidencia"); }} />}
       {selectedFacility && <div className="reportSelectedFacility"><strong>{selectedFacility.name}</strong><span>{selectedFacility.address} · {selectedFacility.locality} · {selectedFacility.department}</span><small>{selectedFacility.statusShort}</small></div>}
       {facilitySearchStatus === "No aparece, cambió de dirección o usa otro nombre" && <div className="reportUnknownPlace"><h3>Lugar pendiente de verificación</h3><div className="reportFieldGrid"><label className="reportField"><span>Departamento</span><select value={department} onChange={(event) => setDepartment(event.target.value)}>{reportDepartments.map((option) => <option key={option}>{option}</option>)}</select></label><label className="reportField"><span>Barrio, localidad o zona</span><input value={unknownArea} onChange={(event) => setUnknownArea(event.target.value)} placeholder="Ubicación aproximada"/></label><label className="reportField"><span>Dirección o referencia exacta</span><input value={unknownAddress} onChange={(event) => setUnknownAddress(event.target.value)} placeholder="Quedaría protegida"/></label><label className="reportField"><span>¿Qué hace pensar que es un residencial o anexo?</span><input value={unknownNote} onChange={(event) => setUnknownNote(event.target.value)} placeholder="Solo datos ficticios"/></label></div></div>}
     </> : <>
@@ -885,4 +890,3 @@ function Sources() {
     </SourceAccordion>
   </div>;
 }
-function Info({icon,title,text,tone="blue"}:{icon:React.ReactNode;title:string;text:string;tone?:string}){return <article className={`info info-${tone}`}><span className="infoIcon">{icon}</span><h2>{title}</h2><p>{text}</p></article>}
