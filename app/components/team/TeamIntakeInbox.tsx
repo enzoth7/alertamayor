@@ -762,7 +762,7 @@ export function TeamIntakeInbox({ initialFacility }: TeamIntakeInboxProps = {}) 
                 <div style={{
                   display: "flex",
                   alignItems: "center",
-                  justify: "space-between",
+                  justifyContent: "space-between",
                   padding: "12px 16px",
                   borderRadius: "10px",
                   backgroundColor: getUrgencyBadgeStyle(selectedReview.urgency).bg,
