@@ -854,6 +854,12 @@ export function TeamIntakeInbox({ initialFacility }: TeamIntakeInboxProps = {}) 
                       <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
                         {selected.attachments.map((attachment) => {
                           const isAudio = (attachment.mime_type && attachment.mime_type.startsWith("audio/")) || attachment.file_name.endsWith(".webm") || attachment.file_name.endsWith(".mp3") || attachment.file_name.endsWith(".ogg") || attachment.file_name.endsWith(".wav") || attachment.file_name.endsWith(".m4a");
+                          const isImage = (attachment.mime_type && attachment.mime_type.startsWith("image/")) ||
+                            attachment.file_name.endsWith(".png") ||
+                            attachment.file_name.endsWith(".jpg") ||
+                            attachment.file_name.endsWith(".jpeg") ||
+                            attachment.file_name.endsWith(".webp") ||
+                            attachment.file_name.endsWith(".heic");
                           const targetPath = attachment.object_path || attachment.id;
                           const attachmentUrl = `/api/team/intake-reports/attachment?path=${encodeURIComponent(targetPath)}`;
                           return (
@@ -868,6 +874,25 @@ export function TeamIntakeInbox({ initialFacility }: TeamIntakeInboxProps = {}) 
                                   <ExternalLink size={13} /> Abrir / Descargar
                                 </a>
                               </div>
+                              {isImage && (
+                                <div style={{ marginTop: "8px" }}>
+                                  <a href={attachmentUrl} target="_blank" rel="noopener noreferrer">
+                                    <img
+                                      src={attachmentUrl}
+                                      alt={attachment.file_name}
+                                      style={{
+                                        maxHeight: "180px",
+                                        maxWidth: "100%",
+                                        borderRadius: "8px",
+                                        border: "1px solid #cbd9e7",
+                                        objectFit: "contain",
+                                        backgroundColor: "#f1f5f9",
+                                        cursor: "pointer",
+                                      }}
+                                    />
+                                  </a>
+                                </div>
+                              )}
                               {isAudio && (
                                 <audio src={attachmentUrl} controls style={{ width: "100%", height: "36px", marginTop: "4px" }} />
                               )}

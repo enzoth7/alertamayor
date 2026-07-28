@@ -917,11 +917,58 @@ export function IntakeReportForm({
         <div className="reportSummary">
           <div><strong>Situación</strong><span>{draft.setting || "No indicada"}</span></div>
           <div><strong>Preocupación</strong><span>{draft.concerns.join(" · ") || "No indicada"}</span></div>
+          {draft.narrative.trim() ? (
+            <div><strong>Lo escrito / Relato</strong><span>{draft.narrative}</span></div>
+          ) : null}
           <div><strong>Lugar</strong><span>{draft.department}{locationSummary ? ` · ${locationSummary}` : ""}</span></div>
           <div><strong>Quién comunica</strong><span>{draft.reporter}{draft.reporterName ? ` (${draft.reporterName})` : ""}</span></div>
           <div><strong>Privacidad</strong><span>{draft.privacy || "No indicada"}</span></div>
           <div><strong>Pruebas / Imágenes</strong><span>{files.length > 0 ? `${files.length} ${files.length === 1 ? "archivo adjunto" : "archivos adjuntos"}` : "Sin archivos adjuntos"}</span></div>
         </div>
+
+        {files.length > 0 && (
+          <div style={{ marginTop: "16px", padding: "16px", backgroundColor: "#f8fafc", borderRadius: "10px", border: "1px solid #cbd9e7" }}>
+            <h4 style={{ margin: "0 0 12px 0", fontSize: "0.95rem", color: "#1e293b", fontWeight: 600 }}>Archivos y audios adjuntos a enviar</h4>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {files.map((file, idx) => {
+                const isAudio = file.type.startsWith("audio/") || file.name.startsWith("relato_voz_") || /\.(webm|mp3|ogg|wav)$/i.test(file.name);
+                const isImage = file.type.startsWith("image/") || /\.(png|jpg|jpeg|webp|heic)$/i.test(file.name);
+                const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
+
+                if (isAudio) {
+                  return (
+                    <div key={`${file.name}-${idx}`} style={{ padding: "10px 12px", backgroundColor: "#ffffff", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.85rem" }}>
+                        <strong style={{ color: "#334155" }}>{file.name}</strong>
+                        <small style={{ color: "#64748b" }}>{fileSizeMB} MB</small>
+                      </div>
+                      <audio src={URL.createObjectURL(file)} controls style={{ width: "100%", height: "36px", marginTop: "4px" }} />
+                    </div>
+                  );
+                }
+
+                if (isImage) {
+                  return (
+                    <div key={`${file.name}-${idx}`} style={{ padding: "10px 12px", backgroundColor: "#ffffff", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.85rem" }}>
+                        <strong style={{ color: "#334155" }}>{file.name}</strong>
+                        <small style={{ color: "#64748b" }}>{fileSizeMB} MB</small>
+                      </div>
+                      <img src={URL.createObjectURL(file)} alt={file.name} style={{ maxHeight: "130px", borderRadius: "8px", border: "1px solid #cbd9e7", marginTop: "6px", objectFit: "contain", backgroundColor: "#f8fafc" }} />
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={`${file.name}-${idx}`} style={{ padding: "10px 12px", backgroundColor: "#ffffff", borderRadius: "8px", border: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.85rem" }}>
+                    <strong style={{ color: "#334155" }}>{file.name}</strong>
+                    <small style={{ color: "#64748b" }}>{fileSizeMB} MB</small>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {draft.privacy === "Anónima" ? (
           <div className="privacyNotice privacyNotice-gray" style={{ marginTop: "16px", marginBottom: "16px" }}>
             Vas a enviar una comunicación anónima. Se guardará la información sobre la situación, el lugar y los archivos. No se guardarán tu nombre, teléfono ni correo. El equipo no podrá contactarte.

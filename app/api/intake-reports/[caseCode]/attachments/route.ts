@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { querySupabaseDatabase } from "../../../../../lib/supabase-db";
 
 export const runtime = "nodejs";
 
@@ -29,9 +30,10 @@ const ALLOWED_MIME_TYPES = new Set([
 ]);
 
 function supabaseHeaders(publishableKey: string): Record<string, string> {
+  const authKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || publishableKey;
   return {
-    apikey: publishableKey,
-    ...(publishableKey.split(".").length === 3 ? { Authorization: `Bearer ${publishableKey}` } : {}),
+    apikey: authKey,
+    Authorization: `Bearer ${authKey}`,
   };
 }
 
@@ -119,26 +121,26 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
     // FALLBACK DIRECTO: Si la Edge Function en la nube responde error (ej 415), subir directo por REST/Storage API
     console.warn(`Edge Function error ${response.status}. Executing direct Supabase storage upload fallback for ${cleanType}...`);
 
-    let report: Record<string, unknown> | undefined;
-    for (let attempt = 0; attempt < 4; attempt++) {
-      const reportRes = await fetch(
-        `${supabaseUrl}/rest/v1/intake_reports?case_code=eq.${encodeURIComponent(caseCode)}&select=id,report_payload`,
-        { headers: supabaseHeaders(publishableKey), cache: "no-store" }
+    let reportId: string | null = null;
+
+    try {
+      const rows = await querySupabaseDatabase<{ id: string }>(
+        "SELECT id FROM public.intake_reports WHERE case_code = $1 LIMIT 1",
+        [caseCode]
       );
-      const reports = (await reportRes.json().catch(() => [])) as Array<Record<string, unknown>>;
-      if (reports[0] && typeof reports[0].id === "string") {
-        report = reports[0];
-        break;
+      if (rows && rows[0]?.id) {
+        reportId = rows[0].id;
       }
-      await new Promise((resolve) => setTimeout(resolve, 500));
+    } catch (err) {
+      console.error("Error querying report by caseCode:", err);
     }
 
-    if (!report || typeof report.id !== "string") {
+    if (!reportId) {
       return NextResponse.json({ error: "No se encontró la comunicación." }, { status: 404 });
     }
 
     const attachmentId = crypto.randomUUID();
-    const objectPath = `${report.id}/${attachmentId}.${extension}`;
+    const objectPath = `${reportId}/${attachmentId}.${extension}`;
     const fileBuffer = await file.arrayBuffer();
 
     const storageRes = await fetch(`${supabaseUrl}/storage/v1/object/intake-evidence/${objectPath}`, {
@@ -159,26 +161,14 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
       return NextResponse.json({ error: "No se pudo guardar el archivo en el almacenamiento." }, { status: 502 });
     }
 
-    const cleanName = (file.name || "archivo").normalize("NFKC").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 240);
-    const metaRes = await fetch(`${supabaseUrl}/rest/v1/intake_report_attachments`, {
-      method: "POST",
-      headers: {
-        ...supabaseHeaders(publishableKey),
-        "Content-Type": "application/json",
-        Prefer: "return=representation",
-      },
-      body: JSON.stringify({
-        id: attachmentId,
-        report_id: report.id,
-        bucket_id: "intake-evidence",
-        object_path: objectPath,
-        file_name: cleanName,
-        mime_type: cleanType,
-        size_bytes: file.size,
-      }),
-    });
-
-    if (!metaRes.ok) {
+    try {
+      await querySupabaseDatabase(
+        `INSERT INTO public.intake_report_attachments (id, report_id, object_path, file_name, mime_type, size_bytes)
+   VALUES ($1, $2, $3, $4, $5, $6)`,
+        [attachmentId, reportId, objectPath, file.name, cleanType, file.size]
+      );
+    } catch (dbErr) {
+      console.error("Error inserting attachment metadata:", dbErr);
       await fetch(`${supabaseUrl}/storage/v1/object/intake-evidence/${objectPath}`, {
         method: "DELETE",
         headers: supabaseHeaders(publishableKey),
@@ -189,7 +179,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
     return NextResponse.json({
       attachment: {
         id: attachmentId,
-        fileName: cleanName,
+        fileName: file.name,
         mimeType: cleanType,
         sizeBytes: file.size,
       },

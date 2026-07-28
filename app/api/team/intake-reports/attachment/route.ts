@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasTeamSession, TEAM_SESSION_COOKIE } from "../../../../../lib/team-session";
+import { querySupabaseDatabase } from "../../../../../lib/supabase-db";
 
 export const runtime = "nodejs";
 
@@ -23,29 +24,26 @@ export async function GET(request: NextRequest) {
     let dbMimeType: string | null = null;
 
     if (!path.includes("/")) {
-      const dbRes = await fetch(
-        `${supabaseUrl}/rest/v1/intake_report_attachments?id=eq.${encodeURIComponent(path)}&select=object_path,mime_type`,
-        {
-          headers: {
-            apikey: publishableKey,
-            ...(publishableKey.split(".").length === 3 ? { Authorization: `Bearer ${publishableKey}` } : {}),
-          },
-          cache: "no-store",
-        }
-      );
-      if (dbRes.ok) {
-        const records = (await dbRes.json().catch(() => [])) as Array<{ object_path?: string; mime_type?: string }>;
-        if (records[0]?.object_path) {
+      try {
+        const records = await querySupabaseDatabase<{ object_path?: string; mime_type?: string }>(
+          "SELECT object_path, mime_type FROM public.intake_report_attachments WHERE id = $1 LIMIT 1",
+          [path]
+        );
+        if (records && records[0]?.object_path) {
           realObjectPath = records[0].object_path;
           dbMimeType = records[0].mime_type || null;
         }
+      } catch (err) {
+        console.error("Error querying attachment object_path:", err);
       }
     }
 
+    const authKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || publishableKey;
+
     const fileRes = await fetch(`${supabaseUrl}/storage/v1/object/intake-evidence/${realObjectPath}`, {
       headers: {
-        apikey: publishableKey,
-        ...(publishableKey.split(".").length === 3 ? { Authorization: `Bearer ${publishableKey}` } : {}),
+        apikey: authKey,
+        Authorization: `Bearer ${authKey}`,
       },
       cache: "no-store",
     });
