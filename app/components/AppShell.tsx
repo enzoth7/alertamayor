@@ -40,7 +40,7 @@ const choices = [
   ["?", "No lo sé", "La persona que consulta no conoce el tipo de lugar."],
 ];
 
-export function AppShell({ initialView, portal }: { initialView: View; portal?: Portal }) {
+export function AppShell({ initialView, portal, forceLogin }: { initialView: View; portal?: Portal; forceLogin?: boolean }) {
   const router = useRouter();
   const view = initialView;
   const [accessMode, setAccessMode] = useState<AccessMode>(() => {
@@ -51,9 +51,9 @@ export function AppShell({ initialView, portal }: { initialView: View; portal?: 
         if (savedMode === "person") return "person";
       } catch {}
     }
-    return portal === "organization" ? "loading" : "chooser";
+    return portal === "organization" ? (forceLogin ? "chooser" : "loading") : "chooser";
   });
-  const [organizationLogin, setOrganizationLogin] = useState(false);
+  const [organizationLogin, setOrganizationLogin] = useState(Boolean(forceLogin));
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
@@ -293,7 +293,6 @@ function HomeView({ go, isOrganization }: { go: (view: View) => void; isOrganiza
 
   return <section className="personHome">
     <header className="personHomeHeader">
-      <div className="eyebrow">Personas y familias</div>
       <h1>¿Qué necesitás hoy?</h1>
       <p>Elegí una opción para empezar.</p>
     </header>

@@ -13,6 +13,7 @@ type IntakeDraft = {
   streetAddress: string;
   doorNumber: string;
   facilityName: string;
+  unknownAddress: boolean;
   reporter: string;
   reporterName: string;
   urgency: "Alta" | "Media" | "Baja" | "";
@@ -34,6 +35,7 @@ const initialDraft: IntakeDraft = {
   streetAddress: "",
   doorNumber: "",
   facilityName: "",
+  unknownAddress: false,
   reporter: "",
   reporterName: "",
   urgency: "",
@@ -174,23 +176,129 @@ export function IntakeReportForm({
   const [attachmentState, setAttachmentState] = useState<"idle" | "uploading" | "complete" | "partial">("idle");
   const [uploadedFileCount, setUploadedFileCount] = useState(0);
   const [emailNotice, setEmailNotice] = useState("");
+  
+  // Sugerencias de dirección ricas en tiempo real
+  type AddressSuggestionItem = {
+    displayName: string;
+    road: string;
+    houseNumber: string;
+    suburb: string;
+    city: string;
+    department: string;
+  };
+  
+  const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestionItem[]>([]);
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
 
   const update = <Key extends keyof IntakeDraft>(key: Key, value: IntakeDraft[Key]) => setDraft((current) => ({ ...current, [key]: value }));
   const toggleConcern = (concern: string) => update("concerns", draft.concerns.includes(concern) ? draft.concerns.filter((item) => item !== concern) : [...draft.concerns, concern]);
   const locationSummary = [draft.city, draft.locality, draft.streetAddress, draft.doorNumber].filter(Boolean).join(" · ");
-  const showContactFields = draft.contactMethod !== "Sin contacto";
+
+  // Efecto de sugerencias de dirección con Nominatim addressdetails=1
+  useEffect(() => {
+    const query = draft.streetAddress.trim();
+    if (query.length < 3) {
+      setAddressSuggestions([]);
+      setShowAddressSuggestions(false);
+      return;
+    }
+
+    const fullQuery = [query, draft.locality, draft.city, draft.department, "Uruguay"].filter(Boolean).join(", ");
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(fullQuery)}&limit=5`);
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const suggestions: AddressSuggestionItem[] = data.map((item: { display_name: string; address?: Record<string, string> }) => {
+            const addr = item.address || {};
+            const matchedDept = departments.find((d) => 
+              d !== "No se conoce" && (
+                item.display_name.toLowerCase().includes(d.toLowerCase()) || 
+                (addr.state && addr.state.toLowerCase().includes(d.toLowerCase())) ||
+                (addr.county && addr.county.toLowerCase().includes(d.toLowerCase()))
+              )
+            ) || "";
+
+            const roadName = addr.road || addr.pedestrian || addr.street || item.display_name.split(",")[0];
+            const houseNo = addr.house_number || "";
+            const sub = addr.suburb || addr.neighbourhood || addr.quarter || "";
+            const cty = addr.city || addr.town || addr.village || addr.municipality || "";
+
+            return {
+              displayName: item.display_name,
+              road: houseNo && !roadName.includes(houseNo) ? `${roadName} ${houseNo}` : roadName,
+              houseNumber: houseNo,
+              suburb: sub,
+              city: cty,
+              department: matchedDept,
+            };
+          }).slice(0, 5);
+
+          setAddressSuggestions(suggestions);
+          setShowAddressSuggestions(true);
+        } else {
+          setAddressSuggestions([]);
+          setShowAddressSuggestions(false);
+        }
+      } catch {
+        setAddressSuggestions([]);
+        setShowAddressSuggestions(false);
+      }
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [draft.streetAddress, draft.locality, draft.city, draft.department]);
+
+  const selectSuggestion = (item: AddressSuggestionItem) => {
+    update("streetAddress", item.road || item.displayName);
+    if (item.houseNumber) update("doorNumber", item.houseNumber);
+    if (item.suburb) update("locality", item.suburb);
+    if (item.city) update("city", item.city);
+    if (item.department) update("department", item.department);
+    setShowAddressSuggestions(false);
+  };
 
   const validate = (): boolean => {
-    if (step === 1 && !draft.setting && !draft.concerns.length && !draft.narrative.trim()) {
-      setMessage("Indicá al menos un dato: el ámbito, una preocupación o un relato breve.");
-      return false;
+    // Validación Paso 1
+    if (step === 1) {
+      const hasConcern = draft.concerns.length > 0;
+      const hasNarrative = draft.narrative.trim().length > 0;
+      const isUnclassified = draft.concerns.includes("No sé cómo clasificarlo");
+
+      if (!hasConcern && !hasNarrative) {
+        setMessage("Elegí al menos una preocupación o contá brevemente qué está pasando.");
+        return false;
+      }
+
+      if (isUnclassified && !hasNarrative) {
+        setMessage("Al elegir 'No sé cómo clasificarlo', escribí una breve explicación de lo que ocurre.");
+        return false;
+      }
     }
-    if (step === 2 && !draft.department) {
-      setMessage("Indicá el departamento donde ocurre la situación.");
-      return false;
+
+    // Validación Paso 2
+    if (step === 2) {
+      const hasAddress = Boolean(draft.streetAddress.trim());
+      const hasDept = Boolean(draft.department && draft.department !== "No se conoce");
+      const hasCityOrLocality = Boolean(draft.city.trim() || draft.locality.trim());
+      const hasFacilityName = Boolean(draft.facilityName.trim());
+      const isUnknownAddr = draft.unknownAddress;
+      const hasAnyRef = Boolean(draft.streetAddress.trim() || draft.locality.trim() || draft.city.trim() || draft.narrative.trim());
+
+      const isValidLocation =
+        hasAddress ||
+        (hasDept && hasCityOrLocality) ||
+        (hasFacilityName && (hasCityOrLocality || hasDept)) ||
+        (isUnknownAddr && hasAnyRef);
+
+      if (!isValidLocation) {
+        setMessage("Indicá una dirección o referencia, o especificá departamento y ciudad/barrio para ubicar el lugar.");
+        return false;
+      }
     }
-    if (step === 3 && (!draft.reporter || !draft.urgency || !draft.privacy)) {
-      setMessage("Completá quién comunica, la urgencia y cómo proteger su identidad.");
+
+    if (step === 3 && (!draft.privacy || !draft.reporter)) {
+      setMessage("Completá la privacidad y quién comunica la situación.");
       return false;
     }
     if (step === 3 && draft.contactEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.contactEmail.trim())) {
@@ -229,19 +337,19 @@ export function IntakeReportForm({
             channel: "Formulario web / app",
             location: {
               department: draft.department,
-              reference: locationSummary || "No especificada",
+              reference: locationSummary || (draft.unknownAddress ? "Dirección exacta no conocida (ver referencias)" : "No especificada"),
             },
             facility: { name: draft.facilityName || null },
             concerns: draft.concerns,
             narrative: draft.narrative,
-            risks: [urgencyLabel(draft.urgency)],
+            risks: ["Por evaluar por el equipo"],
             privacy: draft.privacy,
             contactEmail: draft.contactEmail,
             contactPhone: draft.contactPhone,
             contactMethod: draft.contactMethod,
             safeContact: draft.safeContact,
             noEarlyContact: draft.noEarlyContact,
-            preliminaryPriority: draft.urgency,
+            preliminaryPriority: "Baja",
             suggestedRoute: [],
           },
         }),
@@ -348,41 +456,103 @@ export function IntakeReportForm({
     </div>
   </section>;
 
-  const stageTitle = step === 1 ? "¿Qué está pasando?" : step === 2 ? "¿Dónde ocurre?" : step === 3 ? "Urgencia y contacto" : "Revisá y enviá";
+  const stageTitle = step === 1 ? "¿Qué está pasando?" : step === 2 ? "¿Dónde ocurre?" : step === 3 ? "Contacto" : "Revisá y enviá";
+
+  const availableReporters = draft.privacy === "Anónima"
+    ? ["Familiar o referente", "Vecino/a o amistad", "Cuidador/a", "Profesional", "Persona anónima / Otra"]
+    : ["La propia persona", "Familiar o referente", "Vecino/a o amistad", "Cuidador/a", "Profesional", "Otra persona"];
 
   return <section className="reportFlow">
     <header className="reportFlowHeader">
       <h1>{stageTitle}</h1>
-      <p className="lead">Completá sólo lo que sepas. En el primer paso alcanza con indicar uno de los datos.</p>
+      <p className="lead">
+        {step === 1
+          ? "Elegí al menos una preocupación o contá brevemente qué está pasando."
+          : step === 2
+          ? "Brindá datos suficientes para localizar el lugar de la situación."
+          : "Completá según tus preferencias de privacidad."}
+      </p>
     </header>
 
     <nav className="reportStepper reportStepperFour" aria-label="Pasos de la comunicación">
-      {["Situación", "Lugar", "Urgencia", "Enviar"].map((label, index) => <button key={label} type="button" className={`reportStep ${step === index + 1 ? "isCurrent" : ""} ${step > index + 1 ? "isComplete" : ""}`} onClick={() => index + 1 < step && setStep(index + 1)} disabled={index + 1 > step || submitting} aria-current={step === index + 1 ? "step" : undefined}><span className="reportStepNumber">{step > index + 1 ? <CheckCircle2 size={15}/> : index + 1}</span><span className="reportStepLabel">{label}</span></button>)}
+      {["Situación", "Lugar", "Contacto", "Enviar"].map((label, index) => <button key={label} type="button" className={`reportStep ${step === index + 1 ? "isCurrent" : ""} ${step > index + 1 ? "isComplete" : ""}`} onClick={() => index + 1 < step && setStep(index + 1)} disabled={index + 1 > step || submitting} aria-current={step === index + 1 ? "step" : undefined}><span className="reportStepNumber">{step > index + 1 ? <CheckCircle2 size={15}/> : index + 1}</span><span className="reportStepLabel">{label}</span></button>)}
     </nav>
 
     <div className="reportStage">
       {step === 1 && <>
-        <p className="reportStageHelp">No es obligatorio completar todo: elegí una opción o contalo con tus palabras.</p>
-        <h3 className="reportSubheading">Ámbito <em>opcional</em></h3>
+        <p className="reportStageHelp">Elegí al menos una preocupación o contá brevemente qué está pasando. No es necesario completar ambas cosas.</p>
+        <h3 className="reportSubheading">Ámbito</h3>
         <OptionGrid options={places} selected={draft.setting} onSelect={(value) => update("setting", value)} />
-        <h3 className="reportSubheading">Preocupación <em>opcional</em></h3>
+        <h3 className="reportSubheading">Preocupación</h3>
         <OptionGrid options={concerns} selected={draft.concerns} onSelect={toggleConcern} multiple />
-        <label className="reportField"><span>Contá brevemente qué está pasando <em>opcional</em></span><textarea value={draft.narrative} onChange={(event) => update("narrative", event.target.value)} placeholder="Si preferís, escribí un resumen breve. Usá sólo datos de demostración." /></label>
+        <label className="reportField">
+          <span>
+            Contá brevemente qué está pasando
+            {draft.concerns.includes("No sé cómo clasificarlo") && <em style={{color: "#d97706", fontStyle: "normal", marginLeft: "6px"}}>(Obligatorio para "No sé cómo clasificarlo")</em>}
+          </span>
+          <textarea value={draft.narrative} onChange={(event) => update("narrative", event.target.value)} placeholder="Si preferís, escribí un resumen breve de la situación." />
+        </label>
       </>}
 
       {step === 2 && <>
+        <p className="reportStageHelp">Brindá datos suficientes para localizar el lugar. No es necesario completar todos los campos si indicás una dirección clara o referencia.</p>
+        
+        {/* 1. Dirección o referencia PRIMERO */}
+        <div className="reportFieldGrid reportFieldGridOne">
+          <div className="reportAddressWrapper">
+            <label className="reportField">
+              <span>Dirección o referencia</span>
+              <input
+                value={draft.streetAddress}
+                onChange={(event) => update("streetAddress", event.target.value)}
+                onFocus={() => addressSuggestions.length > 0 && setShowAddressSuggestions(true)}
+                placeholder="Ej.: Av. 18 de Julio 1234, Montevideo"
+              />
+            </label>
+            {showAddressSuggestions && addressSuggestions.length > 0 && (
+              <ul className="reportAddressSuggestions">
+                {addressSuggestions.map((item, index) => (
+                  <li key={index} onMouseDown={(e) => {
+                    e.preventDefault();
+                    selectSuggestion(item);
+                  }}>
+                    <MapPin size={14}/> {item.displayName}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        {/* 2. Departamento, Ciudad, Barrio y Número de puerta */}
         <div className="reportFieldGrid">
           <label className="reportField"><span>Departamento</span><select value={draft.department} onChange={(event) => update("department", event.target.value)}><option value="">Elegí una opción</option>{departments.map((department) => <option key={department}>{department}</option>)}</select></label>
-          <label className="reportField"><span>Ciudad o localidad principal <em>opcional</em></span><input value={draft.city} onChange={(event) => update("city", event.target.value)} placeholder="Ej.: Montevideo, Salto, Las Piedras" /></label>
+          <label className="reportField"><span>Ciudad o localidad principal</span><input value={draft.city} onChange={(event) => update("city", event.target.value)} placeholder="Ej.: Montevideo, Salto, Paysandú" /></label>
         </div>
+
         <div className="reportFieldGrid">
-          <label className="reportField"><span>Barrio o zona <em>opcional</em></span><input value={draft.locality} onChange={(event) => update("locality", event.target.value)} placeholder="Ej.: Pocitos, Centro, Barrio Sur" /></label>
-          <label className="reportField"><span>Dirección o referencia <em>opcional</em></span><input value={draft.streetAddress} onChange={(event) => update("streetAddress", event.target.value)} placeholder="Ej.: Av. 18 de Julio 1234" /></label>
+          <label className="reportField"><span>Barrio o zona</span><input value={draft.locality} onChange={(event) => update("locality", event.target.value)} placeholder="Ej.: Pocitos, Centro, Barrio Sur" /></label>
+          <label className="reportField"><span>Número de puerta, apto o torre</span><input value={draft.doorNumber} onChange={(event) => update("doorNumber", event.target.value)} placeholder="Ej.: Apto 3, Torre B" /></label>
         </div>
-        <div className="reportFieldGrid reportFieldGridOne">
-          <label className="reportField"><span>Número de puerta <em>opcional</em></span><input value={draft.doorNumber} onChange={(event) => update("doorNumber", event.target.value)} placeholder="Ej.: Apto 3, Torre B" /></label>
-        </div>
-        {draft.setting === "En un residencial / ELEPEM" && <label className="reportField" style={{marginTop: "16px"}}><span>Nombre del residencial <em>opcional</em></span><input value={draft.facilityName} onChange={(event) => update("facilityName", event.target.value)} placeholder="Si lo conocés" /></label>}
+
+        {draft.setting === "En un residencial / ELEPEM" && (
+          <label className="reportField" style={{marginTop: "14px"}}>
+            <span>Nombre del residencial o establecimiento</span>
+            <input value={draft.facilityName} onChange={(event) => update("facilityName", event.target.value)} placeholder="Ej.: Residencial Los Pinos" />
+          </label>
+        )}
+
+        <label className="reportCheckbox" style={{marginTop: "14px", marginBottom: "14px"}}>
+          <input type="checkbox" checked={draft.unknownAddress} onChange={(e) => update("unknownAddress", e.target.checked)} />
+          <span>No conozco la dirección exacta</span>
+        </label>
+
+        {draft.unknownAddress && (
+          <div className="privacyNotice privacyNotice-gray" style={{marginBottom: "16px"}}>
+            Indicá cualquier referencia que pueda ayudar: nombre del lugar, barrio, esquina, comercio cercano o descripción de la zona en el relato.
+          </div>
+        )}
+        
         {draft.department && draft.department !== "No se conoce" && (
           <LocationMap
             department={draft.department}
@@ -395,36 +565,135 @@ export function IntakeReportForm({
       </>}
 
       {step === 3 && <>
-        <h3 className="reportSubheading">¿Quién comunica?</h3>
-        <OptionGrid options={reporters} selected={draft.reporter} onSelect={(value) => update("reporter", value)} />
-        <h3 className="reportSubheading">Urgencia</h3>
-        <OptionGrid options={["Alta", "Media", "Baja"]} selected={draft.urgency} onSelect={(value) => update("urgency", value as IntakeDraft["urgency"])} />
-        <h3 className="reportSubheading">Privacidad</h3>
-        <OptionGrid options={["Anónima", "Confidencial", "Identificada"]} selected={draft.privacy} onSelect={(value) => update("privacy", value)} />
-        {(draft.privacy === "Identificada" || draft.privacy === "Confidencial") && (
-          <label className="reportField" style={{marginTop: "14px"}}>
-            <span>Nombre completo <em>opcional</em></span>
-            <input value={draft.reporterName} onChange={(event) => update("reporterName", event.target.value)} placeholder="Ej.: Nombre de quien comunica" />
-          </label>
-        )}
-        <h3 className="reportSubheading">Medio de contacto <em>opcional</em></h3>
-        <div className="reportFieldGrid">
-          <label className="reportField"><span>Cómo contactar con seguridad</span><select value={draft.contactMethod} onChange={(event) => update("contactMethod", event.target.value)}><option>Sin contacto</option><option>Llamada</option><option>WhatsApp o SMS</option><option>Correo</option><option>Persona de confianza</option></select></label>
-          {draft.contactMethod !== "Sin contacto" && <label className="reportField"><span>Horario o condición segura <em>opcional</em></span><input value={draft.safeContact} onChange={(event) => update("safeContact", event.target.value)} placeholder="Ej.: después de las 18" /></label>}
-        </div>
-        {showContactFields && <>
-          {draft.privacy === "Anónima" && (
-            <p style={{margin: "12px 0 0", color: "#58718c", fontSize: "0.82rem"}}>
-              Podés dejar el teléfono o correo de una persona de confianza o referente para recibir novedades en forma segura.
-            </p>
-          )}
-          <div className="reportFieldGrid reportContactData">
-            <label className="reportField"><span><Phone size={15}/> Celular <em>opcional</em></span><input type="tel" inputMode="tel" autoComplete="tel" value={draft.contactPhone} onChange={(event) => update("contactPhone", event.target.value)} placeholder="Ej.: 099 123 456" /></label>
-            <label className="reportField"><span><Mail size={15}/> Correo electrónico <em>opcional</em></span><input type="email" inputMode="email" autoComplete="email" value={draft.contactEmail} onChange={(event) => update("contactEmail", event.target.value)} placeholder="Ej.: nombre@correo.com" /></label>
+        {/* 1. Selección de Privacidad y bajada explicativa */}
+        <h3 className="reportSubheading">¿Cómo querés que manejemos tus datos?</h3>
+        <p style={{margin: "-6px 0 14px", color: "#5c6e82", fontSize: "0.86rem", lineHeight: "1.45"}}>
+          Esta elección se refiere a tus datos como persona que comunica la situación. No cambia la prioridad con la que se evaluará el riesgo. En todos los casos deberás aportar información suficiente para localizar y comprender la situación.
+        </p>
+
+        <OptionGrid
+          options={["Anónima", "Confidencial", "Con identidad registrada"]}
+          selected={draft.privacy}
+          onSelect={(value) => {
+            update("privacy", value);
+            if (value === "Anónima") {
+              update("contactEmail", "");
+              update("contactPhone", "");
+              update("reporterName", "");
+              update("safeContact", "");
+              update("contactMethod", "Sin contacto");
+            }
+          }}
+        />
+        
+        {draft.privacy === "Anónima" && (
+          <div className="privacyNotice privacyNotice-gray">
+            No te pediremos nombre, documento, teléfono ni correo electrónico. El equipo no podrá llamarte ni escribirte. Recibirás un código para consultar el estado de la comunicación. Evitá incluir información que permita identificarte en el relato o en los archivos que adjuntes.
           </div>
-        </>}
-        {draft.privacy !== "Anónima" && <label className="reportCheckbox"><input type="checkbox" checked={draft.noEarlyContact} onChange={(event) => update("noEarlyContact", event.target.checked)} /><span>No contactar primero a la persona señalada ni al establecimiento.</span></label>}
-        {draft.urgency === "Alta" && <div className="reportUrgencyNotice"><ShieldAlert size={21}/><div><strong>Si hay peligro inmediato, llamá al 911, Bomberos o la emergencia médica.</strong><span>Este formulario de demostración no reemplaza una respuesta de urgencia.</span></div></div>}
+        )}
+        {draft.privacy === "Confidencial" && (
+          <div className="privacyNotice privacyNotice-yellow">
+            El equipo autorizado podrá ver tus datos para comunicarse contigo y pedirte información adicional. Tu identidad no se mostrará al establecimiento ni a la persona señalada. Si fuera necesario comunicarla a otro organismo, se te informará para qué y con quién se compartiría, salvo que exista una obligación o excepción legal aplicable.
+          </div>
+        )}
+        {draft.privacy === "Con identidad registrada" && (
+          <div className="privacyNotice privacyNotice-green">
+            Tu nombre y tus datos de contacto quedarán vinculados a la comunicación. El equipo podrá utilizarlos para verificar información, contactarte y gestionar la situación. Esto no significa que tu identidad sea pública ni que se comunique automáticamente al establecimiento o a la persona señalada.
+          </div>
+        )}
+
+        {/* 2. Árbol decisorio de ¿Quién comunica? según Privacidad */}
+        {draft.privacy === "Anónima" && (
+          <>
+            <h3 className="reportSubheading" style={{marginTop: "22px"}}>¿Cómo conocés los hechos?</h3>
+            <OptionGrid
+              options={["Lo vi", "Me lo contó la persona afectada", "Me lo contó otra persona", "Otro"]}
+              selected={draft.reporter}
+              onSelect={(value) => update("reporter", value)}
+            />
+          </>
+        )}
+
+        {draft.privacy === "Confidencial" && (
+          <>
+            <h3 className="reportSubheading" style={{marginTop: "22px"}}>Relación con la persona o los hechos</h3>
+            <OptionGrid
+              options={["Soy la persona afectada", "Familiar", "Vecino o vecina", "Trabajador o profesional", "Otra relación", "Prefiero no decirlo"]}
+              selected={draft.reporter}
+              onSelect={(value) => update("reporter", value)}
+            />
+
+            <label className="reportField" style={{marginTop: "14px"}}>
+              <span>Nombre, alias o cómo querés que te llamemos <em>opcional</em></span>
+              <input value={draft.reporterName} onChange={(event) => update("reporterName", event.target.value)} placeholder="Ej.: María (solo visible para el equipo autorizado)" />
+            </label>
+
+            <h3 className="reportSubheading" style={{marginTop: "22px"}}>Contacto reservado</h3>
+            <div className="reportFieldGrid">
+              <label className="reportField">
+                <span>Medio seguro de contacto</span>
+                <select value={draft.contactMethod} onChange={(event) => update("contactMethod", event.target.value)}>
+                  <option>Llamada</option>
+                  <option>WhatsApp o SMS</option>
+                  <option>Correo</option>
+                  <option>Persona de confianza</option>
+                </select>
+              </label>
+              <label className="reportField">
+                <span>Horario o condición segura <em>opcional</em></span>
+                <input value={draft.safeContact} onChange={(event) => update("safeContact", event.target.value)} placeholder="Ej.: Llamar solo en la tarde" />
+              </label>
+            </div>
+
+            <div className="reportFieldGrid reportContactData">
+              <label className="reportField"><span><Phone size={15}/> Celular / Teléfono <em>opcional</em></span><input type="tel" inputMode="tel" autoComplete="tel" value={draft.contactPhone} onChange={(event) => update("contactPhone", event.target.value)} placeholder="Ej.: 099 123 456" /></label>
+              <label className="reportField"><span><Mail size={15}/> Correo electrónico <em>opcional</em></span><input type="email" inputMode="email" autoComplete="email" value={draft.contactEmail} onChange={(event) => update("contactEmail", event.target.value)} placeholder="Ej.: nombre@correo.com" /></label>
+            </div>
+
+            <label className="reportCheckbox" style={{marginTop: "14px"}}>
+              <input type="checkbox" checked={draft.noEarlyContact} onChange={(event) => update("noEarlyContact", event.target.checked)} />
+              <span>No contactar primero a la persona señalada ni al establecimiento.</span>
+            </label>
+          </>
+        )}
+
+        {draft.privacy === "Con identidad registrada" && (
+          <>
+            <h3 className="reportSubheading" style={{marginTop: "22px"}}>Relación con la persona afectada</h3>
+            <OptionGrid
+              options={["La propia persona", "Familiar o referente", "Vecino/a o amistad", "Cuidador/a", "Profesional", "Otra persona"]}
+              selected={draft.reporter}
+              onSelect={(value) => update("reporter", value)}
+            />
+
+            <label className="reportField" style={{marginTop: "14px"}}>
+              <span>Nombre y apellido completo</span>
+              <input value={draft.reporterName} onChange={(event) => update("reporterName", event.target.value)} placeholder="Ej.: María Rodríguez" />
+            </label>
+
+            <h3 className="reportSubheading" style={{marginTop: "22px"}}>Datos de contacto registrados</h3>
+            <div className="reportFieldGrid reportContactData">
+              <label className="reportField"><span><Phone size={15}/> Celular principal</span><input type="tel" inputMode="tel" autoComplete="tel" value={draft.contactPhone} onChange={(event) => update("contactPhone", event.target.value)} placeholder="Ej.: 099 123 456" /></label>
+              <label className="reportField"><span><Mail size={15}/> Correo electrónico</span><input type="email" inputMode="email" autoComplete="email" value={draft.contactEmail} onChange={(event) => update("contactEmail", event.target.value)} placeholder="Ej.: nombre@correo.com" /></label>
+            </div>
+
+            <div className="reportFieldGrid" style={{marginTop: "14px"}}>
+              <label className="reportField">
+                <span>Horario y forma segura de contacto <em>opcional</em></span>
+                <input value={draft.safeContact} onChange={(event) => update("safeContact", event.target.value)} placeholder="Ej.: preferentemente mañanas" />
+              </label>
+            </div>
+
+            <label className="reportCheckbox" style={{marginTop: "14px"}}>
+              <input type="checkbox" checked={draft.noEarlyContact} onChange={(event) => update("noEarlyContact", event.target.checked)} />
+              <span>No contactar primero a la persona señalada ni al establecimiento.</span>
+            </label>
+          </>
+        )}
+
+        <p style={{marginTop: "22px", color: "#5c6e82", fontSize: "0.82rem", lineHeight: "1.4"}}>
+          Tu elección se refiere a tus datos como persona que comunica. Elegir una modalidad anónima, confidencial o con identidad registrada no cambia la prioridad de la comunicación ni la evaluación de la urgencia.
+        </p>
       </>}
 
       {step === 4 && <>
@@ -432,7 +701,6 @@ export function IntakeReportForm({
           <div><strong>Situación</strong><span>{draft.setting || "No indicada"}</span></div>
           <div><strong>Preocupación</strong><span>{draft.concerns.join(" · ") || "No indicada"}</span></div>
           <div><strong>Lugar</strong><span>{draft.department}{locationSummary ? ` · ${locationSummary}` : ""}</span></div>
-          <div><strong>Urgencia</strong><span>{draft.urgency ? urgencyLabel(draft.urgency) : "No indicada"}</span></div>
           <div><strong>Quién comunica</strong><span>{draft.reporter}{draft.reporterName ? ` (${draft.reporterName})` : ""}</span></div>
           <div><strong>Privacidad</strong><span>{draft.privacy || "No indicada"}</span></div>
         </div>

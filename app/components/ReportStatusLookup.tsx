@@ -27,13 +27,6 @@ export function ReportStatusLookup({ onHome }: { onHome: () => void }) {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    try {
-      const savedCode = window.sessionStorage.getItem("alerta-mayor-last-code");
-      if (savedCode) setCode(savedCode);
-    } catch {}
-  }, []);
-
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const normalized = code.trim().toUpperCase();
@@ -62,7 +55,6 @@ export function ReportStatusLookup({ onHome }: { onHome: () => void }) {
 
   return <section className="statusLookup">
     <header className="statusLookupHeader">
-      <div className="eyebrow">Seguimiento comprensible</div>
       <h1>Seguir una comunicación</h1>
       <p>Consultá si fue recibida usando el código que apareció al finalizar el formulario. No mostramos el contenido ni datos personales.</p>
     </header>

@@ -36,7 +36,7 @@ export default function UruguayRegistry({ onReport }: { onReport: () => void }) 
 
   const visible = useMemo(() => baseWithoutDepartment.filter((facility) => !department || facility.department === department), [baseWithoutDepartment, department]);
   const departmentCounts = useMemo(() => Object.entries(baseWithoutDepartment.reduce<Record<string, number>>((counts, facility) => ({ ...counts, [facility.department]: (counts[facility.department] ?? 0) + 1 }), {})).sort(([a], [b]) => a.localeCompare(b, "es")), [baseWithoutDepartment]);
-  const selected = visible.find((facility) => facility.id === selectedId) ?? visible[0] ?? null;
+  const selected = selectedId ? (visible.find((facility) => facility.id === selectedId) ?? null) : null;
   const totals = useMemo(() => ({
     habilitado: visible.filter((facility) => facility.statusGroup === "habilitado").length,
     registro: visible.filter((facility) => facility.statusGroup === "registro").length,
@@ -44,11 +44,12 @@ export default function UruguayRegistry({ onReport }: { onReport: () => void }) 
   }), [visible]);
 
   useEffect(() => {
-    if (selected && selected.id !== selectedId) setSelectedId(selected.id);
-    if (!selected && selectedId) setSelectedId(null);
-  }, [selected, selectedId]);
+    if (selectedId && !visible.some((facility) => facility.id === selectedId)) {
+      setSelectedId(null);
+    }
+  }, [visible, selectedId]);
 
-  const orderedResults = selected ? [selected, ...visible.filter((facility) => facility.id !== selected.id)] : visible;
+  const orderedResults = visible;
 
   function resetFilters() {
     setQuery(""); setDepartment(""); setStatus(""); setPrecision("");
