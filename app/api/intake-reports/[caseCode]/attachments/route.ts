@@ -24,6 +24,8 @@ const ALLOWED_MIME_TYPES = new Set([
   "audio/aac",
   "audio/m4a",
   "audio/x-m4a",
+  "audio/3gpp",
+  "audio/3gpp2",
 ]);
 
 function supabaseHeaders(publishableKey: string): Record<string, string> {
@@ -60,7 +62,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
     return NextResponse.json({ error: "Cada archivo puede pesar hasta 10 MB." }, { status: 413 });
   }
   const cleanType = file.type.split(";")[0].trim().toLowerCase();
-  if (!ALLOWED_MIME_TYPES.has(cleanType)) {
+  if (!ALLOWED_MIME_TYPES.has(cleanType) && !cleanType.startsWith("audio/")) {
     return NextResponse.json({ error: "Ese tipo de archivo no está permitido." }, { status: 415 });
   }
 
@@ -89,6 +91,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
     "audio/aac": "aac",
     "audio/m4a": "m4a",
     "audio/x-m4a": "m4a",
+    "audio/3gpp": "3gp",
+    "audio/3gpp2": "3g2",
   };
 
   const extension = extensionMap[cleanType] || file.name.split(".").pop() || "bin";
@@ -115,21 +119,18 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
     // FALLBACK DIRECTO: Si la Edge Function en la nube responde error (ej 415), subir directo por REST/Storage API
     console.warn(`Edge Function error ${response.status}. Executing direct Supabase storage upload fallback for ${cleanType}...`);
 
-    let reportRes = await fetch(
-      `${supabaseUrl}/rest/v1/intake_reports?case_code=eq.${encodeURIComponent(caseCode)}&select=id,report_payload`,
-      { headers: supabaseHeaders(publishableKey), cache: "no-store" }
-    );
-    let reports = (await reportRes.json().catch(() => [])) as Array<Record<string, unknown>>;
-    let report = reports[0];
-
-    if (!report || typeof report.id !== "string") {
-      await new Promise((resolve) => setTimeout(resolve, 350));
-      reportRes = await fetch(
+    let report: Record<string, unknown> | undefined;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const reportRes = await fetch(
         `${supabaseUrl}/rest/v1/intake_reports?case_code=eq.${encodeURIComponent(caseCode)}&select=id,report_payload`,
         { headers: supabaseHeaders(publishableKey), cache: "no-store" }
       );
-      reports = (await reportRes.json().catch(() => [])) as Array<Record<string, unknown>>;
-      report = reports[0];
+      const reports = (await reportRes.json().catch(() => [])) as Array<Record<string, unknown>>;
+      if (reports[0] && typeof reports[0].id === "string") {
+        report = reports[0];
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
     if (!report || typeof report.id !== "string") {

@@ -19,7 +19,30 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const fileRes = await fetch(`${supabaseUrl}/storage/v1/object/intake-evidence/${path}`, {
+    let realObjectPath = path;
+    let dbMimeType: string | null = null;
+
+    if (!path.includes("/")) {
+      const dbRes = await fetch(
+        `${supabaseUrl}/rest/v1/intake_report_attachments?id=eq.${encodeURIComponent(path)}&select=object_path,mime_type`,
+        {
+          headers: {
+            apikey: publishableKey,
+            ...(publishableKey.split(".").length === 3 ? { Authorization: `Bearer ${publishableKey}` } : {}),
+          },
+          cache: "no-store",
+        }
+      );
+      if (dbRes.ok) {
+        const records = (await dbRes.json().catch(() => [])) as Array<{ object_path?: string; mime_type?: string }>;
+        if (records[0]?.object_path) {
+          realObjectPath = records[0].object_path;
+          dbMimeType = records[0].mime_type || null;
+        }
+      }
+    }
+
+    const fileRes = await fetch(`${supabaseUrl}/storage/v1/object/intake-evidence/${realObjectPath}`, {
       headers: {
         apikey: publishableKey,
         ...(publishableKey.split(".").length === 3 ? { Authorization: `Bearer ${publishableKey}` } : {}),
@@ -31,14 +54,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "No se pudo obtener el archivo." }, { status: fileRes.status });
     }
 
-    const contentType = fileRes.headers.get("content-type") || "application/octet-stream";
+    let contentType = fileRes.headers.get("content-type");
+    if (!contentType || contentType === "application/octet-stream") {
+      if (dbMimeType) {
+        contentType = dbMimeType;
+      } else {
+        contentType = "application/octet-stream";
+      }
+    }
+
     const arrayBuffer = await fileRes.arrayBuffer();
 
     return new NextResponse(arrayBuffer, {
       status: 200,
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "private, max-age=3600",
+        "Content-Length": String(arrayBuffer.byteLength),
+        "Accept-Ranges": "bytes",
+        "Cache-Control": "public, max-age=3600",
       },
     });
   } catch (error) {

@@ -853,8 +853,9 @@ export function TeamIntakeInbox({ initialFacility }: TeamIntakeInboxProps = {}) 
                     {selected.attachments?.length ? (
                       <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
                         {selected.attachments.map((attachment) => {
-                          const isAudio = attachment.mime_type.startsWith("audio/") || attachment.file_name.endsWith(".webm") || attachment.file_name.endsWith(".mp3") || attachment.file_name.endsWith(".ogg");
-                          const attachmentUrl = `/api/team/intake-reports/attachment?path=${encodeURIComponent(attachment.id)}`;
+                          const isAudio = (attachment.mime_type && attachment.mime_type.startsWith("audio/")) || attachment.file_name.endsWith(".webm") || attachment.file_name.endsWith(".mp3") || attachment.file_name.endsWith(".ogg") || attachment.file_name.endsWith(".wav") || attachment.file_name.endsWith(".m4a");
+                          const targetPath = attachment.object_path || attachment.id;
+                          const attachmentUrl = `/api/team/intake-reports/attachment?path=${encodeURIComponent(targetPath)}`;
                           return (
                             <li key={attachment.id} style={{ display: "flex", flexDirection: "column", gap: "6px", backgroundColor: "#f8fafc", padding: "10px 12px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", justifyContent: "space-between" }}>

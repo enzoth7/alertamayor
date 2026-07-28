@@ -522,16 +522,21 @@ export function IntakeReportForm({
       }
       if (files.length) {
         setAttachmentState("uploading");
-        const uploads = await Promise.all(files.map(async (file) => {
+        let uploaded = 0;
+        for (const file of files) {
           const formData = new FormData();
           formData.set("file", file);
           formData.set("uploadToken", uploadToken);
           try {
-            const uploadResponse = await fetch(`/api/intake-reports/${encodeURIComponent(savedCaseCode)}/attachments`, { method: "POST", body: formData });
-            return uploadResponse.ok;
-          } catch { return false; }
-        }));
-        const uploaded = uploads.filter(Boolean).length;
+            const uploadResponse = await fetch(`/api/intake-reports/${encodeURIComponent(savedCaseCode)}/attachments`, {
+              method: "POST",
+              body: formData,
+            });
+            if (uploadResponse.ok) {
+              uploaded++;
+            }
+          } catch {}
+        }
         setUploadedFileCount(uploaded);
         setAttachmentState(uploaded === files.length ? "complete" : "partial");
       }
