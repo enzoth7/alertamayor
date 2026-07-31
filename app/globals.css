@@ -11,12 +11,16 @@
   --blue2: #0f46b7;
   --green: #087443;
   --amber: #8a4b08;
+  --cyan: #0891b2;
+  --status-gray: #64748b;
   --red: #b42318;
   --violet: #6941c6;
   --shadow: 0 10px 30px rgba(20,35,55,.08);
   --radius: 18px;
   --greenbg: #ebfbf2;
   --amberbg: #fff7e5;
+  --cyanbg: #ecfeff;
+  --status-gray-bg: #f1f5f9;
   --redbg: #fff0ef;
   --violetbg: #f5f1ff;
   --bluebg: #edf4ff;
@@ -1432,6 +1436,10 @@ textarea {
   margin: 24px auto 28px;
 }
 
+.registryStats {
+  grid-template-columns: repeat(6, minmax(0, 185px));
+}
+
 .stat {
   display: flex;
   flex-direction: column;
@@ -1503,6 +1511,24 @@ textarea {
 .statCard-amber small { color: #d97706; }
 .statCard-amber:hover, .statCard-amber.selected { border-color: #f59e0b; }
 
+.statCard-cyan {
+  background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);
+  border-color: #a5f3fc;
+  color: #0e7490;
+}
+.statCard-cyan p { color: #155e75; }
+.statCard-cyan small { color: var(--cyan); }
+.statCard-cyan:hover, .statCard-cyan.selected { border-color: #06b6d4; }
+
+.statCard-gray {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-color: #cbd5e1;
+  color: #475569;
+}
+.statCard-gray p { color: #334155; }
+.statCard-gray small { color: var(--status-gray); }
+.statCard-gray:hover, .statCard-gray.selected { border-color: #64748b; }
+
 .statCard-violet {
   background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
   border-color: #ddd6fe;
@@ -1512,8 +1538,22 @@ textarea {
 .statCard-violet small { color: #7c3aed; }
 .statCard-violet:hover, .statCard-violet.selected { border-color: #8b5cf6; }
 
+.registryOverlapNote {
+  max-width: 720px;
+  margin: -13px auto 20px;
+  color: var(--muted);
+  font-size: .78rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+@media (max-width: 1280px) {
+  .registryStats { grid-template-columns: repeat(3, minmax(0, 185px)); }
+}
+
 @media (max-width: 768px) {
   .stats { grid-template-columns: repeat(2, 1fr); }
+  .registryStats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat { aspect-ratio: auto; min-height: 120px; }
 }
 
@@ -2569,6 +2609,8 @@ textarea {
 .greenDot { background: var(--green); }
 .amberDot { background: #d97706; }
 .blueDot { background: #2383c4; }
+.cyanDot { background: var(--cyan); }
+.grayDot { background: var(--status-gray); }
 .violetDot { background: var(--violet); }
 .redDot { background: var(--red); }
 .resultsMeta { margin: 0 0 4px; color: var(--muted); font-size: .76rem; }
@@ -2598,6 +2640,8 @@ textarea {
 .facilityCard.selected { background: #f4f8ff; border-color: #155eef; }
 .facility-habilitado { border-left-color: var(--green); }
 .facility-registro { border-left-color: #d97706; }
+.facility-mides { border-left-color: var(--cyan); }
+.facility-otra_fuente { border-left-color: var(--status-gray); }
 .facility-verificar { border-left-color: var(--violet); }
 
 .facilityAccordionHeader {
@@ -2636,6 +2680,33 @@ textarea {
   font-size: .81rem;
   font-weight: 600;
 }
+
+.facilityBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.facilityBadges .sourceBadge {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  padding: 3px 6px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: .61rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.facilityBadges .sourceBadge-green { color: #065f46; background: #ecfdf5; border-color: #a7f3d0; }
+.facilityBadges .sourceBadge-cyan { color: #155e75; background: #ecfeff; border-color: #a5f3fc; }
+.facilityBadges .sourceBadge-amber { color: #92400e; background: #fffbeb; border-color: #fde68a; }
+.facilityBadges .sourceBadge-gray { color: #475569; background: #f1f5f9; border-color: #cbd5e1; }
+.facilityBadges .sourceBadge-violet { color: #5b21b6; background: #f5f3ff; border-color: #ddd6fe; }
+.mapPopupBadges { margin: 7px 0; }
 
 .facilityAccordionChevron {
   display: grid;
@@ -3335,4 +3406,3 @@ textarea {
   font-size: 0.8rem;
   color: #dc2626;
 }
-

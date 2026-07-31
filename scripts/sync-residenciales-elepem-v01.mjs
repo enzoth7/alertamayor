@@ -3,6 +3,9 @@ import pg from "pg";
 
 const { Pool } = pg;
 const APPLY = process.argv.includes("--apply");
+const APPLY_MEMBERSHIPS =
+  process.argv.includes("--apply-memberships") || APPLY;
+const MUTATES_DATABASE = APPLY || APPLY_MEMBERSHIPS;
 const VERBOSE = process.argv.includes("--verbose");
 const TARGET_PROJECT_REF = "itolluaivfoxnaohbsdk";
 const SOURCE_URL = new URL(
@@ -86,7 +89,91 @@ const SOURCE_MERGE_GROUPS = [
   },
   { representative: "ELP-0769", members: ["ELP-0769", "ELP-0770"] },
   { representative: "ELP-0791", members: ["ELP-0791", "ELP-0794"] },
+  // Fusiones auditadas después de detectar matches many-to-one en Supabase.
+  // Blanes conserva continuidad por nombre y responsable médico; 935/965 es
+  // una discrepancia entre el certificado histórico y los padrones recientes.
+  {
+    representative: "ELP-0319",
+    members: ["ELP-0318", "ELP-0319"],
+    geocode: "ELP-0319",
+  },
+  // Dorita conserva el mismo nombre; 3374/3674 es una discrepancia histórica
+  // de puerta y la sede pública vigente figura en General Flores 3674.
+  {
+    representative: "ELP-0376",
+    members: ["ELP-0376", "ELP-0593"],
+    geocode: "ELP-0376",
+  },
+  // El teléfono MIDES de Palmar 2520 coincide con el publicado por Fundación
+  // Algarrobo para Palmar 2560.
+  {
+    representative: "ELP-0409",
+    members: ["ELP-0409", "ELP-0411"],
+    geocode: "ELP-0409",
+  },
+  {
+    representative: "ELP-0484",
+    members: ["ELP-0415", "ELP-0484"],
+    geocode: "ELP-0484",
+  },
+  {
+    representative: "ELP-0774",
+    members: ["ELP-0771", "ELP-0774"],
+    geocode: "ELP-0774",
+  },
+  {
+    representative: "ELP-0788",
+    members: ["ELP-0788", "ELP-0789"],
+    geocode: "ELP-0788",
+  },
 ];
+const SOURCE_MEMBERSHIP_CORRECTIONS = new Map([
+  [
+    "ELP-0033",
+    {
+      mides_social: true,
+      labels: ["Certificado Social MIDES"],
+      source_record_ids: ["MIDES-019"],
+      reason:
+        "Puga Soria fue unido por error a ELP-0032 (Hogar Intergeneracional de Pando).",
+    },
+  ],
+  [
+    "ELP-0180",
+    {
+      mides_social: true,
+      msp_registro_historico: true,
+      pacp: true,
+      labels: [
+        "Certificado Social MIDES",
+        "Certificado de registro MSP (histórico)",
+        "Proveedor PACP",
+      ],
+      source_record_ids: ["MIDES-050", "MSPR-091-2021", "PACP-012"],
+      reason:
+        "Registros de Sarandí Grande separados de la entidad conflada ELP-0181.",
+    },
+  ],
+  [
+    "ELP-0182",
+    {
+      mides_social: true,
+      msp_registro_historico: true,
+      labels: [
+        "Certificado Social MIDES",
+        "Certificado de registro MSP (histórico)",
+      ],
+      source_record_ids: [
+        "MIDES-047",
+        "MSPR-041-2018",
+        "MSPR-084-2019",
+        "MSPR-129-2019",
+      ],
+      reason:
+        "Registros de Florida ciudad separados de la entidad conflada ELP-0181.",
+    },
+  ],
+]);
 const KNOWN_EXISTING_MATCHES = new Map([
   ["ELP-0067", "MSP24-168"],
   ["ELP-0100", "MSP24-207"],
@@ -325,20 +412,41 @@ function placesValue(value) {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 
-function sourceLabel(entities) {
+function sourceMemberships(entities, representativeId) {
+  const correction = SOURCE_MEMBERSHIP_CORRECTIONS.get(representativeId);
+  return {
+    mspFinal:
+      entities.some((entity) => Boolean(entity.msp_final)) ||
+      Boolean(correction?.msp_final),
+    mspRegistroHistorico:
+      entities.some((entity) => Boolean(entity.msp_registro_historico)) ||
+      Boolean(correction?.msp_registro_historico),
+    midesSocial:
+      entities.some((entity) => Boolean(entity.mides_social)) ||
+      Boolean(correction?.mides_social),
+    pacp:
+      entities.some((entity) => Boolean(entity.pacp)) ||
+      Boolean(correction?.pacp),
+  };
+}
+
+function sourceLabel(entities, representativeId) {
+  const correction = SOURCE_MEMBERSHIP_CORRECTIONS.get(representativeId);
   const labels = [
     ...new Set(
-      entities
-        .flatMap((entity) => entity.sources || [])
-        .map((source) => String(source.label || "").trim())
-        .filter(Boolean),
+      [
+        ...entities
+          .flatMap((entity) => entity.sources || [])
+          .map((source) => String(source.label || "").trim()),
+        ...(correction?.labels || []),
+      ].filter(Boolean),
     ),
   ];
   return `${labels.join(" + ")} · geocodificación IDE`.slice(0, 240);
 }
 
-function statusFields(entity) {
-  if (entity.msp_final) {
+function statusFields(memberships, entities) {
+  if (memberships.mspFinal) {
     return {
       statusGroup: "habilitado",
       statusStage: "Etapa 3 de 3",
@@ -346,7 +454,7 @@ function statusFields(entity) {
     };
   }
 
-  if (entity.mides_social) {
+  if (memberships.midesSocial) {
     return {
       statusGroup: "registro",
       statusStage: "Etapa 2 de 3",
@@ -354,8 +462,16 @@ function statusFields(entity) {
     };
   }
 
-  if (entity.msp_registro_historico) {
-    const year = entity.historical_latest_year || entity.latest_public_date;
+  if (memberships.mspRegistroHistorico) {
+    const year =
+      entities
+        .map(
+          (entity) =>
+            entity.historical_latest_year || entity.latest_public_date,
+        )
+        .filter(Boolean)
+        .sort()
+        .at(-1) || "sin fecha";
     return {
       statusGroup: "registro",
       statusStage: "Etapa 1 de 3",
@@ -371,7 +487,9 @@ function statusFields(entity) {
 }
 
 function toRow(entity, members = [entity], geocodeEntity = entity) {
-  const status = statusFields(entity);
+  const id = String(entity.entity_id).trim();
+  const memberships = sourceMemberships(members, id);
+  const status = statusFields(memberships, members);
   const capacityEntity =
     members.find(
       (member) =>
@@ -384,7 +502,7 @@ function toRow(entity, members = [entity], geocodeEntity = entity) {
     ) ||
     entity;
   return {
-    id: String(entity.entity_id).trim(),
+    id,
     name: String(entity.name).trim(),
     department: String(entity.department).trim(),
     locality:
@@ -401,7 +519,8 @@ function toRow(entity, members = [entity], geocodeEntity = entity) {
     statusGroup: status.statusGroup,
     statusStage: status.statusStage,
     statusShort: status.statusShort,
-    sourceLabel: sourceLabel(members),
+    sourceLabel: sourceLabel(members, id),
+    ...memberships,
   };
 }
 
@@ -604,10 +723,43 @@ function compactComparison(item) {
   };
 }
 
+function membershipCounts(rows) {
+  return {
+    msp_final: rows.filter((row) => row.mspFinal).length,
+    msp_registro_historico: rows.filter(
+      (row) => row.mspRegistroHistorico,
+    ).length,
+    mides_social: rows.filter((row) => row.midesSocial).length,
+    pacp: rows.filter((row) => row.pacp).length,
+    ninguna_principal: rows.filter(
+      (row) =>
+        !row.mspFinal &&
+        !row.mspRegistroHistorico &&
+        !row.midesSocial,
+    ).length,
+  };
+}
+
 const sourceRows = consolidateSource(sourceEntities);
-if (sourceEntities.length !== 810 || sourceRows.length !== 773) {
+if (sourceEntities.length !== 810 || sourceRows.length !== 767) {
   throw new Error(
     `Conteo inesperado: fuente=${sourceEntities.length}, consolidada=${sourceRows.length}.`,
+  );
+}
+const sourceMembershipCounts = membershipCounts(sourceRows);
+const expectedSourceMembershipCounts = {
+  msp_final: 212,
+  msp_registro_historico: 732,
+  mides_social: 275,
+  pacp: 36,
+  ninguna_principal: 1,
+};
+if (
+  JSON.stringify(sourceMembershipCounts) !==
+  JSON.stringify(expectedSourceMembershipCounts)
+) {
+  throw new Error(
+    `Membresías inesperadas: ${JSON.stringify(sourceMembershipCounts)}.`,
   );
 }
 const invalidRows = sourceRows.filter(
@@ -625,6 +777,12 @@ const invalidRows = sourceRows.filter(
     row.statusStage.length > 120 ||
     row.statusShort.length > 200 ||
     row.sourceLabel.length > 240 ||
+    ![
+      row.mspFinal,
+      row.mspRegistroHistorico,
+      row.midesSocial,
+      row.pacp,
+    ].every((value) => typeof value === "boolean") ||
     !Number.isFinite(row.lat) ||
     !Number.isFinite(row.lng),
 );
@@ -637,7 +795,11 @@ const client = await pool.connect();
 
 try {
   await client.query("begin");
-  await client.query("lock table public.residenciales in share row exclusive mode");
+  if (MUTATES_DATABASE) {
+    await client.query(
+      "lock table public.residenciales in share row exclusive mode",
+    );
+  }
 
   const existingResult = await client.query(`
     select
@@ -654,12 +816,47 @@ try {
       status_group,
       status_stage,
       status_short,
-      source_label
+      source_label,
+      msp_final,
+      msp_registro_historico,
+      mides_social,
+      pacp,
+      other_source
     from public.residenciales
     order by id
   `);
 
   const comparison = compareRows(sourceRows, existingResult.rows);
+  const matchesByExistingId = Map.groupBy(
+    comparison.matches,
+    (item) => item.existing.id,
+  );
+  const coveredExistingIds = new Set(matchesByExistingId.keys());
+  const targetCollisions = [...matchesByExistingId.entries()]
+    .filter(([, matches]) => matches.length > 1)
+    .map(([existingId, matches]) => ({
+      existing_id: existingId,
+      existing_name: matches[0].existing.name,
+      existing_address: matches[0].existing.address,
+      sources: matches.map(compactComparison),
+    }));
+  const existingNotCovered = existingResult.rows
+    .filter((row) => !coveredExistingIds.has(row.id))
+    .map((row) => ({
+      id: row.id,
+      name: row.name,
+      department: row.department,
+      locality: row.locality,
+      address: row.address,
+      status_group: row.status_group,
+      status_short: row.status_short,
+      source_label: row.source_label,
+    }));
+  if (targetCollisions.length > 0) {
+    throw new Error(
+      `Hay ${targetCollisions.length} matches many-to-one sin fusión auditada.`,
+    );
+  }
   const matchedByRule = Object.fromEntries(
     [...new Set(comparison.matches.map((item) => item.rule))]
       .sort()
@@ -670,10 +867,21 @@ try {
   );
 
   const report = {
-    mode: APPLY ? "apply" : "dry-run",
+    mode:
+      APPLY && APPLY_MEMBERSHIPS
+        ? "apply-and-memberships"
+        : APPLY
+          ? "apply"
+          : APPLY_MEMBERSHIPS
+            ? "apply-memberships"
+            : "dry-run",
     source_rows_raw: sourceEntities.length,
     source_rows_after_quality_and_dedupe: sourceRows.length,
+    source_memberships: sourceMembershipCounts,
     excluded_source_rows: Object.fromEntries(EXCLUDED_SOURCE_IDS),
+    audited_membership_corrections: Object.fromEntries(
+      SOURCE_MEMBERSHIP_CORRECTIONS,
+    ),
     merged_source_groups: SOURCE_MERGE_GROUPS.length,
     merged_source_rows_removed: SOURCE_MERGE_GROUPS.reduce(
       (total, group) => total + group.members.length - 1,
@@ -682,6 +890,9 @@ try {
     source_duplicate_ids: duplicateIds(sourceRows),
     existing_rows_before: existingResult.rows.length,
     already_present: comparison.matches.length,
+    unique_existing_rows_covered: coveredExistingIds.size,
+    target_collisions: targetCollisions,
+    existing_rows_not_covered: existingNotCovered,
     already_present_by_status: Object.fromEntries(
       ["habilitado", "registro", "verificar"].map((status) => [
         status,
@@ -713,10 +924,16 @@ try {
       : {}),
   };
 
-  if (!APPLY) {
+  if (!MUTATES_DATABASE) {
     await client.query("rollback");
     console.log(JSON.stringify(report, null, 2));
   } else {
+    if (APPLY_MEMBERSHIPS && !APPLY && comparison.unmatched.length > 0) {
+      throw new Error(
+        `Hay ${comparison.unmatched.length} filas pendientes; usá --apply junto con --apply-memberships.`,
+      );
+    }
+
     const insertSql = `
       insert into public.residenciales (
         id,
@@ -732,37 +949,50 @@ try {
         status_group,
         status_stage,
         status_short,
-        source_label
+        source_label,
+        msp_final,
+        msp_registro_historico,
+        mides_social,
+        pacp,
+        other_source
       )
       values (
         $1, $2, $3, $4, $5, $6, $7,
-        $8, $9, $10, $11, $12, $13, $14
+        $8, $9, $10, $11, $12, $13, $14,
+        $15, $16, $17, $18, $19
       )
       on conflict (id) do nothing
     `;
 
     let inserted = 0;
-    for (const row of comparison.unmatched) {
-      const result = await client.query(insertSql, [
-        row.id,
-        row.name,
-        row.department,
-        row.locality,
-        row.address,
-        row.places,
-        row.lat,
-        row.lng,
-        row.precision,
-        row.precisionLabel,
-        row.statusGroup,
-        row.statusStage,
-        row.statusShort,
-        row.sourceLabel,
-      ]);
-      inserted += result.rowCount;
+    if (APPLY) {
+      for (const row of comparison.unmatched) {
+        const result = await client.query(insertSql, [
+          row.id,
+          row.name,
+          row.department,
+          row.locality,
+          row.address,
+          row.places,
+          row.lat,
+          row.lng,
+          row.precision,
+          row.precisionLabel,
+          row.statusGroup,
+          row.statusStage,
+          row.statusShort,
+          row.sourceLabel,
+          row.mspFinal,
+          row.mspRegistroHistorico,
+          row.midesSocial,
+          row.pacp,
+          false,
+        ]);
+        inserted += result.rowCount;
+      }
     }
 
-    if (inserted !== comparison.unmatched.length) {
+    if (APPLY && inserted !== comparison.unmatched.length) {
       throw new Error(
         `Se esperaban ${comparison.unmatched.length} inserciones y se ejecutaron ${inserted}.`,
       );
@@ -794,7 +1024,12 @@ try {
         status_group,
         status_stage,
         status_short,
-        source_label
+        source_label,
+        msp_final,
+        msp_registro_historico,
+        mides_social,
+        pacp,
+        other_source
       from public.residenciales
       order by id
     `);
@@ -804,6 +1039,191 @@ try {
         `La verificación semántica dejó ${finalComparison.unmatched.length} filas sin cubrir.`,
       );
     }
+    const finalMatchesByExistingId = Map.groupBy(
+      finalComparison.matches,
+      (item) => item.existing.id,
+    );
+    const finalCollisions = [...finalMatchesByExistingId.values()].filter(
+      (matches) => matches.length > 1,
+    );
+    if (
+      finalCollisions.length > 0 ||
+      finalMatchesByExistingId.size !== sourceRows.length
+    ) {
+      throw new Error(
+        "La verificación detectó destinos repetidos o sedes fuente sin destino único.",
+      );
+    }
+
+    let membershipRowsUpdated = 0;
+    if (APPLY_MEMBERSHIPS) {
+      const membershipPayload = finalRowsResult.rows.map((row) => {
+        const match = finalMatchesByExistingId.get(row.id)?.[0];
+        const uncoveredKnownSource =
+          !match &&
+          row.status_group !== "verificar" &&
+          !row.msp_final &&
+          !row.msp_registro_historico &&
+          !row.mides_social &&
+          Boolean(row.source_label);
+        return {
+          id: row.id,
+          msp_final: match?.source.mspFinal ?? row.msp_final,
+          msp_registro_historico:
+            match?.source.mspRegistroHistorico ??
+            row.msp_registro_historico,
+          mides_social: match?.source.midesSocial ?? row.mides_social,
+          pacp: match?.source.pacp ?? row.pacp,
+          other_source: match
+            ? false
+            : Boolean(row.other_source) || uncoveredKnownSource,
+          status_group: match?.source.statusGroup ?? null,
+          status_stage: match?.source.statusStage ?? null,
+          status_short: match?.source.statusShort ?? null,
+          source_label: match?.source.sourceLabel ?? null,
+        };
+      });
+      const membershipUpdateResult = await client.query(
+        `
+          with incoming as (
+            select *
+            from jsonb_to_recordset($1::jsonb) as value(
+              id text,
+              msp_final boolean,
+              msp_registro_historico boolean,
+              mides_social boolean,
+              pacp boolean,
+              other_source boolean,
+              status_group text,
+              status_stage text,
+              status_short text,
+              source_label text
+            )
+          )
+          update public.residenciales as target
+          set
+            msp_final = incoming.msp_final,
+            msp_registro_historico = incoming.msp_registro_historico,
+            mides_social = incoming.mides_social,
+            pacp = incoming.pacp,
+            other_source = incoming.other_source,
+            status_group = coalesce(incoming.status_group, target.status_group),
+            status_stage = coalesce(incoming.status_stage, target.status_stage),
+            status_short = coalesce(incoming.status_short, target.status_short),
+            source_label = coalesce(incoming.source_label, target.source_label),
+            updated_at = now()
+          from incoming
+          where target.id = incoming.id
+            and (
+              target.msp_final,
+              target.msp_registro_historico,
+              target.mides_social,
+              target.pacp,
+              target.other_source,
+              target.status_group,
+              target.status_stage,
+              target.status_short,
+              target.source_label
+            ) is distinct from (
+              incoming.msp_final,
+              incoming.msp_registro_historico,
+              incoming.mides_social,
+              incoming.pacp,
+              incoming.other_source,
+              coalesce(incoming.status_group, target.status_group),
+              coalesce(incoming.status_stage, target.status_stage),
+              coalesce(incoming.status_short, target.status_short),
+              coalesce(incoming.source_label, target.source_label)
+            )
+        `,
+        [JSON.stringify(membershipPayload)],
+      );
+      membershipRowsUpdated = membershipUpdateResult.rowCount;
+    }
+
+    const verifiedMembershipResult = await client.query(`
+      select
+        count(*)::integer as total,
+        count(*) filter (where msp_final)::integer as msp_final,
+        count(*) filter (where msp_registro_historico)::integer
+          as msp_registro_historico,
+        count(*) filter (where mides_social)::integer as mides_social,
+        count(*) filter (where pacp)::integer as pacp,
+        count(*) filter (where other_source)::integer as other_source,
+        count(*) filter (
+          where status_group = 'verificar'
+        )::integer as verificar,
+        count(*) filter (
+          where status_group <> 'verificar'
+            and not msp_final
+            and not msp_registro_historico
+            and not mides_social
+            and (other_source or pacp)
+        )::integer as gris,
+        count(*) filter (
+          where status_group <> 'verificar' and msp_final
+        )::integer as color_verde,
+        count(*) filter (
+          where status_group <> 'verificar'
+            and not msp_final
+            and mides_social
+        )::integer as color_celeste,
+        count(*) filter (
+          where status_group <> 'verificar'
+            and not msp_final
+            and not mides_social
+            and msp_registro_historico
+        )::integer as color_naranja
+      from public.residenciales
+    `);
+    const verifiedMemberships = verifiedMembershipResult.rows[0];
+    if (APPLY_MEMBERSHIPS) {
+      const verifiedSourceMembershipResult = await client.query(
+        `
+          select
+            count(*) filter (where msp_final)::integer as msp_final,
+            count(*) filter (where msp_registro_historico)::integer
+              as msp_registro_historico,
+            count(*) filter (where mides_social)::integer as mides_social,
+            count(*) filter (where pacp)::integer as pacp
+          from public.residenciales
+          where id = any($1::text[])
+        `,
+        [[...finalMatchesByExistingId.keys()]],
+      );
+      const verifiedSourceMemberships =
+        verifiedSourceMembershipResult.rows[0];
+      for (const key of [
+        "msp_final",
+        "msp_registro_historico",
+        "mides_social",
+        "pacp",
+      ]) {
+        if (
+          verifiedSourceMemberships[key] !== sourceMembershipCounts[key]
+        ) {
+          throw new Error(
+            `Verificación ${key}: se esperaban ${sourceMembershipCounts[key]} y hay ${verifiedSourceMemberships[key]}.`,
+          );
+        }
+      }
+      const expectedGray =
+        sourceMembershipCounts.ninguna_principal +
+        finalRowsResult.rows.filter(
+          (row) =>
+            !finalMatchesByExistingId.has(row.id) &&
+            row.status_group !== "verificar" &&
+            !row.msp_final &&
+            !row.msp_registro_historico &&
+            !row.mides_social &&
+            (row.other_source || Boolean(row.source_label)),
+        ).length;
+      if (verifiedMemberships.gris !== expectedGray) {
+        throw new Error(
+          `Verificación gris: se esperaban ${expectedGray} y hay ${verifiedMemberships.gris}.`,
+        );
+      }
+    }
 
     await client.query("commit");
     console.log(
@@ -811,8 +1231,10 @@ try {
         {
           ...report,
           inserted,
+          membership_rows_updated: membershipRowsUpdated,
           existing_rows_after: finalCount,
           source_rows_covered_after: sourceRows.length,
+          database_memberships: verifiedMemberships,
           verified: true,
         },
         null,

@@ -7,8 +7,22 @@ import type { Facility } from "./map-types";
 const colors = {
   habilitado: "#087443",
   registro: "#d97706",
+  mides: "#0891b2",
+  otra_fuente: "#64748b",
   verificar: "#6941c6",
-};
+} satisfies Record<Facility["statusGroup"], string>;
+
+function membershipBadges(facility: Facility) {
+  return [
+    facility.mspFinal && ["Habilitación final MSP", "green"],
+    facility.midesSocial && ["Certificado Social MIDES", "cyan"],
+    facility.mspRegistroHistorico && ["Registro MSP histórico", "amber"],
+    facility.pacp && ["Proveedor PACP", "gray"],
+    facility.otherSource &&
+      !facility.pacp && ["Otra fuente / fuera de listas auditadas", "gray"],
+    facility.pendingVerification && ["Pendiente de verificación", "violet"],
+  ].filter(Boolean) as [string, string][];
+}
 
 function createPopup(facility: Facility) {
   const popup = document.createElement("div");
@@ -25,6 +39,16 @@ function createPopup(facility: Facility) {
   const location = document.createElement("p");
   location.textContent = `${facility.locality} · ${facility.department}`;
   popup.appendChild(location);
+
+  const badges = document.createElement("div");
+  badges.className = "facilityBadges mapPopupBadges";
+  for (const [label, tone] of membershipBadges(facility)) {
+    const badge = document.createElement("span");
+    badge.className = `sourceBadge sourceBadge-${tone}`;
+    badge.textContent = label;
+    badges.appendChild(badge);
+  }
+  popup.appendChild(badges);
 
   const status = document.createElement("b");
   status.textContent = facility.statusShort;

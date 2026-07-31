@@ -15,6 +15,17 @@ function normalize(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
+function matchesAdministrativeStatus(
+  facility: Facility,
+  status: FacilityStatus,
+) {
+  if (status === "habilitado") return facility.mspFinal;
+  if (status === "registro") return facility.mspRegistroHistorico;
+  if (status === "mides") return facility.midesSocial;
+  if (status === "otra_fuente") return facility.otherSource;
+  return facility.pendingVerification;
+}
+
 export default function UruguayRegistry({ onReport }: { onReport: (facility?: Facility) => void }) {
   const { facilities, loading, error } = useResidenciales();
   const [query, setQuery] = useState("");
@@ -29,19 +40,33 @@ export default function UruguayRegistry({ onReport }: { onReport: (facility?: Fa
     if (requestedMode && ["streets", "list"].includes(requestedMode)) setMode(requestedMode);
   }, []);
 
-  const baseWithoutDepartment = useMemo(() => facilities.filter((facility) => {
-    const haystack = normalize(`${facility.name} ${facility.address} ${facility.locality} ${facility.department} ${facility.statusShort}`);
-    return (!status || facility.statusGroup === status) && (!precision || facility.precision === precision) && (!query || haystack.includes(normalize(query)));
-  }), [facilities, precision, query, status]);
+  const statusIndependentWithoutDepartment = useMemo(() => facilities.filter((facility) => {
+    const haystack = normalize(`${facility.name} ${facility.address} ${facility.locality} ${facility.department} ${facility.statusShort} ${facility.sourceLabel}`);
+    return (!precision || facility.precision === precision) && (!query || haystack.includes(normalize(query)));
+  }), [facilities, precision, query]);
 
+  const baseWithoutDepartment = useMemo(
+    () => statusIndependentWithoutDepartment.filter(
+      (facility) => !status || matchesAdministrativeStatus(facility, status),
+    ),
+    [statusIndependentWithoutDepartment, status],
+  );
   const visible = useMemo(() => baseWithoutDepartment.filter((facility) => !department || facility.department === department), [baseWithoutDepartment, department]);
+  const kpiScope = useMemo(
+    () => statusIndependentWithoutDepartment.filter(
+      (facility) => !department || facility.department === department,
+    ),
+    [statusIndependentWithoutDepartment, department],
+  );
   const departmentCounts = useMemo(() => Object.entries(baseWithoutDepartment.reduce<Record<string, number>>((counts, facility) => ({ ...counts, [facility.department]: (counts[facility.department] ?? 0) + 1 }), {})).sort(([a], [b]) => a.localeCompare(b, "es")), [baseWithoutDepartment]);
   const selected = selectedId ? (visible.find((facility) => facility.id === selectedId) ?? null) : null;
   const totals = useMemo(() => ({
-    habilitado: visible.filter((facility) => facility.statusGroup === "habilitado").length,
-    registro: visible.filter((facility) => facility.statusGroup === "registro").length,
-    verificar: visible.filter((facility) => facility.statusGroup === "verificar").length,
-  }), [visible]);
+    habilitado: kpiScope.filter((facility) => facility.mspFinal).length,
+    registro: kpiScope.filter((facility) => facility.mspRegistroHistorico).length,
+    mides: kpiScope.filter((facility) => facility.midesSocial).length,
+    otraFuente: kpiScope.filter((facility) => facility.otherSource).length,
+    verificar: kpiScope.filter((facility) => facility.pendingVerification).length,
+  }), [kpiScope]);
 
   useEffect(() => {
     if (selectedId && !visible.some((facility) => facility.id === selectedId)) {
@@ -75,19 +100,33 @@ export default function UruguayRegistry({ onReport }: { onReport: (facility?: Fa
         </button>
         <button type="button" className={`stat statCard-amber ${status === "registro" ? "selected" : ""}`} onClick={() => setStatus(status === "registro" ? "" : "registro")}>
           <b>{totals.registro}</b>
-          <p>en registro</p>
-          <small>Certificado de registro</small>
+          <p>con registro</p>
+          <small>Certificado de registro MSP</small>
         </button>
         <button type="button" className={`stat statCard-violet ${status === "verificar" ? "selected" : ""}`} onClick={() => setStatus(status === "verificar" ? "" : "verificar")}>
           <b>{totals.verificar}</b>
           <p>por verificar</p>
-          <small>Capa de demostración</small>
+          <small>Revisión pendiente</small>
+        </button>
+        <button type="button" className={`stat statCard-gray ${status === "otra_fuente" ? "selected" : ""}`} onClick={() => setStatus(status === "otra_fuente" ? "" : "otra_fuente")}>
+          <b>{totals.otraFuente}</b>
+          <p>otras fuentes</p>
+          <small>No figura en estas 3 listas</small>
+        </button>
+        <button type="button" className={`stat statCard-cyan ${status === "mides" ? "selected" : ""}`} onClick={() => setStatus(status === "mides" ? "" : "mides")}>
+          <b>{totals.mides}</b>
+          <p>certificado social</p>
+          <small>Certificado Social MIDES</small>
         </button>
       </div>
+      <p className="registryOverlapNote">
+        Las acreditaciones se cuentan por separado: un mismo residencial puede
+        figurar en más de una lista.
+      </p>
       <div className="registryToolbar">
         <label className="searchField"><b>Nombre, calle o localidad</b><div className="registrySearchBox"><Search size={19}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ej.: La Paz, Artigas 1308, hogar"/></div></label>
         <label><b>Departamento</b><select value={department} onChange={(event) => setDepartment(event.target.value)}><option value="">Todos</option>{departmentCounts.map(([name]) => <option key={name}>{name}</option>)}</select></label>
-        <label><b>Situación administrativa</b><select value={status} onChange={(event) => setStatus(event.target.value as "" | FacilityStatus)}><option value="">Todas las que tienen punto</option><option value="habilitado">Habilitación final · corte 2024</option><option value="registro">Certificado de registro · emitido 2024</option><option value="verificar">No figura / dato no coincide · DEMO</option></select></label>
+        <label><b>Situación administrativa</b><select value={status} onChange={(event) => setStatus(event.target.value as "" | FacilityStatus)}><option value="">Todas las que tienen punto</option><option value="habilitado">Habilitación final MSP</option><option value="registro">Certificado de registro MSP (histórico)</option><option value="verificar">Pendiente de verificación</option><option value="otra_fuente">No figura en las tres listas auditadas</option><option value="mides">Certificado Social MIDES</option></select></label>
         <label><b>Precisión (opcional)</b><select value={precision} onChange={(event) => setPrecision(event.target.value)}><option value="">Todas</option><option value="puerta">Nivel de puerta</option><option value="calle">Nivel de calle</option><option value="referencial">Referencial</option></select></label>
         <button className="secondary resetMapFilters" onClick={resetFilters}>Ver todo</button>
       </div>
@@ -104,8 +143,9 @@ export default function UruguayRegistry({ onReport }: { onReport: (facility?: Fa
         <div className="resultsHead"><div><div className="eyebrow">Registro consultable</div><h2>Resultados</h2></div><output className="resultCount">{visible.length}</output></div>
         <ul className="resultsLegend">
           <li><i className="dot greenDot"/>Habilitación final MSP</li>
-          <li><i className="dot amberDot"/>Certificado de registro</li>
-          <li><i className="dot blueDot"/>Certificado social MIDES</li>
+          <li><i className="dot amberDot"/>Certificado de registro MSP (histórico)</li>
+          <li><i className="dot cyanDot"/>Certificado Social MIDES</li>
+          <li><i className="dot grayDot"/>No figura en las tres listas auditadas</li>
           <li><i className="dot violetDot"/>Pendiente de verificación</li>
         </ul>
         <p className="resultsMeta">{visible.length} residenciales encontrados</p>
@@ -123,6 +163,45 @@ export default function UruguayRegistry({ onReport }: { onReport: (facility?: Fa
       </aside>
     </div>
   </>;
+}
+
+function FacilityMembershipBadges({ facility }: { facility: Facility }) {
+  const badges = [
+    facility.mspFinal && {
+      label: "Habilitación final MSP",
+      tone: "green",
+    },
+    facility.midesSocial && {
+      label: "Certificado Social MIDES",
+      tone: "cyan",
+    },
+    facility.mspRegistroHistorico && {
+      label: "Registro MSP histórico",
+      tone: "amber",
+    },
+    facility.pacp && {
+      label: "Proveedor PACP",
+      tone: "gray",
+    },
+    facility.otherSource && !facility.pacp && {
+      label: "Otra fuente / fuera de listas auditadas",
+      tone: "gray",
+    },
+    facility.pendingVerification && {
+      label: "Pendiente de verificación",
+      tone: "violet",
+    },
+  ].filter(Boolean) as { label: string; tone: string }[];
+
+  return (
+    <span className="facilityBadges" aria-label="Fuentes y situación administrativa">
+      {badges.map((badge) => (
+        <span className={`sourceBadge sourceBadge-${badge.tone}`} key={badge.label}>
+          {badge.label}
+        </span>
+      ))}
+    </span>
+  );
 }
 
 function FacilityAccordionCard({
@@ -160,6 +239,7 @@ function FacilityAccordionCard({
         <div className="facilityAccordionTitle">
           <strong>{facility.name}</strong>
           <span className="facilityLocation">{facility.locality} · {facility.department}</span>
+          <FacilityMembershipBadges facility={facility} />
         </div>
         <span className="facilityAccordionChevron">
           {isOpen ? <ChevronUp size={18}/> : <ChevronDown size={18}/>}

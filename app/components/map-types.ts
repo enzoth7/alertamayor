@@ -1,4 +1,9 @@
-export type FacilityStatus = "habilitado" | "registro" | "verificar";
+export type FacilityStatus =
+  | "habilitado"
+  | "registro"
+  | "mides"
+  | "otra_fuente"
+  | "verificar";
 
 export type Facility = {
   id: string;
@@ -15,6 +20,12 @@ export type Facility = {
   statusStage: string;
   statusShort: string;
   sourceLabel: string;
+  mspFinal: boolean;
+  mspRegistroHistorico: boolean;
+  midesSocial: boolean;
+  pacp: boolean;
+  otherSource: boolean;
+  pendingVerification: boolean;
 };
 
 export type MapMode = "streets" | "list";
