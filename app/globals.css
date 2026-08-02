@@ -1437,7 +1437,7 @@ textarea {
 }
 
 .registryStats {
-  grid-template-columns: repeat(6, minmax(0, 185px));
+  grid-template-columns: repeat(8, minmax(0, 185px));
 }
 
 .stat {
@@ -1537,6 +1537,30 @@ textarea {
 .statCard-violet p { color: #4c1d95; }
 .statCard-violet small { color: #7c3aed; }
 .statCard-violet:hover, .statCard-violet.selected { border-color: #8b5cf6; }
+
+.statCard-black {
+  background: linear-gradient(135deg, #252525 0%, #050505 100%);
+  border-color: #111;
+  color: #fff;
+}
+.statCard-black p { color: #fff; }
+.statCard-black small { color: #d4d4d4; }
+.statCard-black:hover, .statCard-black.selected {
+  border-color: #000;
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, .2), 0 10px 24px rgba(0, 0, 0, .2);
+}
+
+.statCard-red {
+  background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+  border-color: #fda4af;
+  color: #be123c;
+}
+.statCard-red p { color: #9f1239; }
+.statCard-red small { color: #e11d48; }
+.statCard-red:hover, .statCard-red.selected {
+  border-color: #e11d48;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, .12), 0 10px 24px rgba(159, 18, 57, .14);
+}
 
 .registryOverlapNote {
   max-width: 720px;
@@ -2600,6 +2624,30 @@ textarea {
 
 .registryDataStatus { margin: 16px 0 0; }
 .registryDataError { border-color: #efaaa3; background: var(--redbg); color: var(--red); }
+.privateCandidateMapNotice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border: 1px solid #fda4af;
+  border-radius: 13px;
+  background: #fff1f2;
+  color: #881337;
+  font-size: .82rem;
+  line-height: 1.45;
+}
+.privateCandidateMapNotice button {
+  flex: 0 0 auto;
+  padding: 8px 11px;
+  border: 1px solid #e11d48;
+  border-radius: 9px;
+  background: #fff;
+  color: #be123c;
+  font-weight: 800;
+  cursor: pointer;
+}
 .resultsHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .resultsHead h2 { margin: 3px 0 0; }
 .resultCount { min-width: 42px; padding: 7px 10px; border-radius: 999px; background: var(--bluebg); color: var(--blue); font-weight: 900; text-align: center; }
@@ -2612,6 +2660,7 @@ textarea {
 .cyanDot { background: var(--cyan); }
 .grayDot { background: var(--status-gray); }
 .violetDot { background: var(--violet); }
+.blackDot { background: #111; }
 .redDot { background: var(--red); }
 .resultsMeta { margin: 0 0 4px; color: var(--muted); font-size: .76rem; }
 
@@ -2643,6 +2692,8 @@ textarea {
 .facility-mides { border-left-color: var(--cyan); }
 .facility-otra_fuente { border-left-color: var(--status-gray); }
 .facility-verificar { border-left-color: var(--violet); }
+.facility-app { border-left-color: #111; }
+.facility-candidate_private { border-left-color: #e11d48; background: #fffafb; }
 
 .facilityAccordionHeader {
   width: 100%;
@@ -2706,6 +2757,8 @@ textarea {
 .facilityBadges .sourceBadge-amber { color: #92400e; background: #fffbeb; border-color: #fde68a; }
 .facilityBadges .sourceBadge-gray { color: #475569; background: #f1f5f9; border-color: #cbd5e1; }
 .facilityBadges .sourceBadge-violet { color: #5b21b6; background: #f5f3ff; border-color: #ddd6fe; }
+.facilityBadges .sourceBadge-black { color: #fff; background: #111; border-color: #000; }
+.facilityBadges .sourceBadge-red { color: #be123c; background: #fff1f2; border-color: #fda4af; }
 .mapPopupBadges { margin: 7px 0; }
 
 .facilityAccordionChevron {
@@ -2745,6 +2798,8 @@ textarea {
 .facilityAccordionActions {
   margin-top: 12px;
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .facilityReportBtn {
@@ -2754,6 +2809,17 @@ textarea {
   padding: 8px 14px;
   border-radius: 10px;
   justify-content: center;
+}
+
+.facilityCandidateSourceLink,
+.facilityPrivateReviewBtn {
+  flex: 1 1 150px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: .8rem;
+  text-align: center;
+  text-decoration: none;
 }
 
 .overviewSelection p, .mapPopup p { margin: 3px 0; }

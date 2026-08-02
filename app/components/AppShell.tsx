@@ -11,6 +11,7 @@ import { TeamVisitsWorkflow } from "./team/TeamVisitsWorkflow";
 import { IntakeReportForm } from "./IntakeReportForm";
 import { ReportStatusLookup } from "./ReportStatusLookup";
 import { TeamIntakeInbox } from "./team/TeamIntakeInbox";
+import { TeamFacilityCandidateQueue } from "./team/TeamFacilityCandidateQueue";
 import { useResidenciales } from "../hooks/useResidenciales";
 import type { Facility } from "./map-types";
 
@@ -77,13 +78,14 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
     if (portal === "organization") {
       const restoreOrg = async () => {
         try {
-          const savedMode = window.sessionStorage.getItem(ACCESS_SESSION_KEY);
-          if (savedMode === "organization") {
-            const response = await fetch("/api/team/session", { cache: "no-store" });
-            const data: unknown = await response.json().catch(() => null);
-            const authenticated = Boolean(data && typeof data === "object" && "authenticated" in data && data.authenticated === true);
-            if (!active) return;
-            if (authenticated) { setAccessMode("organization"); return; }
+          const response = await fetch("/api/team/session", { cache: "no-store" });
+          const data: unknown = await response.json().catch(() => null);
+          const authenticated = Boolean(data && typeof data === "object" && "authenticated" in data && data.authenticated === true);
+          if (!active) return;
+          if (authenticated) {
+            window.sessionStorage.setItem(ACCESS_SESSION_KEY, "organization");
+            setAccessMode("organization");
+            return;
           }
           if (!active) return;
           window.sessionStorage.removeItem(ACCESS_SESSION_KEY);
@@ -228,7 +230,7 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
       {view === "inicio" && <HomeView go={go} isOrganization={isOrganization}/>}
       {view === "denuncia" && <IntakeReportForm onHome={() => go("inicio")} onFollow={(code) => { if (code) setFollowCode(code); go("seguimiento"); }} initialFacility={preselectedFacility}/>}
       {view === "seguimiento" && <ReportStatusLookup onHome={() => go("inicio")} initialCode={followCode}/>}
-      {view === "residenciales" && <UruguayRegistry onReport={(facility) => {
+      {view === "residenciales" && (isOrganization ? <TeamFacilityCandidateQueue/> : <UruguayRegistry onReport={(facility) => {
         if (facility) {
           try {
             window.sessionStorage.setItem("alerta-mayor-preselected-facility", JSON.stringify(facility));
@@ -236,7 +238,7 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
           setPreselectedFacility(facility);
         }
         go(isOrganization ? "equipos" : "denuncia");
-      }}/>} 
+      }}/>) }
       {isOrganization && view === "equipos" && <Team initialFacility={preselectedFacility}/>}
       {isOrganization && view === "fuentes" && <Sources/>}
     </div>
@@ -269,7 +271,6 @@ function AccessGateway({ organizationLogin, setOrganizationLogin, username, setU
           <label><span>Contraseña</span><div className="accessInput"><LockKeyhole size={19}/><input type="password" value={password} onChange={(event) => { setPassword(event.target.value); setLoginError(""); }} autoComplete="current-password"/></div></label>
           {loginError && <div className="accessLoginError" role="alert">{loginError}</div>}
           <button className="accessLoginSubmit" type="submit" disabled={isLoggingIn}>{isLoggingIn ? "Ingresando…" : "Ingresar"} <ArrowRight size={18}/></button>
-          <p className="accessDemoCredentials">Credenciales de prueba: <strong>user</strong> / <strong>password</strong></p>
         </form>
         <button type="button" className="accessLoginBack" onClick={() => { setOrganizationLogin(false); setLoginError(""); setPassword(""); }}><ArrowLeft size={17}/> Volver</button>
       </>}

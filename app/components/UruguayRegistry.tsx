@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Building2, ChevronDown, ChevronUp, MapPinned, Search } from "lucide-react";
 import { useResidenciales } from "../hooks/useResidenciales";
+import { usePrivateCandidateMapLayer } from "../hooks/usePrivateCandidateMapLayer";
 import type { Facility, FacilityStatus, MapMode } from "./map-types";
 
 const StreetMap = dynamic(() => import("./StreetMap"), {
@@ -23,17 +24,32 @@ function matchesAdministrativeStatus(
   if (status === "registro") return facility.mspRegistroHistorico;
   if (status === "mides") return facility.midesSocial;
   if (status === "otra_fuente") return facility.otherSource;
+  if (status === "app") return facility.appDiscovered;
+  if (status === "candidate_private") return facility.privateCandidate === true;
   return facility.pendingVerification;
 }
 
 export default function UruguayRegistry({ onReport }: { onReport: (facility?: Facility) => void }) {
-  const { facilities, loading, error } = useResidenciales();
+  const { facilities: publicFacilities, loading, error } = useResidenciales();
+  const {
+    facilities: privateCandidateFacilities,
+    available: privateCandidatesAvailable,
+    loading: privateCandidatesLoading,
+    error: privateCandidatesError,
+  } = usePrivateCandidateMapLayer();
+  const [showPrivateCandidates, setShowPrivateCandidates] = useState(true);
   const [query, setQuery] = useState("");
   const [department, setDepartment] = useState("");
   const [status, setStatus] = useState<"" | FacilityStatus>("");
   const [precision, setPrecision] = useState("");
   const [mode, setMode] = useState<MapMode>("streets");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const facilities = useMemo(
+    () => showPrivateCandidates
+      ? [...publicFacilities, ...privateCandidateFacilities]
+      : publicFacilities,
+    [privateCandidateFacilities, publicFacilities, showPrivateCandidates],
+  );
 
   useEffect(() => {
     const requestedMode = new URLSearchParams(window.location.search).get("map") as MapMode | null;
@@ -66,7 +82,11 @@ export default function UruguayRegistry({ onReport }: { onReport: (facility?: Fa
     mides: kpiScope.filter((facility) => facility.midesSocial).length,
     otraFuente: kpiScope.filter((facility) => facility.otherSource).length,
     verificar: kpiScope.filter((facility) => facility.pendingVerification).length,
+    app: kpiScope.filter((facility) => facility.appDiscovered).length,
+    privateCandidates: kpiScope.filter((facility) => facility.privateCandidate).length,
   }), [kpiScope]);
+  const visiblePublicCount = visible.filter((facility) => !facility.privateCandidate).length;
+  const visiblePrivateCandidateCount = visible.filter((facility) => facility.privateCandidate).length;
 
   useEffect(() => {
     if (selectedId && !visible.some((facility) => facility.id === selectedId)) {
@@ -87,6 +107,17 @@ export default function UruguayRegistry({ onReport }: { onReport: (facility?: Fa
       <p className="lead">Elegí una categoría, un departamento o seleccioná un punto en el mapa para ver la información.</p>
       {loading && <div className="notice registryDataStatus" role="status">Cargando residenciales…</div>}
       {error && <div className="notice registryDataStatus registryDataError" role="alert">{error}</div>}
+      {privateCandidatesAvailable && privateCandidatesLoading && <div className="notice registryDataStatus" role="status">Actualizando candidatos OSM del piloto…</div>}
+      {privateCandidatesAvailable && privateCandidatesError && <div className="notice registryDataStatus registryDataError" role="alert">{privateCandidatesError}</div>}
+      {privateCandidatesAvailable && <div className="privateCandidateMapNotice">
+        <span><strong>Capa piloto de descubrimiento.</strong> Los 30 puntos rojos son candidatos OSM de evidencia C para revisar; se muestran junto al mapa sin sumarlos a la base oficial de 804 residenciales.</span>
+        <button type="button" onClick={() => {
+          setShowPrivateCandidates((current) => {
+            if (current && status === "candidate_private") setStatus("");
+            return !current;
+          });
+        }}>{showPrivateCandidates ? "Ocultar candidatos" : `Mostrar ${privateCandidateFacilities.length} candidatos`}</button>
+      </div>}
       <div className="stats registryStats">
         <button type="button" className={`stat statCard-blue ${!status ? "selected" : ""}`} onClick={() => setStatus("")}>
           <b>{visible.length}</b>
@@ -108,6 +139,11 @@ export default function UruguayRegistry({ onReport }: { onReport: (facility?: Fa
           <p>por verificar</p>
           <small>Revisión pendiente</small>
         </button>
+        <button type="button" className={`stat statCard-black ${status === "app" ? "selected" : ""}`} onClick={() => setStatus(status === "app" ? "" : "app")}>
+          <b>{totals.app}</b>
+          <p>encontrados por la app</p>
+          <small>Fuente digital · sin verificar</small>
+        </button>
         <button type="button" className={`stat statCard-gray ${status === "otra_fuente" ? "selected" : ""}`} onClick={() => setStatus(status === "otra_fuente" ? "" : "otra_fuente")}>
           <b>{totals.otraFuente}</b>
           <p>otras fuentes</p>
@@ -118,15 +154,27 @@ export default function UruguayRegistry({ onReport }: { onReport: (facility?: Fa
           <p>certificado social</p>
           <small>Certificado Social MIDES</small>
         </button>
+        {privateCandidatesAvailable && <button type="button" className={`stat statCard-red ${status === "candidate_private" ? "selected" : ""}`} onClick={() => {
+          setShowPrivateCandidates(true);
+          setStatus(status === "candidate_private" ? "" : "candidate_private");
+        }}>
+          <b>{privateCandidateFacilities.length}</b>
+          <p>candidatos OSM</p>
+          <small>Piloto · evidencia C</small>
+        </button>}
       </div>
       <p className="registryOverlapNote">
         Las acreditaciones se cuentan por separado: un mismo residencial puede
-        figurar en más de una lista.
+        figurar en más de una lista. Los candidatos del piloto no son una acreditación.
       </p>
       <div className="registryToolbar">
         <label className="searchField"><b>Nombre, calle o localidad</b><div className="registrySearchBox"><Search size={19}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ej.: La Paz, Artigas 1308, hogar"/></div></label>
         <label><b>Departamento</b><select value={department} onChange={(event) => setDepartment(event.target.value)}><option value="">Todos</option>{departmentCounts.map(([name]) => <option key={name}>{name}</option>)}</select></label>
-        <label><b>Situación administrativa</b><select value={status} onChange={(event) => setStatus(event.target.value as "" | FacilityStatus)}><option value="">Todas las que tienen punto</option><option value="habilitado">Habilitación final MSP</option><option value="registro">Certificado de registro MSP (histórico)</option><option value="verificar">Pendiente de verificación</option><option value="otra_fuente">No figura en las tres listas auditadas</option><option value="mides">Certificado Social MIDES</option></select></label>
+        <label><b>Situación administrativa</b><select value={status} onChange={(event) => {
+          const nextStatus = event.target.value as "" | FacilityStatus;
+          if (nextStatus === "candidate_private") setShowPrivateCandidates(true);
+          setStatus(nextStatus);
+        }}><option value="">Todas las que tienen punto</option><option value="habilitado">Habilitación final MSP</option><option value="registro">Certificado de registro MSP (histórico)</option><option value="verificar">Pendiente de verificación</option><option value="app">Encontrados por la app</option><option value="otra_fuente">No figura en las tres listas auditadas</option><option value="mides">Certificado Social MIDES</option>{privateCandidatesAvailable && <option value="candidate_private">Candidatos OSM del piloto</option>}</select></label>
         <label><b>Precisión (opcional)</b><select value={precision} onChange={(event) => setPrecision(event.target.value)}><option value="">Todas</option><option value="puerta">Nivel de puerta</option><option value="calle">Nivel de calle</option><option value="referencial">Referencial</option></select></label>
         <button className="secondary resetMapFilters" onClick={resetFilters}>Ver todo</button>
       </div>
@@ -147,8 +195,10 @@ export default function UruguayRegistry({ onReport }: { onReport: (facility?: Fa
           <li><i className="dot cyanDot"/>Certificado Social MIDES</li>
           <li><i className="dot grayDot"/>No figura en las tres listas auditadas</li>
           <li><i className="dot violetDot"/>Pendiente de verificación</li>
+          <li><i className="dot blackDot"/>Encontrado por la app</li>
+          {privateCandidatesAvailable && showPrivateCandidates && <li><i className="dot redDot"/>Candidato OSM del piloto · evidencia C</li>}
         </ul>
-        <p className="resultsMeta">{visible.length} residenciales encontrados</p>
+        <p className="resultsMeta">{visiblePublicCount} públicos{showPrivateCandidates && visiblePrivateCandidateCount > 0 ? ` + ${visiblePrivateCandidateCount} candidatos del piloto` : ""}</p>
         <div className="registryResultsScroll">
           {orderedResults.map((facility) => (
             <FacilityAccordionCard
@@ -190,6 +240,14 @@ function FacilityMembershipBadges({ facility }: { facility: Facility }) {
     facility.pendingVerification && {
       label: "Pendiente de verificación",
       tone: "violet",
+    },
+    facility.appDiscovered && {
+      label: "Encontrado por la app · sin verificar",
+      tone: "black",
+    },
+    facility.privateCandidate && {
+      label: `Candidato OSM del piloto · evidencia ${facility.privateCandidateEvidenceTier || "C"}`,
+      tone: "red",
     },
   ].filter(Boolean) as { label: string; tone: string }[];
 
@@ -254,7 +312,10 @@ function FacilityAccordionCard({
           {facility.precisionLabel && <em className="facilityPrecision">{facility.precisionLabel}</em>}
           
           <div className="facilityAccordionActions">
-            <button className="reportContinue facilityReportBtn" onClick={() => {
+            {facility.privateCandidate ? <>
+              {facility.privateCandidateSourceUrl && <a className="secondary facilityCandidateSourceLink" href={facility.privateCandidateSourceUrl} target="_blank" rel="noopener noreferrer">Abrir fuente OSM</a>}
+              <a className="reportContinue facilityPrivateReviewBtn" href="/organizacion/residenciales">Abrir cola interna</a>
+            </> : <button className="reportContinue facilityReportBtn" onClick={() => {
               if (facility) {
                 try {
                   window.sessionStorage.setItem("alerta-mayor-preselected-facility", JSON.stringify(facility));
@@ -263,7 +324,7 @@ function FacilityAccordionCard({
               onReport(facility);
             }}>
               Comunicar preocupación
-            </button>
+            </button>}
           </div>
         </div>
       )}

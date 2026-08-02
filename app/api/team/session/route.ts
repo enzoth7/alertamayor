@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createTeamSession, hasTeamSession, hasValidTeamCredentials, TEAM_SESSION_COOKIE } from "../../../../lib/team-session";
+import { createTeamSession, hasTeamSession, hasValidTeamCredentials, TEAM_SESSION_COOKIE } from "../../../../lib/team-session.mjs";
 
 export const runtime = "nodejs";
 
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     const response = NextResponse.json({ authenticated: true });
-    response.cookies.set(TEAM_SESSION_COOKIE, createTeamSession(), cookieOptions(request));
+    response.cookies.set(TEAM_SESSION_COOKIE, createTeamSession(username), cookieOptions(request));
     return response;
   } catch (error) {
     console.error("Unhandled error in team session POST:", error);

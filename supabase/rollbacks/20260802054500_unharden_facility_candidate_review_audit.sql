@@ -1,0 +1,8 @@
+begin;
+
+drop trigger if exists facility_candidate_review_events_append_only
+  on discovery_private.facility_candidate_review_events;
+drop function if exists discovery_private.reject_facility_candidate_review_event_mutation();
+drop index if exists discovery_private.facility_candidate_review_events_matched_residencial_idx;
+
+commit;

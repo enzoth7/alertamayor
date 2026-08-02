@@ -1,0 +1,67 @@
+{
+  "version": 0.6,
+  "generator": "fixture-only",
+  "elements": [
+    {
+      "type": "node",
+      "id": 101,
+      "lat": -34.901,
+      "lon": -56.164,
+      "tags": {
+        "amenity": "social_facility",
+        "social_facility": "nursing_home",
+        "social_facility:for": "senior",
+        "name": "Residencial Ejemplo",
+        "operator": "Operador Ejemplo",
+        "addr:street": "Calle Uno",
+        "addr:housenumber": "123",
+        "addr:city": "Montevideo",
+        "addr:state": "Montevideo",
+        "contact:phone": "+598 2000 0000",
+        "contact:website": "https://example.test/residencial"
+      }
+    },
+    {
+      "type": "way",
+      "id": 202,
+      "center": {
+        "lat": -34.72,
+        "lon": -56.22
+      },
+      "tags": {
+        "social_facility": "assisted_living",
+        "name": "Hogar Asistido",
+        "addr:full": "Ruta 5 km 40",
+        "addr:town": "Canelones",
+        "addr:state": "Canelones",
+        "phone": "4332 0000"
+      }
+    },
+    {
+      "type": "relation",
+      "id": 303,
+      "center": {
+        "lat": -32.31,
+        "lon": -58.08
+      },
+      "tags": {
+        "amenity": "retirement_home",
+        "name": "Hogar Histórico",
+        "operator": "Asociación Local",
+        "addr:place": "Barrio Centro",
+        "addr:housenumber": "45",
+        "addr:city": "Paysandú",
+        "is_in:department": "Paysandú",
+        "website": "https://example.test/hogar"
+      }
+    },
+    {
+      "type": "node",
+      "id": 404,
+      "tags": {
+        "amenity": "care_home"
+      }
+    }
+  ]
+}
+

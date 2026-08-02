@@ -1,0 +1,25 @@
+{
+  "generatedAt": "2026-07-31T23:58:07.008Z",
+  "departments": [
+    "Montevideo",
+    "Canelones"
+  ],
+  "sources": [
+    "osm"
+  ],
+  "existingCount": 787,
+  "discoveryCountBeforeDeduplication": 24,
+  "candidateCount": 23,
+  "probableMatches": 11,
+  "possibleMatches": 3,
+  "newCandidates": 9,
+  "googleIdentifierOnly": 0,
+  "sourceCounts": {
+    "osm": 23
+  },
+  "warnings": [],
+  "requestUsage": {
+    "googleRequests": 0,
+    "apifyRuns": 0
+  }
+}

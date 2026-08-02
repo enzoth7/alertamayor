@@ -10,6 +10,8 @@ const colors = {
   mides: "#0891b2",
   otra_fuente: "#64748b",
   verificar: "#6941c6",
+  app: "#111111",
+  candidate_private: "#e11d48",
 } satisfies Record<Facility["statusGroup"], string>;
 
 function membershipBadges(facility: Facility) {
@@ -21,6 +23,11 @@ function membershipBadges(facility: Facility) {
     facility.otherSource &&
       !facility.pacp && ["Otra fuente / fuera de listas auditadas", "gray"],
     facility.pendingVerification && ["Pendiente de verificación", "violet"],
+    facility.appDiscovered && ["Encontrado por la app", "black"],
+    facility.privateCandidate && [
+      `Candidato OSM del piloto · evidencia ${facility.privateCandidateEvidenceTier || "C"}`,
+      "red",
+    ],
   ].filter(Boolean) as [string, string][];
 }
 
@@ -65,7 +72,7 @@ export default function StreetMap({ facilities, selectedId, onSelect }: { facili
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
-  const isFirstRender = useRef(true);
+  const fittedFacilitiesRef = useRef("");
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -94,12 +101,14 @@ export default function StreetMap({ facilities, selectedId, onSelect }: { facili
     markers.clearLayers();
     facilities.forEach((facility) => {
       const isSelected = selectedId === facility.id;
+      const isPilotCandidate = facility.statusGroup === "candidate_private";
       const marker = L.circleMarker([facility.lat, facility.lng], {
-        radius: isSelected ? 10 : facility.statusGroup === "verificar" ? 7 : 6,
-        color: isSelected ? "#155eef" : "#fff",
+        radius: isSelected ? 11 : isPilotCandidate ? 8 : ["verificar", "app"].includes(facility.statusGroup) ? 7 : 6,
+        color: isSelected ? "#155eef" : isPilotCandidate ? "#881337" : "#fff",
         weight: isSelected ? 3 : 2,
         fillColor: colors[facility.statusGroup],
         fillOpacity: 0.92,
+        dashArray: facility.privateCandidate ? "4 3" : undefined,
       });
       marker.on("click", () => {
         onSelect(facility.id);
@@ -109,8 +118,9 @@ export default function StreetMap({ facilities, selectedId, onSelect }: { facili
     });
 
     // Ajustar límites solo en la carga inicial o al cambiar filtros
-    if (isFirstRender.current && facilities.length) {
-      isFirstRender.current = false;
+    const facilitiesKey = facilities.map((facility) => facility.id).sort().join("|");
+    if (facilities.length && facilitiesKey !== fittedFacilitiesRef.current) {
+      fittedFacilitiesRef.current = facilitiesKey;
       const bounds = L.latLngBounds(facilities.map(({ lat, lng }) => [lat, lng]));
       map.fitBounds(bounds, { padding: [28, 28], maxZoom: 14 });
     }

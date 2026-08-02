@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { hasTeamSession, TEAM_SESSION_COOKIE } from "../../../../../lib/team-session";
+import { hasTeamSession, TEAM_SESSION_COOKIE } from "../../../../../lib/team-session.mjs";
 import { querySupabaseDatabase } from "../../../../../lib/supabase-db";
 
 export const runtime = "nodejs";

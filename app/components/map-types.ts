@@ -3,7 +3,9 @@ export type FacilityStatus =
   | "registro"
   | "mides"
   | "otra_fuente"
-  | "verificar";
+  | "verificar"
+  | "app"
+  | "candidate_private";
 
 export type Facility = {
   id: string;
@@ -26,6 +28,11 @@ export type Facility = {
   pacp: boolean;
   otherSource: boolean;
   pendingVerification: boolean;
+  appDiscovered: boolean;
+  privateCandidate?: boolean;
+  privateCandidateEvidenceTier?: "A" | "B" | "C";
+  privateCandidateSourceUrl?: string;
+  privateCandidateRetrievedAt?: string;
 };
 
 export type MapMode = "streets" | "list";

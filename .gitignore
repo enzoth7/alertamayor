@@ -6,6 +6,10 @@ out/
 # local tooling
 .agents/
 .vscode/
+scratch/elepem-discovery/
+data/discovery/*.json
+data/discovery/*.tmp-*
+!data/discovery/README.md
 
 # environment files
 .env*

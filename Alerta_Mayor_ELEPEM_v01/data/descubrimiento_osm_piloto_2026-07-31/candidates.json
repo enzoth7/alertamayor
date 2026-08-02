@@ -1,0 +1,1178 @@
+{
+  "meta": {
+    "version": 1,
+    "generatedAt": "2026-07-31T23:58:07.008Z",
+    "departments": [
+      "Montevideo",
+      "Canelones"
+    ],
+    "sources": [
+      "osm"
+    ],
+    "existingSource": "database",
+    "existingCount": 787,
+    "discoveryCount": 24,
+    "warnings": [],
+    "requestUsage": {
+      "googleRequests": 0,
+      "apifyRuns": 0
+    },
+    "attribution": {
+      "openstreetmap": "© OpenStreetMap contributors · ODbL",
+      "google": null,
+      "apify": null
+    }
+  },
+  "candidates": [
+    {
+      "id": "RDC-883f28d0e0de0c2b",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "node/5635917122",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/node/5635917122",
+          "queries": [
+            "OSM UY-CA: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "nursing_home",
+            "healthcare": null,
+            "socialFacility": null,
+            "socialFacilityFor": null
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Casa",
+      "department": "Canelones",
+      "locality": null,
+      "address": null,
+      "phone": null,
+      "websiteUrl": null,
+      "lat": -34.8136506,
+      "lng": -56.0447186,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "new_candidate",
+      "suggestedResidencialId": null,
+      "confidence": 0,
+      "matchReasons": [],
+      "alternativeMatches": [],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-8f7de37d85d4732a",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "way/110440392",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/way/110440392",
+          "queries": [
+            "OSM UY-CA: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "social_facility",
+            "healthcare": null,
+            "socialFacility": "group_home",
+            "socialFacilityFor": "senior"
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Hogar de ancianos",
+      "department": "Canelones",
+      "locality": null,
+      "address": null,
+      "phone": null,
+      "websiteUrl": null,
+      "lat": -34.5179523,
+      "lng": -56.2832691,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "new_candidate",
+      "suggestedResidencialId": null,
+      "confidence": 0,
+      "matchReasons": [],
+      "alternativeMatches": [],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-ca5c93314d98aec3",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "way/1276230694",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/way/1276230694",
+          "queries": [
+            "OSM UY-CA: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "social_facility",
+            "healthcare": null,
+            "socialFacility": "nursing_home",
+            "socialFacilityFor": null
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Hogar de Ancianos",
+      "department": "Canelones",
+      "locality": null,
+      "address": null,
+      "phone": null,
+      "websiteUrl": null,
+      "lat": -34.7052478,
+      "lng": -55.946605,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "new_candidate",
+      "suggestedResidencialId": null,
+      "confidence": 0,
+      "matchReasons": [],
+      "alternativeMatches": [],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-71348cad2596d9e7",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "node/11698609680",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/node/11698609680",
+          "queries": [
+            "OSM UY-CA: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "social_facility",
+            "healthcare": null,
+            "socialFacility": "group_home",
+            "socialFacilityFor": "senior"
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Residencial Shangrilá",
+      "department": "Canelones",
+      "locality": null,
+      "address": null,
+      "phone": null,
+      "websiteUrl": null,
+      "lat": -34.8574772,
+      "lng": -56.0053932,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "new_candidate",
+      "suggestedResidencialId": null,
+      "confidence": 0,
+      "matchReasons": [],
+      "alternativeMatches": [],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-90168b1715cb1ab6",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "node/12651112919",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/node/12651112919",
+          "queries": [
+            "OSM UY-CA: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "social_facility",
+            "healthcare": null,
+            "socialFacility": "group_home",
+            "socialFacilityFor": "senior"
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Vitae Mentis",
+      "department": "Canelones",
+      "locality": null,
+      "address": null,
+      "phone": "+598 2601 8287",
+      "websiteUrl": null,
+      "lat": -34.8661736,
+      "lng": -56.0216185,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "new_candidate",
+      "suggestedResidencialId": null,
+      "confidence": 0,
+      "matchReasons": [],
+      "alternativeMatches": [],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-80cfab3fa591ccb2",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "node/10633748914",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/node/10633748914",
+          "queries": [
+            "OSM UY-MO: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "social_facility",
+            "healthcare": null,
+            "socialFacility": "nursing_home",
+            "socialFacilityFor": "senior"
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Centro Ombú",
+      "department": "Montevideo",
+      "locality": "Montevideo",
+      "address": "Bulevar España 2583",
+      "phone": "+598 92 454 889",
+      "websiteUrl": "https://www.centrodeladultomayor.com.uy/centro-ombu/",
+      "lat": -34.9124463,
+      "lng": -56.1582367,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "new_candidate",
+      "suggestedResidencialId": null,
+      "confidence": 0.5184,
+      "matchReasons": [],
+      "alternativeMatches": [
+        {
+          "residencialId": "ELP-0585",
+          "name": "Residencial Centro Arrels",
+          "score": 0.5184
+        },
+        {
+          "residencialId": "ELP-0348",
+          "name": "CENTRO DEL ADULTO MAYOR",
+          "score": 0.4966
+        },
+        {
+          "residencialId": "ELP-0347",
+          "name": "Centro Del Adulto Mayor Central",
+          "score": 0.44
+        }
+      ],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-114ec8af14bd8d6e",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "node/4127310293",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/node/4127310293",
+          "queries": [
+            "OSM UY-MO: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "social_facility",
+            "healthcare": null,
+            "socialFacility": "group_home",
+            "socialFacilityFor": "senior"
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Cotolengo Don Orione",
+      "department": "Montevideo",
+      "locality": null,
+      "address": null,
+      "phone": null,
+      "websiteUrl": null,
+      "lat": -34.8413484,
+      "lng": -56.1978619,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "new_candidate",
+      "suggestedResidencialId": null,
+      "confidence": 0,
+      "matchReasons": [],
+      "alternativeMatches": [],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-9e5d281f159a7c64",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "node/4403552224",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/node/4403552224",
+          "queries": [
+            "OSM UY-MO: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "social_facility",
+            "healthcare": null,
+            "socialFacility": "group_home",
+            "socialFacilityFor": "senior"
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "La Mia Casa",
+      "department": "Montevideo",
+      "locality": "Montevideo",
+      "address": "Avenida Agraciada 3592",
+      "phone": null,
+      "websiteUrl": null,
+      "lat": -34.8664126,
+      "lng": -56.2077899,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "new_candidate",
+      "suggestedResidencialId": null,
+      "confidence": 0.3924,
+      "matchReasons": [
+        "73 m entre coordenadas"
+      ],
+      "alternativeMatches": [
+        {
+          "residencialId": "ELP-0383",
+          "name": "EL ATARDECER",
+          "score": 0.3924
+        },
+        {
+          "residencialId": "MSP24-116",
+          "name": "La Rosaleda",
+          "score": 0.3858
+        },
+        {
+          "residencialId": "ELP-0346",
+          "name": "Centro Del Adulto Mayor Agraciada (Clamerica SA)",
+          "score": 0.3797
+        }
+      ],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-7d5cf0c90bd3f3a4",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "node/11032111730",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/node/11032111730",
+          "queries": [
+            "OSM UY-MO: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "social_facility",
+            "healthcare": null,
+            "socialFacility": "assisted_living",
+            "socialFacilityFor": "senior"
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Residencial Myriam Martinez",
+      "department": "Montevideo",
+      "locality": null,
+      "address": null,
+      "phone": null,
+      "websiteUrl": null,
+      "lat": -34.8406844,
+      "lng": -56.1197265,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "new_candidate",
+      "suggestedResidencialId": null,
+      "confidence": 0,
+      "matchReasons": [],
+      "alternativeMatches": [],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-1e8b2e51c8fd1bf5",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "way/1316164543",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/way/1316164543",
+          "queries": [
+            "OSM UY-MO: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "social_facility",
+            "healthcare": null,
+            "socialFacility": "nursing_home",
+            "socialFacilityFor": "senior"
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Casa Di Riposo Italiana",
+      "department": "Montevideo",
+      "locality": null,
+      "address": null,
+      "phone": null,
+      "websiteUrl": null,
+      "lat": -34.8904336,
+      "lng": -56.1614096,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "possible_match",
+      "suggestedResidencialId": "ELP-0334",
+      "confidence": 0.88,
+      "matchReasons": [
+        "nombre casi idéntico",
+        "nombre distintivo exacto"
+      ],
+      "alternativeMatches": [],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-a94ee9e2c73be944",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "way/458159003",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/way/458159003",
+          "queries": [
+            "OSM UY-MO: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": null,
+            "healthcare": null,
+            "socialFacility": "assisted_living",
+            "socialFacilityFor": null
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "La Maison",
+      "department": "Montevideo",
+      "locality": null,
+      "address": "26 de Marzo",
+      "phone": null,
+      "websiteUrl": null,
+      "lat": -34.9068962,
+      "lng": -56.1417017,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "possible_match",
+      "suggestedResidencialId": "MSP24-111",
+      "confidence": 0.6697,
+      "matchReasons": [
+        "12 m entre coordenadas"
+      ],
+      "alternativeMatches": [],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-0fc5b04b4ff39099",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "node/3053487191",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/node/3053487191",
+          "queries": [
+            "OSM UY-MO: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "social_facility",
+            "healthcare": null,
+            "socialFacility": "group_home",
+            "socialFacilityFor": "senior"
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Los Álamos",
+      "department": "Montevideo",
+      "locality": "Montevideo",
+      "address": "Ibiray 2398",
+      "phone": null,
+      "websiteUrl": null,
+      "lat": -34.9167954,
+      "lng": -56.1618268,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "possible_match",
+      "suggestedResidencialId": "ELP-0571",
+      "confidence": 0.905,
+      "matchReasons": [
+        "nombre distintivo exacto",
+        "dirección normalizada exacta",
+        "6 m entre coordenadas"
+      ],
+      "alternativeMatches": [],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-ba169c2669d2991a",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "node/5144543221",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/node/5144543221",
+          "queries": [
+            "OSM UY-MO: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "social_facility",
+            "healthcare": null,
+            "socialFacility": "assisted_living",
+            "socialFacilityFor": "senior"
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Claro de Luna",
+      "department": "Montevideo",
+      "locality": null,
+      "address": "Santiago Gadea 3582",
+      "phone": null,
+      "websiteUrl": null,
+      "lat": -34.8907025,
+      "lng": -56.1411957,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "probable_match",
+      "suggestedResidencialId": "ELP-0355",
+      "confidence": 1,
+      "matchReasons": [
+        "nombre casi idéntico",
+        "nombre distintivo exacto",
+        "dirección normalizada exacta",
+        "0 m entre coordenadas"
+      ],
+      "alternativeMatches": [],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-7d33a13ceb5a3b64",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "node/13067352454",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/node/13067352454",
+          "queries": [
+            "OSM UY-MO: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "social_facility",
+            "healthcare": null,
+            "socialFacility": "group_home",
+            "socialFacilityFor": "senior"
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Doña Juana",
+      "department": "Montevideo",
+      "locality": "Montevideo",
+      "address": "Doctor Francisco Simón 2416",
+      "phone": null,
+      "websiteUrl": null,
+      "lat": -34.8841667,
+      "lng": -56.1504374,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "probable_match",
+      "suggestedResidencialId": "MSP24-143",
+      "confidence": 0.975,
+      "matchReasons": [
+        "nombre casi idéntico",
+        "nombre distintivo exacto",
+        "dirección muy similar",
+        "4 m entre coordenadas"
+      ],
+      "alternativeMatches": [],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-487bbbc16b1414e8",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "node/6404947685",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/node/6404947685",
+          "queries": [
+            "OSM UY-MO: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "nursing_home",
+            "healthcare": null,
+            "socialFacility": null,
+            "socialFacilityFor": null
+          }
+        },
+        {
+          "source": "openstreetmap",
+          "externalId": "node/10671335950",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/node/10671335950",
+          "queries": [
+            "OSM UY-MO: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "nursing_home",
+            "healthcare": null,
+            "socialFacility": null,
+            "socialFacilityFor": null
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Estilo de Vida",
+      "department": "Montevideo",
+      "locality": null,
+      "address": "Luis B. Cavia",
+      "phone": null,
+      "websiteUrl": null,
+      "lat": -34.9116675,
+      "lng": -56.153399,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "probable_match",
+      "suggestedResidencialId": "MSP24-125",
+      "confidence": 0.9751,
+      "matchReasons": [
+        "nombre casi idéntico",
+        "nombre distintivo exacto",
+        "dirección muy similar",
+        "4 m entre coordenadas"
+      ],
+      "alternativeMatches": [
+        {
+          "residencialId": "MSP24-123",
+          "name": "Estilo de vida",
+          "score": 0.905
+        },
+        {
+          "residencialId": "MSP24-126",
+          "name": "Estilo de vida",
+          "score": 0.905
+        }
+      ],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-a6a38721a68e9c28",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "node/6404947885",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/node/6404947885",
+          "queries": [
+            "OSM UY-MO: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "nursing_home",
+            "healthcare": null,
+            "socialFacility": null,
+            "socialFacilityFor": null
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Estilo de Vida",
+      "department": "Montevideo",
+      "locality": null,
+      "address": "Domingo Cullen 693",
+      "phone": null,
+      "websiteUrl": null,
+      "lat": -34.9159276,
+      "lng": -56.1631301,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "probable_match",
+      "suggestedResidencialId": "ELP-0401",
+      "confidence": 0.9975,
+      "matchReasons": [
+        "nombre casi idéntico",
+        "nombre distintivo exacto",
+        "dirección normalizada exacta",
+        "14 m entre coordenadas"
+      ],
+      "alternativeMatches": [
+        {
+          "residencialId": "MSP24-123",
+          "name": "Estilo de vida",
+          "score": 0.88
+        },
+        {
+          "residencialId": "MSP24-125",
+          "name": "Estilo de vida",
+          "score": 0.88
+        }
+      ],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-1738de799ffd143a",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "node/6466087985",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/node/6466087985",
+          "queries": [
+            "OSM UY-MO: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "nursing_home",
+            "healthcare": null,
+            "socialFacility": null,
+            "socialFacilityFor": null
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Estilo de Vida",
+      "department": "Montevideo",
+      "locality": "Montevideo",
+      "address": "Echevarriarza 3453",
+      "phone": null,
+      "websiteUrl": null,
+      "lat": -34.9088743,
+      "lng": -56.1370292,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "probable_match",
+      "suggestedResidencialId": "MSP24-126",
+      "confidence": 1,
+      "matchReasons": [
+        "nombre casi idéntico",
+        "nombre distintivo exacto",
+        "dirección normalizada exacta",
+        "6 m entre coordenadas"
+      ],
+      "alternativeMatches": [
+        {
+          "residencialId": "MSP24-123",
+          "name": "Estilo de vida",
+          "score": 0.905
+        },
+        {
+          "residencialId": "MSP24-125",
+          "name": "Estilo de vida",
+          "score": 0.905
+        }
+      ],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-bd196cd762122307",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "node/11198618886",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/node/11198618886",
+          "queries": [
+            "OSM UY-MO: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "nursing_home",
+            "healthcare": null,
+            "socialFacility": "group_home",
+            "socialFacilityFor": "senior"
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Estilo de Vida",
+      "department": "Montevideo",
+      "locality": "Montevideo",
+      "address": "Bulevar España 2520",
+      "phone": "+59827106026",
+      "websiteUrl": "http://www.estilodevida.com.uy/",
+      "lat": -34.9122466,
+      "lng": -56.1598104,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "probable_match",
+      "suggestedResidencialId": "MSP24-123",
+      "confidence": 0.975,
+      "matchReasons": [
+        "nombre casi idéntico",
+        "nombre distintivo exacto",
+        "11 m entre coordenadas"
+      ],
+      "alternativeMatches": [
+        {
+          "residencialId": "MSP24-125",
+          "name": "Estilo de vida",
+          "score": 0.905
+        },
+        {
+          "residencialId": "MSP24-126",
+          "name": "Estilo de vida",
+          "score": 0.905
+        }
+      ],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-597fd2d8586456ce",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "node/12599439415",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/node/12599439415",
+          "queries": [
+            "OSM UY-MO: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "social_facility",
+            "healthcare": null,
+            "socialFacility": "group_home",
+            "socialFacilityFor": "senior"
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Fundación Algarrobo",
+      "department": "Montevideo",
+      "locality": null,
+      "address": null,
+      "phone": null,
+      "websiteUrl": null,
+      "lat": -34.9020182,
+      "lng": -56.1594233,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "probable_match",
+      "suggestedResidencialId": "MSP24-150",
+      "confidence": 0.95,
+      "matchReasons": [
+        "nombre casi idéntico",
+        "nombre distintivo exacto",
+        "14 m entre coordenadas"
+      ],
+      "alternativeMatches": [],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-3f2a4961b0f7d753",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "node/13130842101",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/node/13130842101",
+          "queries": [
+            "OSM UY-MO: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "nursing_home",
+            "healthcare": null,
+            "socialFacility": null,
+            "socialFacilityFor": null
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Historias de Vida",
+      "department": "Montevideo",
+      "locality": null,
+      "address": "Juan María Pérez 2785",
+      "phone": null,
+      "websiteUrl": null,
+      "lat": -34.9173735,
+      "lng": -56.1528071,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "probable_match",
+      "suggestedResidencialId": "ELP-0423",
+      "confidence": 0.95,
+      "matchReasons": [
+        "nombre casi idéntico",
+        "nombre distintivo exacto",
+        "19 m entre coordenadas"
+      ],
+      "alternativeMatches": [
+        {
+          "residencialId": "MSP24-125",
+          "name": "Estilo de vida",
+          "score": 0.3681
+        }
+      ],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-cc1bcf8ee2673119",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "way/457106176",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/way/457106176",
+          "queries": [
+            "OSM UY-MO: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "social_facility",
+            "healthcare": null,
+            "socialFacility": "assisted_living",
+            "socialFacilityFor": "senior"
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Humana Residencial",
+      "department": "Montevideo",
+      "locality": "Montevideo",
+      "address": "Bulevar España 2128",
+      "phone": null,
+      "websiteUrl": null,
+      "lat": -34.9088449,
+      "lng": -56.1699902,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "probable_match",
+      "suggestedResidencialId": "ELP-0606",
+      "confidence": 0.95,
+      "matchReasons": [
+        "nombre casi idéntico",
+        "nombre distintivo exacto",
+        "6 m entre coordenadas"
+      ],
+      "alternativeMatches": [
+        {
+          "residencialId": "MSP24-026",
+          "name": "Acompaña Residenciales",
+          "score": 0.885
+        },
+        {
+          "residencialId": "ELP-0585",
+          "name": "Residencial Centro Arrels",
+          "score": 0.4838
+        }
+      ],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-5296bad3e45fa172",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "node/944527136",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/node/944527136",
+          "queries": [
+            "OSM UY-MO: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "social_facility",
+            "healthcare": null,
+            "socialFacility": "nursing_home",
+            "socialFacilityFor": "senior"
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Los Abuelos",
+      "department": "Montevideo",
+      "locality": "Montevideo",
+      "address": "Avenida General Flores 4918",
+      "phone": "+598 2514 6141",
+      "websiteUrl": null,
+      "lat": -34.8413081,
+      "lng": -56.1510504,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "probable_match",
+      "suggestedResidencialId": "ELP-0464",
+      "confidence": 0.96,
+      "matchReasons": [
+        "nombre distintivo exacto",
+        "dirección normalizada exacta",
+        "0 m entre coordenadas"
+      ],
+      "alternativeMatches": [
+        {
+          "residencialId": "ELP-0430",
+          "name": "HOGAR DE ABUELOS",
+          "score": 0.905
+        }
+      ],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    },
+    {
+      "id": "RDC-a037aeea6f67a619",
+      "sources": [
+        "openstreetmap"
+      ],
+      "origins": [
+        {
+          "source": "openstreetmap",
+          "externalId": "node/12599456724",
+          "googlePlaceId": null,
+          "sourceUrl": "https://www.openstreetmap.org/node/12599456724",
+          "queries": [
+            "OSM UY-MO: nursing_home/social_facility para personas mayores"
+          ],
+          "evidence": {
+            "amenity": "social_facility",
+            "healthcare": null,
+            "socialFacility": "group_home",
+            "socialFacilityFor": "senior"
+          }
+        }
+      ],
+      "googlePlaceIds": [],
+      "name": "Residencial Le Parc",
+      "department": "Montevideo",
+      "locality": null,
+      "address": null,
+      "phone": null,
+      "websiteUrl": null,
+      "lat": -34.8991835,
+      "lng": -56.1579571,
+      "operationalStatus": null,
+      "discoveredAt": "2026-07-31T23:58:07.008Z",
+      "storagePolicy": "open_data",
+      "matchStatus": "probable_match",
+      "suggestedResidencialId": "ELP-0497",
+      "confidence": 0.95,
+      "matchReasons": [
+        "nombre distintivo exacto",
+        "11 m entre coordenadas"
+      ],
+      "alternativeMatches": [
+        {
+          "residencialId": "ELP-0640",
+          "name": "Residencial Rincon de luz",
+          "score": 0.3685
+        },
+        {
+          "residencialId": "ELP-0611",
+          "name": "Residencial Le Sens",
+          "score": 0.3609
+        }
+      ],
+      "reviewStatus": "pending",
+      "reviewNotes": null
+    }
+  ]
+}

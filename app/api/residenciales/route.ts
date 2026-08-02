@@ -16,7 +16,7 @@ type ResidentialRow = Record<string, unknown> & {
   lng: number;
   precision: Facility["precision"];
   precision_label: string;
-  status_group: "habilitado" | "registro" | "verificar";
+  status_group: "habilitado" | "registro" | "verificar" | "app";
   status_stage: string;
   status_short: string;
   source_label: string;
@@ -28,6 +28,7 @@ type ResidentialRow = Record<string, unknown> & {
 };
 
 function deriveStatusGroup(row: ResidentialRow): Facility["statusGroup"] {
+  if (row.status_group === "app") return "app";
   if (row.status_group === "verificar") return "verificar";
   if (row.msp_final) return "habilitado";
   if (row.mides_social) return "mides";
@@ -38,6 +39,7 @@ function deriveStatusGroup(row: ResidentialRow): Facility["statusGroup"] {
 function isOtherSource(row: ResidentialRow) {
   return (
     row.status_group !== "verificar" &&
+    row.status_group !== "app" &&
     !row.msp_final &&
     !row.msp_registro_historico &&
     !row.mides_social &&
@@ -98,6 +100,8 @@ export async function GET() {
         pacp: row.pacp,
         otherSource,
         pendingVerification: row.status_group === "verificar",
+        appDiscovered: row.status_group === "app",
+        privateCandidate: false,
       };
     });
 

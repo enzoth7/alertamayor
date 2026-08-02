@@ -1,4 +1,4 @@
-import { Pool } from "pg";
+import { Pool, type PoolClient } from "pg";
 
 let pool: Pool | undefined;
 
@@ -28,4 +28,23 @@ function getDatabasePool(): Pool {
 export async function querySupabaseDatabase<T extends Record<string, unknown>>(text: string, values: unknown[] = []): Promise<T[]> {
   const result = await getDatabasePool().query<T>(text, values);
   return result.rows;
+}
+
+export async function withSupabaseTransaction<T>(
+  callback: (client: PoolClient) => Promise<T>,
+): Promise<T> {
+  const client = await getDatabasePool().connect();
+  try {
+    await client.query("begin");
+    await client.query("set local statement_timeout = '15s'");
+    await client.query("set local lock_timeout = '5s'");
+    const result = await callback(client);
+    await client.query("commit");
+    return result;
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
