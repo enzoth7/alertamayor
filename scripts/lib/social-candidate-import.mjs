@@ -6,6 +6,7 @@ import {
   normalizeText,
   rankFacilityMatches,
 } from "../../lib/facility-matching.mjs";
+import { matchingFacilityRelation } from "../../lib/elepem-data-source.mjs";
 
 const EXPECTED_OFFICIAL_MATCHES = new Set([
   "residencia san cono",
@@ -362,8 +363,30 @@ export function buildSocialCandidateDryRun({ input, publicFacilities = [], priva
   };
 }
 
-export const SOCIAL_DRY_RUN_READ_SQL = Object.freeze({
-  publicFacilities: `select id, name, department, locality, address, lat, lng from public.residenciales order by id`,
-  privateCandidates: `select id::text, candidate_key, normalized_name, normalized_department, normalized_locality, normalized_address, lat, lng from discovery_private.facility_candidates order by id`,
-  sourceObservations: `select id::text, source_record_key, normalized_name, normalized_department, normalized_locality, normalized_address, lat, lng from discovery_private.facility_source_observations where source_type = 'openstreetmap' order by id`,
-});
+export function socialDryRunReadSql(dataSource = "legacy") {
+  const publicFacilities = dataSource === "normalized"
+    ? `select
+         exclusion.subject_id as id,
+         exclusion.name,
+         exclusion.department,
+         exclusion.locality,
+         exclusion.address,
+         facility.lat,
+         facility.lng
+       from ${matchingFacilityRelation(dataSource)} as exclusion
+       join public.facilities_current_internal as facility
+         on facility.facility_key = exclusion.subject_id
+       where exclusion.subject_type = 'normalized_facility'
+       order by exclusion.subject_id`
+    : `select id, name, department, locality, address, lat, lng
+       from ${matchingFacilityRelation(dataSource)}
+       order by id`;
+
+  return Object.freeze({
+    publicFacilities,
+    privateCandidates: `select id::text, candidate_key, normalized_name, normalized_department, normalized_locality, normalized_address, lat, lng from discovery_private.facility_candidates order by id`,
+    sourceObservations: `select id::text, source_record_key, normalized_name, normalized_department, normalized_locality, normalized_address, lat, lng from discovery_private.facility_source_observations where source_type = 'openstreetmap' order by id`,
+  });
+}
+
+export const SOCIAL_DRY_RUN_READ_SQL = socialDryRunReadSql("legacy");

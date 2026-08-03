@@ -15,8 +15,11 @@ function getDatabasePool(): Pool {
     database: process.env.SUPABASE_DB_NAME || "postgres",
     user: process.env.SUPABASE_DB_USER || "postgres",
     password,
-    // Supabase's managed pooler requires TLS; its connection string uses sslmode=require.
-    ssl: { rejectUnauthorized: process.env.SUPABASE_DB_SSL_REJECT_UNAUTHORIZED === "true" },
+    // Supabase managed connections require TLS. Local disposable PostgreSQL
+    // may opt out explicitly; production keeps the secure default.
+    ssl: process.env.SUPABASE_DB_SSL_MODE === "disable"
+      ? false
+      : { rejectUnauthorized: process.env.SUPABASE_DB_SSL_REJECT_UNAUTHORIZED === "true" },
     max: 3,
     idleTimeoutMillis: 10_000,
     connectionTimeoutMillis: 10_000,

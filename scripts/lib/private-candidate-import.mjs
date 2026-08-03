@@ -149,6 +149,110 @@ export const UPSERT_CANDIDATES_SQL = `
   returning id
 `;
 
+export const UPSERT_NORMALIZED_CANDIDATES_SQL = `
+  with incoming as (
+    select *
+    from jsonb_to_recordset($1::jsonb) as row(
+      "candidateKey" text,
+      "candidateName" text,
+      "candidateDepartment" text,
+      "candidateLocality" text,
+      "candidateAddress" text,
+      lat double precision,
+      lng double precision,
+      "candidateStatus" text,
+      "bestMatchResidencialId" text,
+      "bestMatchScore" numeric
+    )
+  ), resolved as (
+    select
+      incoming.*,
+      facility.facility_id as valid_facility_id,
+      legacy.legacy_residencial_id as valid_legacy_match_id
+    from incoming
+    left join elepem_core.legacy_facility_map as input_mapping
+      on input_mapping.legacy_residencial_id = incoming."bestMatchResidencialId"
+     and input_mapping.mapping_status = 'mapped'
+    left join lateral (
+      select current_facility.facility_id, current_facility.facility_key
+      from public.facilities_current_internal as current_facility
+      join public.known_facilities_exclusion_view as exclusion
+        on exclusion.subject_type = 'normalized_facility'
+       and exclusion.subject_id = current_facility.facility_key
+      where current_facility.facility_key = incoming."bestMatchResidencialId"
+         or current_facility.facility_id = input_mapping.facility_id
+      order by (current_facility.facility_key = incoming."bestMatchResidencialId") desc
+      limit 1
+    ) as facility on true
+    left join lateral (
+      select mapping.legacy_residencial_id
+      from elepem_core.legacy_facility_map as mapping
+      where mapping.facility_id = facility.facility_id
+        and mapping.mapping_status = 'mapped'
+      order by mapping.legacy_residencial_id
+      limit 1
+    ) as legacy on true
+    where incoming."candidateName" is not null
+  )
+  insert into discovery_private.facility_candidates (
+    candidate_key,
+    status,
+    normalized_name,
+    normalized_department,
+    normalized_locality,
+    normalized_address,
+    lat,
+    lng,
+    best_match_residencial_id,
+    resolved_facility_id,
+    best_match_score,
+    evidence_tier,
+    human_reviewed,
+    public_eligible,
+    first_seen_at,
+    last_seen_at
+  )
+  select
+    resolved."candidateKey",
+    resolved."candidateStatus",
+    resolved."candidateName",
+    resolved."candidateDepartment",
+    resolved."candidateLocality",
+    resolved."candidateAddress",
+    resolved.lat,
+    resolved.lng,
+    resolved.valid_legacy_match_id,
+    resolved.valid_facility_id,
+    resolved."bestMatchScore",
+    'C',
+    false,
+    false,
+    $2,
+    $2
+  from resolved
+  on conflict (candidate_key) do update set
+    status = excluded.status,
+    normalized_name = excluded.normalized_name,
+    normalized_department = excluded.normalized_department,
+    normalized_locality = excluded.normalized_locality,
+    normalized_address = excluded.normalized_address,
+    lat = excluded.lat,
+    lng = excluded.lng,
+    best_match_residencial_id = excluded.best_match_residencial_id,
+    resolved_facility_id = excluded.resolved_facility_id,
+    best_match_score = excluded.best_match_score,
+    last_seen_at = greatest(discovery_private.facility_candidates.last_seen_at, excluded.last_seen_at),
+    updated_at = now()
+  where not discovery_private.facility_candidates.human_reviewed
+  returning id
+`;
+
+export function candidateUpsertSql(dataSource = "legacy") {
+  return dataSource === "normalized"
+    ? UPSERT_NORMALIZED_CANDIDATES_SQL
+    : UPSERT_CANDIDATES_SQL;
+}
+
 export const LINK_SOURCES_SQL = `
   with incoming as (
     select *
@@ -228,6 +332,7 @@ export const PRIVATE_IMPORT_SQL = Object.freeze([
   INSERT_RUN_SQL,
   INSERT_OBSERVATIONS_SQL,
   UPSERT_CANDIDATES_SQL,
+  UPSERT_NORMALIZED_CANDIDATES_SQL,
   LINK_SOURCES_SQL,
   INSERT_EXTERNAL_IDS_SQL,
 ]);
@@ -247,7 +352,7 @@ async function countPublicResidenciales(client) {
   return result.rows[0].count;
 }
 
-export async function applyPrivateCandidates(client, { inputMetadata, rows }) {
+export async function applyPrivateCandidates(client, { inputMetadata, rows, dataSource = "legacy" }) {
   assertPrivateImportSql();
   const requiredTables = await client.query(`
     select
@@ -279,7 +384,7 @@ export async function applyPrivateCandidates(client, { inputMetadata, rows }) {
       runId,
       JSON.stringify(rows),
     ]);
-    const candidates = await client.query(UPSERT_CANDIDATES_SQL, [
+    const candidates = await client.query(candidateUpsertSql(dataSource), [
       JSON.stringify(rows),
       inputMetadata.retrievedAt,
     ]);
@@ -308,6 +413,7 @@ export async function applyPrivateCandidates(client, { inputMetadata, rows }) {
       insertedOrUpdatedCandidates: candidates.rowCount,
       insertedLinks: links.rowCount,
       insertedExternalIds: externalIds.rowCount,
+      dataSource,
       totals: totals.rows[0],
     };
   } catch (error) {

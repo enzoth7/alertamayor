@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { buildSocialCandidateDryRun, SOCIAL_DRY_RUN_READ_SQL } from "./lib/social-candidate-import.mjs";
+import { readElepemDataSource } from "../lib/elepem-data-source.mjs";
+import { buildSocialCandidateDryRun, socialDryRunReadSql } from "./lib/social-candidate-import.mjs";
 import { discoveryPath, parseArgs, uruguayDateStamp, writeJsonAtomically } from "./lib/discovery-files.mjs";
 import { createSupabasePool } from "./lib/supabase-script-db.mjs";
 
@@ -8,15 +9,16 @@ async function readJson(path) {
   return JSON.parse(await readFile(path, "utf8"));
 }
 
-async function readTargets() {
+async function readTargets(dataSource) {
+  const readSql = socialDryRunReadSql(dataSource);
   const pool = createSupabasePool("alertamayor-social-candidate-dry-run");
   const client = await pool.connect();
   try {
     await client.query("begin transaction read only");
     await client.query("set local statement_timeout = '30s'");
-    const publicFacilities = await client.query(SOCIAL_DRY_RUN_READ_SQL.publicFacilities);
-    const privateCandidates = await client.query(SOCIAL_DRY_RUN_READ_SQL.privateCandidates);
-    const sourceObservations = await client.query(SOCIAL_DRY_RUN_READ_SQL.sourceObservations);
+    const publicFacilities = await client.query(readSql.publicFacilities);
+    const privateCandidates = await client.query(readSql.privateCandidates);
+    const sourceObservations = await client.query(readSql.sourceObservations);
     await client.query("commit");
     return {
       publicFacilities: publicFacilities.rows,
@@ -41,7 +43,8 @@ async function main() {
   const inputPath = resolve(String(args.input));
   const osmPath = resolve(String(args.osm || "data/discovery/osm-elepem-candidates-2026-08-02.json"));
   const outputPath = discoveryPath(args.output, `social-candidate-review-${uruguayDateStamp()}.json`);
-  const [input, osmDocument, targets] = await Promise.all([readJson(inputPath), readJson(osmPath), readTargets()]);
+  const dataSource = readElepemDataSource();
+  const [input, osmDocument, targets] = await Promise.all([readJson(inputPath), readJson(osmPath), readTargets(dataSource)]);
   const report = buildSocialCandidateDryRun({
     input,
     ...targets,
@@ -49,6 +52,7 @@ async function main() {
   });
   report.metadata.inputPath = inputPath;
   report.metadata.osmPath = osmPath;
+  report.metadata.dataSource = dataSource;
   report.metadata.comparisonCounts = {
     publicResidenciales: targets.publicFacilities.length,
     privateCandidates: targets.privateCandidates.length,

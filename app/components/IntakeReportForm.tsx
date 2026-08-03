@@ -672,7 +672,7 @@ export function IntakeReportForm({
           <label className="reportField">
             <span>
               Contá brevemente qué está pasando
-              {draft.concerns.includes("No sé cómo clasificarlo") && <em style={{color: "#d97706", fontStyle: "normal", marginLeft: "6px"}}>(Obligatorio para "No sé cómo clasificarlo")</em>}
+              {draft.concerns.includes("No sé cómo clasificarlo") && <em style={{color: "#d97706", fontStyle: "normal", marginLeft: "6px"}}>(Obligatorio para “No sé cómo clasificarlo”)</em>}
             </span>
             <textarea value={draft.narrative} onChange={(event) => update("narrative", event.target.value)} placeholder="Si preferís, escribí un resumen breve de la situación." />
           </label>

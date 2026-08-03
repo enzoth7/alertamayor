@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { readElepemDataSource } from "../lib/elepem-data-source.mjs";
 import { parseArgs } from "./lib/discovery-files.mjs";
 import { createSupabasePool } from "./lib/supabase-script-db.mjs";
 
@@ -58,6 +59,7 @@ async function main() {
   const inputPath = resolve(String(args.input));
   const document = JSON.parse(await readFile(inputPath, "utf8"));
   const rows = suggestionRows(document);
+  const dataSource = readElepemDataSource();
   const pool = createSupabasePool("alertamayor-private-match-suggestion-sync");
   const client = await pool.connect();
   try {
@@ -75,8 +77,69 @@ async function main() {
          and candidate.candidate_key = incoming."candidateKey"`,
       [JSON.stringify(rows)],
     );
-    const inserted = await client.query(
-      `with incoming as (
+    const insertSql = dataSource === "normalized"
+      ? `with incoming as (
+         select *
+         from jsonb_to_recordset($1::jsonb) as row(
+           "candidateKey" text,
+           rank smallint,
+           "residencialId" text,
+           score numeric,
+           components jsonb,
+           "generatedAt" timestamptz
+         )
+       )
+       insert into discovery_private.facility_candidate_match_suggestions (
+         candidate_id,
+         residencial_id,
+         facility_id,
+         rank,
+         score,
+         components,
+         generated_at
+       )
+       select
+         candidate.id,
+         mapping.legacy_residencial_id,
+         facility.facility_id,
+         incoming.rank,
+         incoming.score,
+         incoming.components,
+         incoming."generatedAt"
+       from incoming
+       join discovery_private.facility_candidates as candidate
+         on candidate.candidate_key = incoming."candidateKey"
+       left join elepem_core.legacy_facility_map as input_mapping
+         on input_mapping.legacy_residencial_id = incoming."residencialId"
+        and input_mapping.mapping_status = 'mapped'
+       join lateral (
+         select current_facility.*
+         from public.facilities_current_internal as current_facility
+         where current_facility.facility_key = incoming."residencialId"
+            or current_facility.facility_id = input_mapping.facility_id
+         order by (current_facility.facility_key = incoming."residencialId") desc
+         limit 1
+       ) as facility on true
+       join public.known_facilities_exclusion_view as exclusion
+         on exclusion.subject_type = 'normalized_facility'
+        and exclusion.subject_id = facility.facility_key
+       left join lateral (
+         select legacy.legacy_residencial_id
+         from elepem_core.legacy_facility_map as legacy
+         where legacy.facility_id = facility.facility_id
+           and legacy.mapping_status = 'mapped'
+         order by legacy.legacy_residencial_id
+         limit 1
+       ) as mapping on true
+       on conflict (candidate_id, rank) do update set
+         residencial_id = excluded.residencial_id,
+         facility_id = excluded.facility_id,
+         score = excluded.score,
+         components = excluded.components,
+         generated_at = excluded.generated_at,
+         updated_at = now()
+       returning candidate_id`
+      : `with incoming as (
          select *
          from jsonb_to_recordset($1::jsonb) as row(
            "candidateKey" text,
@@ -105,7 +168,9 @@ async function main() {
        from incoming
        join discovery_private.facility_candidates as candidate
          on candidate.candidate_key = incoming."candidateKey"
-       join public.residenciales as residencial
+       join ${dataSource === "compatibility"
+         ? "public.residenciales_legacy_compat"
+         : "public.residenciales"} as residencial
          on residencial.id = incoming."residencialId"
        on conflict (candidate_id, rank) do update set
          residencial_id = excluded.residencial_id,
@@ -113,9 +178,8 @@ async function main() {
          components = excluded.components,
          generated_at = excluded.generated_at,
          updated_at = now()
-       returning candidate_id`,
-      [JSON.stringify(rows)],
-    );
+       returning candidate_id`;
+    const inserted = await client.query(insertSql, [JSON.stringify(rows)]);
     const after = await countPublic(client);
     if (before !== after) throw new Error("Cambió public.residenciales; se revierte.");
     await client.query("commit");
@@ -124,6 +188,7 @@ async function main() {
       suggestions: inserted.rowCount,
       publicResidencialesBefore: before,
       publicResidencialesAfter: after,
+      dataSource,
     }, null, 2));
   } catch (error) {
     await client.query("rollback");

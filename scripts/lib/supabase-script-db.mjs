@@ -14,10 +14,12 @@ export function createSupabasePool(applicationName) {
     database: process.env.SUPABASE_DB_NAME || "postgres",
     user: process.env.SUPABASE_DB_USER || "postgres",
     password,
-    ssl: {
-      rejectUnauthorized:
-        process.env.SUPABASE_DB_SSL_REJECT_UNAUTHORIZED === "true",
-    },
+    ssl: process.env.SUPABASE_DB_SSL_MODE === "disable"
+      ? false
+      : {
+          rejectUnauthorized:
+            process.env.SUPABASE_DB_SSL_REJECT_UNAUTHORIZED === "true",
+        },
     application_name: applicationName,
     max: 1,
     connectionTimeoutMillis: 20_000,

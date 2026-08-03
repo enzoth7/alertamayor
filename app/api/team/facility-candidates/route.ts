@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  candidateSuggestionSql,
+  readElepemDataSource,
+} from "../../../../lib/elepem-data-source.mjs";
 import { validateCandidateReviewInput } from "../../../../lib/facility-candidate-review.mjs";
 import { querySupabaseDatabase, withSupabaseTransaction } from "../../../../lib/supabase-db";
 import {
@@ -46,7 +50,10 @@ function sessionFrom(request: NextRequest) {
   return readTeamSession(request.cookies.get(TEAM_SESSION_COOKIE)?.value);
 }
 
-function buildCandidateQuery(request: NextRequest) {
+function buildCandidateQuery(
+  request: NextRequest,
+  dataSource: ReturnType<typeof readElepemDataSource>,
+) {
   const values: unknown[] = [];
   const where = ["true"];
   const parameter = (value: unknown) => {
@@ -121,25 +128,7 @@ function buildCandidateQuery(request: NextRequest) {
           where candidate_source.candidate_id = candidate.id
         ), '[]'::jsonb) as sources,
         coalesce((
-          select jsonb_agg(
-            jsonb_build_object(
-              'rank', suggestion.rank,
-              'score', suggestion.score,
-              'components', suggestion.components,
-              'generatedAt', suggestion.generated_at,
-              'residencialId', residencial.id,
-              'name', residencial.name,
-              'department', residencial.department,
-              'locality', residencial.locality,
-              'address', residencial.address,
-              'latitude', residencial.lat,
-              'longitude', residencial.lng
-            ) order by suggestion.rank
-          )
-          from discovery_private.facility_candidate_match_suggestions as suggestion
-          join public.residenciales as residencial
-            on residencial.id = suggestion.residencial_id
-          where suggestion.candidate_id = candidate.id
+          ${candidateSuggestionSql(dataSource)}
         ), '[]'::jsonb) as suggestions,
         coalesce((
           select jsonb_agg(to_jsonb(recent_event) order by recent_event.created_at desc)
@@ -184,11 +173,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
   try {
-    const query = buildCandidateQuery(request);
+    const dataSource = readElepemDataSource();
+    const query = buildCandidateQuery(request, dataSource);
     const candidates = await querySupabaseDatabase(query.sql, query.values);
     return NextResponse.json(
       { candidates, reviewer: session.reviewer },
-      { headers: { "Cache-Control": "no-store" } },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+          "X-ELEPEM-Data-Source": dataSource,
+        },
+      },
     );
   } catch (error) {
     console.error("Private facility candidate queue fetch failed.", {
@@ -228,6 +223,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const dataSource = readElepemDataSource();
     const updated = await withSupabaseTransaction(async (client) => {
       const currentResult = await client.query(
         `select *
@@ -239,12 +235,43 @@ export async function POST(request: NextRequest) {
       const current = currentResult.rows[0];
       if (!current) throw new ApiError("No se encontró el candidato.", 404);
 
+      let resolvedFacilityId: string | null = null;
+      let legacyResidencialId: string | null = null;
       if (input.matchedResidencialId) {
-        const match = await client.query(
-          "select id from public.residenciales where id = $1 limit 1",
-          [input.matchedResidencialId],
-        );
-        if (!match.rows[0]) throw new ApiError("El residencial vinculado no existe.", 400);
+        if (dataSource === "normalized") {
+          const match = await client.query(
+            `select
+               facility.facility_id::text,
+               mapping.legacy_residencial_id
+             from public.facilities_current_internal as facility
+             left join lateral (
+               select legacy.legacy_residencial_id
+               from elepem_core.legacy_facility_map as legacy
+               where legacy.facility_id = facility.facility_id
+                 and legacy.mapping_status = 'mapped'
+               order by legacy.legacy_residencial_id
+               limit 1
+             ) as mapping on true
+             where facility.facility_key = $1
+             limit 1`,
+            [input.matchedResidencialId],
+          );
+          if (!match.rows[0]) throw new ApiError("La sede normalizada vinculada no existe.", 400);
+          resolvedFacilityId = match.rows[0].facility_id;
+          legacyResidencialId = match.rows[0].legacy_residencial_id ?? null;
+        } else {
+          const match = await client.query(
+            `select id
+             from ${dataSource === "compatibility"
+               ? "public.residenciales_legacy_compat"
+               : "public.residenciales"}
+             where id = $1
+             limit 1`,
+            [input.matchedResidencialId],
+          );
+          if (!match.rows[0]) throw new ApiError("El residencial vinculado no existe.", 400);
+          legacyResidencialId = match.rows[0].id;
+        }
       }
 
       if (input.action === "verified_new" || input.action === "verified_match") {
@@ -282,72 +309,118 @@ export async function POST(request: NextRequest) {
       const correctedLongitude = input.corrections.longitude ?? current.lng;
       const matchedResidencialId = input.action === "verified_new"
         ? null
-        : input.matchedResidencialId ?? current.best_match_residencial_id;
+        : legacyResidencialId ?? current.best_match_residencial_id;
+      const matchedFacilityId = input.action === "verified_new"
+        ? null
+        : resolvedFacilityId ?? current.resolved_facility_id ?? null;
 
-      const result = await client.query(
-        `update discovery_private.facility_candidates
-         set
-           status = $2,
-           normalized_name = $3,
-           normalized_address = $4,
-           lat = $5,
-           lng = $6,
-           best_match_residencial_id = $7,
-           evidence_tier = $8,
-           human_reviewed = true,
-           reviewed_at = now(),
-           reviewed_by = $9,
-           review_note = $10,
-           public_eligible = false,
-           updated_at = now()
-         where id = $1::bigint
-         returning *`,
-        [
-          input.candidateId,
-          input.status,
-          correctedName,
-          correctedAddress,
-          correctedLatitude,
-          correctedLongitude,
-          matchedResidencialId,
-          input.evidenceTier,
-          session.reviewer,
-          input.reviewNote,
-        ],
-      );
+      const result = dataSource === "normalized"
+        ? await client.query(
+          `update discovery_private.facility_candidates
+           set
+             status = $2,
+             normalized_name = $3,
+             normalized_address = $4,
+             lat = $5,
+             lng = $6,
+             best_match_residencial_id = $7,
+             resolved_facility_id = $8::bigint,
+             evidence_tier = $9,
+             human_reviewed = true,
+             reviewed_at = now(),
+             reviewed_by = $10,
+             review_note = $11,
+             public_eligible = false,
+             updated_at = now()
+           where id = $1::bigint
+           returning *`,
+          [
+            input.candidateId,
+            input.status,
+            correctedName,
+            correctedAddress,
+            correctedLatitude,
+            correctedLongitude,
+            matchedResidencialId,
+            matchedFacilityId,
+            input.evidenceTier,
+            session.reviewer,
+            input.reviewNote,
+          ],
+        )
+        : await client.query(
+          `update discovery_private.facility_candidates
+           set
+             status = $2,
+             normalized_name = $3,
+             normalized_address = $4,
+             lat = $5,
+             lng = $6,
+             best_match_residencial_id = $7,
+             evidence_tier = $8,
+             human_reviewed = true,
+             reviewed_at = now(),
+             reviewed_by = $9,
+             review_note = $10,
+             public_eligible = false,
+             updated_at = now()
+           where id = $1::bigint
+           returning *`,
+          [
+            input.candidateId,
+            input.status,
+            correctedName,
+            correctedAddress,
+            correctedLatitude,
+            correctedLongitude,
+            matchedResidencialId,
+            input.evidenceTier,
+            session.reviewer,
+            input.reviewNote,
+          ],
+        );
       const candidateAfter = result.rows[0];
-      await client.query(
-        `insert into discovery_private.facility_candidate_review_events (
-           candidate_id,
-           action,
-           previous_status,
-           new_status,
-           previous_evidence_tier,
-           new_evidence_tier,
-           matched_residencial_id,
-           reviewer_identifier,
-           review_note,
-           corrections,
-           candidate_before,
-           candidate_after
-         ) values (
-           $1::bigint, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11::jsonb, $12::jsonb
-         )`,
-        [
-          input.candidateId,
-          input.action,
-          current.status,
-          candidateAfter.status,
-          current.evidence_tier,
-          candidateAfter.evidence_tier,
-          matchedResidencialId,
-          session.reviewer,
-          input.reviewNote,
-          JSON.stringify(input.corrections),
-          JSON.stringify(current),
-          JSON.stringify(candidateAfter),
-        ],
-      );
+      const reviewValues = [
+        input.candidateId,
+        input.action,
+        current.status,
+        candidateAfter.status,
+        current.evidence_tier,
+        candidateAfter.evidence_tier,
+        matchedResidencialId,
+        session.reviewer,
+        input.reviewNote,
+        JSON.stringify(input.corrections),
+        JSON.stringify(current),
+        JSON.stringify(candidateAfter),
+      ];
+      if (dataSource === "normalized") {
+        await client.query(
+          `insert into discovery_private.facility_candidate_review_events (
+             candidate_id, action, previous_status, new_status,
+             previous_evidence_tier, new_evidence_tier, matched_residencial_id,
+             reviewer_identifier, review_note, corrections, candidate_before,
+             candidate_after, matched_facility_id
+           ) values (
+             $1::bigint, $2, $3, $4, $5, $6, $7, $8, $9,
+             $10::jsonb, $11::jsonb, $12::jsonb, $13::bigint
+           )`,
+          [...reviewValues, matchedFacilityId],
+        );
+      } else {
+        await client.query(
+          `insert into discovery_private.facility_candidate_review_events (
+             candidate_id, action, previous_status, new_status,
+             previous_evidence_tier, new_evidence_tier, matched_residencial_id,
+             reviewer_identifier, review_note, corrections, candidate_before,
+             candidate_after
+           ) values (
+             $1::bigint, $2, $3, $4, $5, $6, $7, $8, $9,
+             $10::jsonb, $11::jsonb, $12::jsonb
+           )`,
+          reviewValues,
+        );
+      }
       return candidateAfter;
     });
 

@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+import {
+  publicFacilityRelation,
+  readElepemDataSource,
+} from "../../../lib/elepem-data-source.mjs";
 import { querySupabaseDatabase } from "../../../lib/supabase-db";
 import type { Facility } from "../../components/map-types";
 
@@ -49,6 +53,8 @@ function isOtherSource(row: ResidentialRow) {
 
 export async function GET() {
   try {
+    const dataSource = readElepemDataSource();
+    const relation = publicFacilityRelation(dataSource);
     const rows = await querySupabaseDatabase<ResidentialRow>(`
       select
         id,
@@ -70,7 +76,7 @@ export async function GET() {
         mides_social,
         pacp,
         other_source
-      from public.residenciales
+      from ${relation}
       order by department, name, id
     `);
 
@@ -110,6 +116,7 @@ export async function GET() {
       {
         headers: {
           "Cache-Control": "public, s-maxage=300, stale-while-revalidate=3600",
+          "X-ELEPEM-Data-Source": dataSource,
         },
       },
     );

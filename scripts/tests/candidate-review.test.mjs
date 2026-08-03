@@ -5,6 +5,7 @@ import {
   privateCandidateRows,
 } from "../lib/candidate-review.mjs";
 import {
+  candidateUpsertSql,
   PRIVATE_IMPORT_SQL,
   assertPrivateImportSql,
 } from "../lib/private-candidate-import.mjs";
@@ -112,4 +113,11 @@ test("el SQL de apply no contiene escrituras a public", () => {
   for (const sql of PRIVATE_IMPORT_SQL) {
     assert.doesNotMatch(sql, /\b(?:insert\s+into|update|delete\s+from)\s+public\./i);
   }
+});
+
+test("el importador normalizado resuelve coincidencias desde el índice de exclusión", () => {
+  const sql = candidateUpsertSql("normalized");
+  assert.match(sql, /known_facilities_exclusion_view/);
+  assert.match(sql, /resolved_facility_id/);
+  assert.doesNotMatch(sql, /insert\s+into\s+public\./i);
 });

@@ -8,7 +8,9 @@ privada de revisión humana.
 
 ## Reglas no negociables
 
-- No scrapear Google Maps, Instagram ni Facebook.
+- Antes de cualquier tarea de descubrimiento, importación, Google Places,
+  Instagram, Facebook, matching o geocodificación, leer:
+  `docs/PLAN_NACIONAL_DESCUBRIMIENTO_ELEPEM.md`
 - No usar Playwright, Selenium, cuentas falsas, proxies ni automatización de login.
 - No sortear CAPTCHA, bloqueos, rate limits, robots.txt ni controles de acceso.
 - No copiar ni almacenar reseñas, autores, fotografías o contenido de Google.
@@ -24,6 +26,26 @@ privada de revisión humana.
 - Nunca guardar secretos o archivos .env en Git.
 - Nunca utilizar credenciales de producción en pruebas.
 - No alterar rutas públicas o la interfaz existente fuera de la tarea indicada.
+
+## Investigación pública y reparto de tareas
+
+- Codex no hará scraping directo de la interfaz de Google Maps, Instagram ni Facebook.
+- Codex no iniciará sesión ni automatizará login en Instagram o Facebook.
+- No se usará la API oficial de Instagram o Facebook en este proyecto.
+- La investigación pública de Instagram, Facebook, Google Maps, medios,
+  directorios y otras fuentes será realizada en ChatGPT Plus/Pro fuera del
+  repositorio.
+- Codex sí puede importar archivos JSON, CSV y Markdown preparados por ChatGPT
+  y conservar sus URLs, fechas, observaciones factuales y limitaciones.
+- Codex no descargará masivamente publicaciones, comentarios, fotografías,
+  seguidores, historiales de cuentas ni datos personales.
+- La clave de Google Maps almacenada localmente podrá usarse únicamente para
+  verificación controlada de candidatos y obtención de place_id.
+- No se usará Google Places para construir automáticamente la base nacional,
+  copiar masivamente fichas ni generar coordenadas para el mapa de Alerta Mayor.
+- De Google solo se conservará de forma permanente el place_id, la URL externa,
+  la fecha de verificación y la identidad de la persona revisora.
+- Ningún candidato se publica automáticamente.
 
 ## Evidencia
 

@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { readElepemDataSource } from "../lib/elepem-data-source.mjs";
 import {
   buildCandidateReview,
   privateCandidateRows,
@@ -57,12 +58,14 @@ async function main() {
   }
 
   const rows = privateCandidateRows(input, review);
+  const dataSource = readElepemDataSource();
   const pool = createSupabasePool("alertamayor-private-osm-candidate-import");
   const client = await pool.connect();
   try {
     const database = await applyPrivateCandidates(client, {
       inputMetadata: validated.inputMetadata,
       rows,
+      dataSource,
     });
     review.metadata.databaseApply = {
       appliedAt: new Date().toISOString(),

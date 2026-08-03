@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildSocialCandidateDryRun, validateSocialCandidateDataset } from "../lib/social-candidate-import.mjs";
+import {
+  buildSocialCandidateDryRun,
+  socialDryRunReadSql,
+  validateSocialCandidateDataset,
+} from "../lib/social-candidate-import.mjs";
 
 const input = {
   dataset: "social-test",
@@ -12,6 +16,13 @@ const input = {
     { candidate_key: "instagram:paysandu:bellanova", observed_name: "Residencia Bellanova", instagram_url: "https://www.instagram.com/bellanova/", department: "Paysandú", locality: "Paysandú", address: null, phones: ["092 396 264"], evidence_tier: "C", sources: [{ type: "instagram_public_profile", url: "https://www.instagram.com/bellanova/", observed_at: "2026-08-02" }], do_not_publish_automatically: true },
   ],
 };
+
+test("el matching normalizado usa el índice nacional de exclusión", () => {
+  const sql = socialDryRunReadSql("normalized").publicFacilities;
+  assert.match(sql, /known_facilities_exclusion_view/);
+  assert.match(sql, /subject_type = 'normalized_facility'/);
+  assert.doesNotMatch(sql, /from public\.residenciales\b/);
+});
 
 test("mantiene las dos direcciones de Como en Casa como establecimientos distintos", () => {
   const result = validateSocialCandidateDataset(input);

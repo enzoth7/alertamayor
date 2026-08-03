@@ -865,7 +865,7 @@ function Sources() {
         <div className="affirmBlock affirmBlock-no">
           <h3>Lo que no puede afirmar</h3>
           <ul>
-            <li>Que "no figura" significa clandestino.</li>
+            <li>Que “no figura” significa clandestino.</li>
             <li>Que tener habilitación equivale a no haber tenido incidentes.</li>
             <li>Que un certificado histórico siga vigente hoy.</li>
             <li>Que una alerta equivale a una infracción confirmada.</li>
