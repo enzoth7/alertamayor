@@ -113,6 +113,12 @@ export default function StreetMap({ facilities, selectedId, onSelect }: { facili
       marker.on("click", () => {
         onSelect(facility.id);
       });
+      marker.bindTooltip(facility.name, {
+        direction: "top",
+        offset: [0, -7],
+        opacity: 0.96,
+        className: "facilityNameTooltip",
+      });
       marker.bindPopup(createPopup(facility));
       marker.addTo(markers);
     });

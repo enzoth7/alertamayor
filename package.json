@@ -27,6 +27,8 @@
     "db:load:paysandu-app": "node --env-file=.env.local scripts/load-paysandu-app-discoveries.mjs",
     "db:export:residenciales": "node --env-file=.env.local scripts/export-residenciales.mjs",
     "db:import:candidates": "node --env-file=.env.local scripts/import-discovery-candidates.mjs",
+    "db:import:social-candidates": "node --env-file=.env.local scripts/import-social-candidates.mjs",
+    "discovery:geocode:ide": "node scripts/geocode-manual-discovery-candidates.mjs",
     "db:sync:candidate-matches": "node --env-file=.env.local scripts/sync-candidate-match-suggestions.mjs",
     "db:import:residenciales": "node --env-file=.env.local scripts/import-residenciales.mjs"
   },

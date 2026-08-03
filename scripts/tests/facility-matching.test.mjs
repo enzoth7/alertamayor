@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  addressParts,
   classifyFacilityMatch,
   normalizeAddress,
   normalizePhone,
@@ -8,6 +9,12 @@ import {
   rankFacilityMatches,
   scoreFacilityMatch,
 } from "../../lib/facility-matching.mjs";
+
+test("conserva Uruguay cuando es el nombre de una calle", () => {
+  const parts = addressParts("Uruguay 1896", { locality: "Paysandú", department: "Paysandú" });
+  assert.equal(parts.street, "uruguay");
+  assert.equal(parts.doorNumber, "1896");
+});
 
 const existing = {
   id: "ELP-0273",

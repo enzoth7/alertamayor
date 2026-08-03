@@ -2596,16 +2596,19 @@ textarea {
 
 .registryMapLayout {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(340px, .75fr);
+  grid-template-columns: minmax(0, 1.7fr) minmax(310px, 1fr);
   gap: 15px;
   align-items: start;
-  margin-top: 15px;
+  width: min(calc(100vw - 32px), 1800px);
+  margin: 15px 0 0 50%;
+  transform: translateX(-50%);
 }
+.registryMapLayout.hasUnlocatedPanel { grid-template-columns: minmax(220px, .72fr) minmax(440px, 1.7fr) minmax(310px, 1fr); }
 
-.registryMapLayout.mapListOnly { grid-template-columns: 1fr; }
+.registryMapLayout.mapListOnly { grid-template-columns: minmax(280px, 1fr) minmax(340px, 1.2fr); }
 
 .leafletRegistryMap, .streetMapLoading {
-  height: 670px;
+  height: 760px;
   border: 1px solid var(--line);
   border-radius: 16px;
   overflow: hidden;
@@ -2615,7 +2618,7 @@ textarea {
 }
 
 .registryResults {
-  height: 670px;
+  height: 760px;
   padding: 18px;
   display: flex;
   flex-direction: column;
@@ -2638,6 +2641,14 @@ textarea {
   font-size: .82rem;
   line-height: 1.45;
 }
+.registryUnlocatedPanel {
+  height: 760px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.unlocatedPanelLead { margin: 12px 0; color: #7c4a47; font-size: .8rem; line-height: 1.45; }
 .privateCandidateMapNotice button {
   flex: 0 0 auto;
   padding: 8px 11px;
@@ -2662,6 +2673,32 @@ textarea {
 .violetDot { background: var(--violet); }
 .blackDot { background: #111; }
 .redDot { background: var(--red); }
+
+.unlocatedPilotCandidates {
+  flex: 1;
+  min-height: 0;
+  border: 1px solid #f2c9c4;
+  border-radius: 14px;
+  background: #fff9f8;
+  overflow: hidden;
+}
+.unlocatedPilotCandidates ul { display: grid; gap: 8px; height: 100%; margin: 0; padding: 14px; overflow: auto; list-style: none; }
+.unlocatedPilotCandidates li { display: grid; gap: 3px; padding: 10px; border: 1px solid #f4d7d3; border-radius: 10px; background: #fff; }
+.unlocatedPilotCandidates li strong { color: #4c1d1d; font-size: .84rem; }
+.unlocatedPilotCandidates li span { color: #6b5a5a; font-size: .75rem; line-height: 1.35; }
+.unlocatedPilotCandidates li small { color: #a13b33; font-size: .68rem; font-weight: 700; }
+.unlocatedEmpty { margin: 0; padding: 16px; color: #7c4a47; font-size: .82rem; }
+.leaflet-tooltip.facilityNameTooltip {
+  border: 0;
+  border-radius: 7px;
+  padding: 5px 8px;
+  background: #102a4d;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(15, 42, 77, .28);
+  font-size: .75rem;
+  font-weight: 750;
+}
+.leaflet-tooltip-top.facilityNameTooltip::before { border-top-color: #102a4d; }
 .resultsMeta { margin: 0 0 4px; color: var(--muted); font-size: .76rem; }
 
 .registryResultsScroll {

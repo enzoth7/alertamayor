@@ -33,6 +33,7 @@ export default function UruguayRegistry({ onReport }: { onReport: (facility?: Fa
   const { facilities: publicFacilities, loading, error } = useResidenciales();
   const {
     facilities: privateCandidateFacilities,
+    unlocatedCandidates,
     available: privateCandidatesAvailable,
     loading: privateCandidatesLoading,
     error: privateCandidatesError,
@@ -87,6 +88,12 @@ export default function UruguayRegistry({ onReport }: { onReport: (facility?: Fa
   }), [kpiScope]);
   const visiblePublicCount = visible.filter((facility) => !facility.privateCandidate).length;
   const visiblePrivateCandidateCount = visible.filter((facility) => facility.privateCandidate).length;
+  const visibleUnlocatedCandidates = useMemo(() => unlocatedCandidates.filter((candidate) => !candidate.hasCoordinates && (() => {
+    const haystack = normalize(`${candidate.name} ${candidate.address || ""} ${candidate.locality} ${candidate.department}`);
+    return (!department || candidate.department === department)
+      && (!query || haystack.includes(normalize(query)));
+  })()), [department, query, unlocatedCandidates]);
+  const unlocatedCandidateCount = unlocatedCandidates.filter((candidate) => !candidate.hasCoordinates).length;
 
   useEffect(() => {
     if (selectedId && !visible.some((facility) => facility.id === selectedId)) {
@@ -110,13 +117,13 @@ export default function UruguayRegistry({ onReport }: { onReport: (facility?: Fa
       {privateCandidatesAvailable && privateCandidatesLoading && <div className="notice registryDataStatus" role="status">Actualizando candidatos OSM del piloto…</div>}
       {privateCandidatesAvailable && privateCandidatesError && <div className="notice registryDataStatus registryDataError" role="alert">{privateCandidatesError}</div>}
       {privateCandidatesAvailable && <div className="privateCandidateMapNotice">
-        <span><strong>Capa piloto de descubrimiento.</strong> Los 30 puntos rojos son candidatos OSM de evidencia C para revisar; se muestran junto al mapa sin sumarlos a la base oficial de 804 residenciales.</span>
+        <span><strong>Capa piloto de descubrimiento.</strong> Los {privateCandidateFacilities.length} puntos rojos incluyen candidatos OSM y coincidencias exactas de IDE Uruguay. Los {unlocatedCandidateCount} hallazgos manuales sin coordenadas verificadas están en el listado inferior; no se sumaron a la base oficial.</span>
         <button type="button" onClick={() => {
           setShowPrivateCandidates((current) => {
             if (current && status === "candidate_private") setStatus("");
             return !current;
           });
-        }}>{showPrivateCandidates ? "Ocultar candidatos" : `Mostrar ${privateCandidateFacilities.length} candidatos`}</button>
+        }}>{showPrivateCandidates ? "Ocultar candidatos" : `Mostrar ${privateCandidateFacilities.length + unlocatedCandidates.length} candidatos`}</button>
       </div>}
       <div className="stats registryStats">
         <button type="button" className={`stat statCard-blue ${!status ? "selected" : ""}`} onClick={() => setStatus("")}>
@@ -159,8 +166,8 @@ export default function UruguayRegistry({ onReport }: { onReport: (facility?: Fa
           setStatus(status === "candidate_private" ? "" : "candidate_private");
         }}>
           <b>{privateCandidateFacilities.length}</b>
-          <p>candidatos OSM</p>
-          <small>Piloto · evidencia C</small>
+          <p>puntos piloto</p>
+          <small>OSM · evidencia C</small>
         </button>}
       </div>
       <p className="registryOverlapNote">
@@ -182,13 +189,27 @@ export default function UruguayRegistry({ onReport }: { onReport: (facility?: Fa
       <div className="mapModes"><strong>Cómo verlos:</strong><button className={mode === "streets" ? "active" : ""} onClick={() => setMode("streets")}><MapPinned size={18}/> Mapa con calles</button><button className={mode === "list" ? "active" : ""} onClick={() => setMode("list")}><Building2 size={18}/> Solo listado</button></div>
     </section>
 
-    <div className={`registryMapLayout ${mode === "list" ? "mapListOnly" : ""}`}>
+    <div className={`registryMapLayout ${privateCandidatesAvailable && showPrivateCandidates ? "hasUnlocatedPanel" : ""} ${mode === "list" ? "mapListOnly" : ""}`}>
+      {privateCandidatesAvailable && showPrivateCandidates && <aside className="card registryUnlocatedPanel" aria-label="Candidatos sin coordenadas verificadas">
+        <div className="resultsHead"><div><div className="eyebrow">Piloto interno</div><h2>Sin ubicar</h2></div><output className="resultCount">{visibleUnlocatedCandidates.length}</output></div>
+        <p className="unlocatedPanelLead">No tienen coordenadas comprobadas; por eso no se colocan en el mapa.</p>
+        <div className="unlocatedPilotCandidates">
+          <ul>
+            {visibleUnlocatedCandidates.map((candidate) => <li key={candidate.candidateKey}>
+              <strong>{candidate.name}</strong>
+              <span>{candidate.address || "Sin dirección exacta"} · {candidate.locality}, {candidate.department}</span>
+              <small>{candidate.historical ? "Referencia histórica · no mapear" : "Evidencia C · requiere geocodificación y revisión"}</small>
+            </li>)}
+          </ul>
+          {!visibleUnlocatedCandidates.length && <p className="unlocatedEmpty">No hay candidatos sin coordenadas para estos filtros.</p>}
+        </div>
+      </aside>}
       {mode !== "list" && <div className="registryMapColumn">
         <StreetMap facilities={visible} selectedId={selected?.id ?? null} onSelect={setSelectedId}/>
       </div>}
 
       <aside className="card registryResults">
-        <div className="resultsHead"><div><div className="eyebrow">Registro consultable</div><h2>Resultados</h2></div><output className="resultCount">{visible.length}</output></div>
+        <div className="resultsHead"><div><div className="eyebrow">Registro consultable</div><h2>Con ubicación en el mapa</h2></div><output className="resultCount">{visible.length}</output></div>
         <ul className="resultsLegend">
           <li><i className="dot greenDot"/>Habilitación final MSP</li>
           <li><i className="dot amberDot"/>Certificado de registro MSP (histórico)</li>
