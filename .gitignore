@@ -1,6 +1,7 @@
 # dependencies and build output
 node_modules/
 .next/
+.next-*/
 out/
 
 # local tooling
@@ -11,6 +12,7 @@ out/
 # environment files
 .env*
 !.env.example
+n8n/credentials.md
 
 # operating system files
 .DS_Store

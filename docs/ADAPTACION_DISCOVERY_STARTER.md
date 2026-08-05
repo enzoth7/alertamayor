@@ -47,7 +47,7 @@ Ejemplo:
 ```powershell
 node scripts/match-facility-candidates.mjs `
   --input ruta\candidates.json `
-  --existing Alerta_Mayor_ELEPEM_v01\data\elepem_publicos_v01.json `
+  --existing data\discovery\residenciales-live-2026-08-02.json `
   --out scratch\candidate-matches.json
 ```
 
@@ -85,4 +85,3 @@ Una futura migración deberá ampliar el esquema vigente en vez de crear una col
 paralela. Antes de aplicarla se requiere plan, SQL de reversión, prueba sin
 credenciales productivas y verificación explícita de que solo evidencia A/B
 revisada puede llegar al mapa público.
-

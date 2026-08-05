@@ -122,8 +122,61 @@ function sourceTypeForResearch(value) {
     return "official";
   }
   if (sourceType.includes("news") || sourceType.includes("media")) return "news";
+  if (sourceType.includes("openstreetmap") || sourceType === "osm") return "openstreetmap";
   if (sourceType === "facility_website") return "facility_website";
   if (sourceType === "public_directory") return "public_directory";
+  return "other";
+}
+
+function sourceChannelFor({ sourceType, sourceUrl, displayName }) {
+  const type = normalizeText(sourceType).replaceAll(" ", "_");
+  const context = normalizeText(`${sourceUrl ?? ""} ${displayName ?? ""}`);
+  if (type === "official") return "official_sources";
+  if (
+    type === "openstreetmap" ||
+    /openstreetmap|google maps|googlemaps|google com maps|maps google|maps app goo gl|serpapi|mapas? public/.test(context)
+  ) {
+    return "public_maps";
+  }
+  if (
+    type === "social_public_url" ||
+    /instagram|facebook|redes? sociales?|social public/.test(context)
+  ) {
+    return "public_social_sources";
+  }
+  if (type === "manual_referral") return "manual_editorial";
+  return "other_public_sources";
+}
+
+function legacySourceChannel(row) {
+  if (
+    booleanValue(row.msp_final) ||
+    booleanValue(row.msp_registro_historico) ||
+    booleanValue(row.mides_social) ||
+    booleanValue(row.pacp)
+  ) {
+    return "official_sources";
+  }
+  const label = normalizeText(row.source_label);
+  if (/openstreetmap|google maps|googlemaps|google com maps|maps google|maps app goo gl|serpapi|mapas? public/.test(label)) {
+    return "public_maps";
+  }
+  if (/instagram|facebook|redes? sociales?|social public/.test(label)) {
+    return "public_social_sources";
+  }
+  if (/manual|editorial|equipo/.test(label)) return "manual_editorial";
+  return "other_public_sources";
+}
+
+function legacySourceType(channel, sourceLabel) {
+  if (channel === "official_sources") return "official";
+  if (channel === "public_social_sources") return "social_public_url";
+  if (channel === "manual_editorial") return "legacy_app";
+  if (channel === "public_maps") {
+    return /openstreetmap|\bosm\b/.test(normalizeText(sourceLabel))
+      ? "openstreetmap"
+      : "public_directory";
+  }
   return "other";
 }
 
@@ -325,9 +378,19 @@ export function buildBackfillPlan({
   const sourceCatalogByUrl = new Map();
   function registerCatalog(row) {
     if (sourceCatalogSeen.has(row.sourceKey)) return row.sourceKey;
+    const normalizedRow = {
+      ...row,
+      sourceChannel:
+        row.sourceChannel ??
+        sourceChannelFor({
+          sourceType: row.sourceType,
+          sourceUrl: row.baseUrl,
+          displayName: row.displayName,
+        }),
+    };
     sourceCatalogSeen.add(row.sourceKey);
-    sourceCatalog.push(row);
-    if (row.baseUrl) sourceCatalogByUrl.set(row.baseUrl, row.sourceKey);
+    sourceCatalog.push(normalizedRow);
+    if (normalizedRow.baseUrl) sourceCatalogByUrl.set(normalizedRow.baseUrl, normalizedRow.sourceKey);
     return row.sourceKey;
   }
   for (const row of sourceCatalogRows) {
@@ -343,15 +406,50 @@ export function buildBackfillPlan({
       sourceLicense: null,
     });
   }
-  const legacyCatalogKey = registerCatalog({
-    sourceKey: "SRC-LEGACY-SUPABASE-RESIDENCIALES",
-    displayName: "Snapshot read-only de public.residenciales",
-    sourceType: "legacy_app",
-    baseUrl: `https://${remoteSnapshot.metadata.projectRef}.supabase.co`,
-    authorityLevel: "lead",
-    storagePolicy: "normalized_only",
-    sourceLicense: null,
-  });
+  const legacyCatalogs = new Map();
+  const legacyCatalogDefinitions = {
+    official_sources: {
+      displayName: "Fuentes oficiales importadas desde public.residenciales",
+      sourceType: "official",
+      authorityLevel: "official_nominal",
+    },
+    public_maps: {
+      displayName: "Mapas públicos importados desde public.residenciales",
+      sourceType: "public_directory",
+      authorityLevel: "lead",
+    },
+    public_social_sources: {
+      displayName: "Fuentes públicas de redes sociales importadas desde public.residenciales",
+      sourceType: "social_public_url",
+      authorityLevel: "lead",
+    },
+    other_public_sources: {
+      displayName: "Otras fuentes públicas importadas desde public.residenciales",
+      sourceType: "other",
+      authorityLevel: "lead",
+    },
+    manual_editorial: {
+      displayName: "Carga editorial heredada de public.residenciales",
+      sourceType: "legacy_app",
+      authorityLevel: "lead",
+    },
+  };
+  for (const [sourceChannel, definition] of Object.entries(legacyCatalogDefinitions)) {
+    legacyCatalogs.set(
+      sourceChannel,
+      registerCatalog({
+        sourceKey: `SRC-LEGACY-${sourceChannel.toUpperCase().replaceAll("_", "-")}`,
+        displayName: definition.displayName,
+        sourceType: definition.sourceType,
+        sourceChannel,
+        baseUrl: `https://${remoteSnapshot.metadata.projectRef}.supabase.co`,
+        authorityLevel: definition.authorityLevel,
+        storagePolicy:
+          sourceChannel === "public_social_sources" ? "reference_only" : "normalized_only",
+        sourceLicense: null,
+      }),
+    );
+  }
 
   const sourceRuns = [];
   const runSeen = new Set();
@@ -406,14 +504,22 @@ export function buildBackfillPlan({
   const legacyMappings = [];
 
   const legacyRetrievedAt = validTimestamp(remoteSnapshot.metadata.retrievedAt, generatedAt);
-  const legacyRunKey = registerRun(
-    legacyCatalogKey,
-    "other",
-    `https://${remoteSnapshot.metadata.projectRef}.supabase.co`,
-    legacyRetrievedAt,
-  );
+  const legacyRunKeys = new Map();
   const legacyObservationById = new Map();
   for (const row of legacyRows) {
+    const sourceChannel = legacySourceChannel(row);
+    const sourceType = legacySourceType(sourceChannel, row.source_label);
+    const catalogKey = legacyCatalogs.get(sourceChannel);
+    let runKey = legacyRunKeys.get(sourceChannel);
+    if (!runKey) {
+      runKey = registerRun(
+        catalogKey,
+        sourceType,
+        `https://${remoteSnapshot.metadata.projectRef}.supabase.co`,
+        legacyRetrievedAt,
+      );
+      legacyRunKeys.set(sourceChannel, runKey);
+    }
     const payload = {
       id: row.id,
       name: row.name,
@@ -426,22 +532,23 @@ export function buildBackfillPlan({
       updated_at: row.updated_at ?? row.updatedAt,
     };
     const logicalKey = registerObservation({
-      runKey: legacyRunKey,
-      sourceCatalogKey: legacyCatalogKey,
-      sourceType: "other",
+      runKey,
+      sourceCatalogKey: catalogKey,
+      sourceType,
       sourceRecordKey: `public.residenciales:${row.id}`,
       sourceUrl: `https://${remoteSnapshot.metadata.projectRef}.supabase.co`,
       retrievedAt: legacyRetrievedAt,
       sourceDate: validDate(remoteSnapshot.metadata.retrievedAt),
       sourceLicense: null,
-      storagePolicy: "normalized_only",
+      storagePolicy:
+        sourceChannel === "public_social_sources" ? "reference_only" : "normalized_only",
       normalizedName: normalizeText(row.name) || null,
       normalizedDepartment: normalizeText(row.department) || null,
       normalizedLocality: normalizeText(row.locality) || null,
       normalizedAddress: normalizeText(row.address) || null,
       lat: numberOrNull(row.lat ?? row.latitude),
       lng: numberOrNull(row.lng ?? row.longitude),
-      humanNote: "Snapshot read-only usado para reconciliación local.",
+      humanNote: `Snapshot read-only usado para reconciliación local. Fuente heredada: ${String(row.source_label || "sin etiqueta").slice(0, 300)}.`,
       recordHash: sha256(JSON.stringify(payload)),
     });
     legacyObservationById.set(String(row.id), logicalKey);
@@ -806,6 +913,11 @@ export function buildBackfillPlan({
       sourceKey: stableKey("SRC-REMOTE", `${run.source_type}|${run.source_url}`),
       displayName: `Fuente privada existente: ${run.source_type}`,
       sourceType: run.source_type,
+      sourceChannel: sourceChannelFor({
+        sourceType: run.source_type,
+        sourceUrl: run.source_url,
+        displayName: `Fuente privada existente: ${run.source_type}`,
+      }),
       baseUrl: run.source_url,
       authorityLevel: run.source_type === "official" ? "official_nominal" : "lead",
       storagePolicy: run.storage_policy,
@@ -983,6 +1095,11 @@ export function buildBackfillPlan({
           sourceKey: stableKey("SRC-RESEARCH", `${sourceType}|${host}`, host),
           displayName: `${label}: ${host}`.slice(0, 240),
           sourceType,
+          sourceChannel: sourceChannelFor({
+            sourceType,
+            sourceUrl,
+            displayName: `${label}: ${host}`,
+          }),
           baseUrl: `https://${host}`,
           authorityLevel:
             sourceType === "official"

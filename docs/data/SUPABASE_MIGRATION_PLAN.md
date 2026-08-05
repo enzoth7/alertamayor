@@ -1,10 +1,12 @@
 # Plan de migración al modelo normalizado
 
-Estado: Paso 4. Diseño y SQL local solamente; ninguna migración aplicada.
+Estado: esquema paralelo y backfill aplicados en `itolluaivfoxnaohbsdk` el 2026-08-04. Verificación SQL, RLS, rollback local e idempotencia aprobados. El runtime permanece en `legacy`; el corte de lectura corresponde al Paso 6.
+
+Informe de ejecución: `data/migration/production_normalized_migration_2026-08-04_2026-08-04T21-56-11-230Z.json`.
 
 ## Puerta de seguridad
 
-El proyecto conectado identificado durante la auditoría es `itolluaivfoxnaohbsdk` (`Alerta Mayor`, región `sa-east-1`). No está demostrado que sea un entorno desechable y se trata como producción.
+El proyecto conectado identificado durante la auditoría es `itolluaivfoxnaohbsdk` (`Alerta Mayor`, región `sa-east-1`) y se trató como producción. La aplicación se realizó únicamente después de la confirmación explícita del target por el responsable del proyecto.
 
 Antes de ejecutar SQL se requiere:
 
@@ -43,8 +45,9 @@ No se valida el rollback sobre el proyecto remoto actual.
 1. Crear entradas estables en `source_catalog` para cada fuente real.
 2. Enlazar las corridas y observaciones existentes mediante `source_catalog_id`.
 3. Crear una corrida de backfill con hash del conjunto de entrada, fecha y conteos.
-4. Representar cada fila heredada mediante una observación de tipo `legacy_app`; no modificar observaciones previas.
-5. No convertir etiquetas genéricas en fuentes inventadas. Registrar conflicto si falta URL, referencia o fecha.
+4. Representar cada fila heredada mediante una observación del snapshot y conservar su `source_label`; clasificarla en `official_sources`, `public_maps`, `public_social_sources`, `other_public_sources` o `manual_editorial` solamente cuando las banderas o la etiqueta heredada lo demuestren.
+5. Los registros Paysandú rotulados `SerpApi Google Maps` se normalizan como `public_maps`; la geocodificación posterior no cambia el canal de hallazgo.
+6. No convertir etiquetas genéricas en fuentes inventadas. Registrar conflicto si falta URL, referencia o fecha.
 
 ## Fase C — Mapping de IDs y sedes
 

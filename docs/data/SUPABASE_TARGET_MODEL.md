@@ -36,7 +36,7 @@ Supabase anunció que las tablas nuevas de `public` dejarán de recibir permisos
 
 | Tabla | Responsabilidad | Regla principal |
 |---|---|---|
-| `elepem_core.source_catalog` | Catálogo estable de fuentes y política de conservación | Una clave por fuente; nivel de autoridad y política explícitos |
+| `elepem_core.source_catalog` | Catálogo estable de fuentes, canal visible y política de conservación | Una clave por fuente; `source_channel` canónico, nivel de autoridad y política explícitos |
 | `elepem_core.organizations` | Operadores, titulares y organizaciones | Separada de la sede física |
 | `elepem_core.facilities` | Identidad estable de cada sede física | Una fila por sede; fusionar mediante referencia, no borrar |
 | `elepem_core.facility_operators` | Relación histórica sede-organización | Una relación actual por tipo y sede |

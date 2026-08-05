@@ -1,131 +1,14 @@
 import { NextResponse } from "next/server";
+import {
+  buildReportPayload,
+  isRecord,
+  MAX_INTAKE_REQUEST_BYTES,
+  newCaseCode,
+  newUploadToken,
+} from "../../../lib/intake-report.mjs";
 
 export const runtime = "nodejs";
 
-const MAX_REQUEST_BYTES = 32_768;
-
-type JsonRecord = Record<string, unknown>;
-
-function isRecord(value: unknown): value is JsonRecord {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function text(value: unknown, maxLength = 240): string {
-  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
-}
-
-function textList(value: unknown, maxItems = 24, maxLength = 240): string[] {
-  if (!Array.isArray(value)) return [];
-
-  return value
-    .filter((item): item is string => typeof item === "string")
-    .map((item) => text(item, maxLength))
-    .filter(Boolean)
-    .slice(0, maxItems);
-}
-
-function optionalText(value: unknown, maxLength = 240): string | null {
-  const normalized = text(value, maxLength);
-  return normalized || null;
-}
-
-function email(value: unknown): string | null {
-  const normalized = text(value, 254).toLowerCase();
-  if (!normalized) return null;
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized) ? normalized : null;
-}
-
-function phone(value: unknown): string | null {
-  const normalized = text(value, 24);
-  if (!normalized) return null;
-  return /^[+()0-9\s.-]{6,24}$/.test(normalized) ? normalized : null;
-}
-
-function getRandomHex(bytesCount: number): string {
-  const bytes = new Uint8Array(bytesCount);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("").toUpperCase();
-}
-
-function getRandomBase64Url(bytesCount: number): string {
-  const bytes = new Uint8Array(bytesCount);
-  crypto.getRandomValues(bytes);
-  return btoa(String.fromCharCode(...bytes))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
-
-function buildReportPayload(value: unknown): JsonRecord | null {
-  if (!isRecord(value)) return null;
-
-  const setting = text(value.setting);
-  const reporter = text(value.reporter);
-  const location = isRecord(value.location) ? value.location : {};
-  const facility = isRecord(value.facility) ? value.facility : {};
-  const preliminaryPriority = text(value.preliminaryPriority, 32);
-  const department = text(location.department, 100);
-  const locationReference = text(location.reference, 500);
-  const selectedConcerns = textList(value.concerns);
-  const narrative = text(value.narrative, 6_000);
-  const risks = textList(value.risks);
-  const privacy = text(value.privacy, 80);
-  const submittedEmail = email(value.contactEmail);
-  const submittedPhone = phone(value.contactPhone);
-
-  const hasSituationInformation = Boolean(setting || selectedConcerns.length || narrative);
-  if (!hasSituationInformation || !reporter || !department || !locationReference || !privacy) return null;
-  if (text(value.contactEmail, 254) && !submittedEmail) return null;
-  if (text(value.contactPhone, 24) && !submittedPhone) return null;
-
-  return {
-    version: 1,
-    submittedAt: new Date().toISOString(),
-    source: "web",
-    setting: setting || "No indicado",
-    reporter,
-    channel: optionalText(value.channel),
-    ageRange: optionalText(value.ageRange),
-    dependency: optionalText(value.dependency),
-    livingWith: optionalText(value.livingWith),
-    needs: textList(value.needs),
-    otherNeed: optionalText(value.otherNeed, 500),
-    requestAssessment: value.requestAssessment === true,
-    location: {
-      department,
-      reference: locationReference,
-      privateAddress: optionalText(location.privateAddress, 500),
-      unknownArea: optionalText(location.unknownArea, 300),
-      unknownAddress: optionalText(location.unknownAddress, 500),
-      unknownNote: optionalText(location.unknownNote, 1_000),
-    },
-    facility: {
-      id: optionalText(facility.id, 100),
-      name: optionalText(facility.name, 300),
-      address: optionalText(facility.address, 500),
-      locality: optionalText(facility.locality, 200),
-      department: optionalText(facility.department, 100),
-      searchStatus: optionalText(facility.searchStatus, 200),
-    },
-    concerns: selectedConcerns.length ? selectedConcerns : ["No indicada"],
-    allegedRelation: optionalText(value.allegedRelation),
-    narrative: narrative || "Sin relato adicional.",
-    risks: risks.length ? risks : ["No especificado"],
-    privacy,
-    contactEmail: submittedEmail,
-    contactPhone: submittedPhone,
-    contactMethod: optionalText(value.contactMethod, 120),
-    safeContact: optionalText(value.safeContact, 1_000),
-    noEarlyContact: value.noEarlyContact === true,
-    preliminaryPriority: ["Alta", "Media", "Baja"].includes(preliminaryPriority) ? preliminaryPriority : "Baja",
-    suggestedRoute: textList(value.suggestedRoute, 12),
-  };
-}
-
-function newCaseCode(): string {
-  const date = new Date().toISOString().slice(0, 10).replaceAll("-", "");
-  return `AM-${date}-${getRandomHex(4)}`;
-}
 
 function supabaseHeaders(publishableKey: string): Record<string, string> {
   return {
@@ -159,7 +42,7 @@ async function requestTrackingEmail(supabaseUrl: string, publishableKey: string,
 export async function POST(request: Request) {
   try {
     const declaredLength = Number(request.headers.get("content-length") || 0);
-    if (declaredLength > MAX_REQUEST_BYTES) {
+    if (declaredLength > MAX_INTAKE_REQUEST_BYTES) {
       return NextResponse.json({ error: "La comunicación es demasiado extensa." }, { status: 413 });
     }
 
@@ -175,7 +58,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Faltan datos requeridos para guardar la comunicación." }, { status: 400 });
     }
 
-    if (JSON.stringify(payload).length > MAX_REQUEST_BYTES) {
+    if (JSON.stringify(payload).length > MAX_INTAKE_REQUEST_BYTES) {
       return NextResponse.json({ error: "La comunicación es demasiado extensa." }, { status: 413 });
     }
 
@@ -189,7 +72,7 @@ export async function POST(request: Request) {
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const caseCode = newCaseCode();
-      const uploadToken = getRandomBase64Url(24);
+      const uploadToken = newUploadToken();
       let response: Response;
       try {
         response = await fetch(`${supabaseUrl}/rest/v1/intake_reports`, {

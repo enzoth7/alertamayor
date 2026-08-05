@@ -128,6 +128,34 @@ test("backfill maps exact IDs, separates contacts and never plans publication", 
   assert.equal(plan.facilities[0].publicationStatus, "private");
   assert.equal(plan.facilities[0].reviewStatus, "needs_review");
   assert.equal(plan.summary.publicApprovedRowsPlanned, 0);
+  assert.ok(plan.sourceCatalog.every((row) => row.sourceChannel));
+  assert.equal(
+    plan.sourceCatalog.find((row) => row.sourceType === "official")?.sourceChannel,
+    "official_sources",
+  );
+});
+
+test("legacy Google Maps discoveries are normalized as public maps", () => {
+  const plan = build({
+    legacyRows: [
+      legacy({
+        id: "APP-001",
+        status_group: "app",
+        source_label: "SerpApi Google Maps · barrido Paysandú 2026-08-01 · RDC-001",
+        msp_registro_historico: false,
+        other_source: true,
+      }),
+    ],
+    officialRows: [],
+  });
+  const observation = plan.observations.find(
+    (row) => row.sourceRecordKey === "public.residenciales:APP-001",
+  );
+  const catalog = plan.sourceCatalog.find(
+    (row) => row.sourceKey === observation?.sourceCatalogKey,
+  );
+  assert.equal(catalog?.sourceChannel, "public_maps");
+  assert.equal(observation?.sourceType, "public_directory");
 });
 
 test("name equality alone never merges different physical addresses", () => {
@@ -168,5 +196,9 @@ test("social research stores only URL metadata and keeps candidate at tier C", (
   assert.equal(social.normalizedName, null);
   assert.equal(social.normalizedAddress, null);
   assert.equal(social.storagePolicy, "reference_only");
+  const socialCatalog = plan.sourceCatalog.find(
+    (row) => row.sourceKey === social.sourceCatalogKey,
+  );
+  assert.equal(socialCatalog.sourceChannel, "public_social_sources");
   assert.ok(!JSON.stringify(social).includes("contenido que no debe persistirse"));
 });

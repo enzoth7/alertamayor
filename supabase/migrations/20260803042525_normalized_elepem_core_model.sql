@@ -26,6 +26,14 @@ create table if not exists elepem_core.source_catalog (
       'legacy_app',
       'other'
     )),
+  source_channel text not null
+    check (source_channel in (
+      'official_sources',
+      'public_maps',
+      'public_social_sources',
+      'other_public_sources',
+      'manual_editorial'
+    )),
   base_url text
     check (
       base_url is null

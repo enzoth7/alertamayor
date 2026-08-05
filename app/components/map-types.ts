@@ -29,10 +29,14 @@ export type Facility = {
   otherSource: boolean;
   pendingVerification: boolean;
   appDiscovered: boolean;
+  sourceCategories?: Array<"official" | "public_maps" | "social_public" | "other_public">;
   privateCandidate?: boolean;
+  privateCandidateStatus?: string;
   privateCandidateEvidenceTier?: "A" | "B" | "C";
   privateCandidateSourceUrl?: string;
   privateCandidateRetrievedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type MapMode = "streets" | "list";

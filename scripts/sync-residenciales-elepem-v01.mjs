@@ -1,17 +1,37 @@
 import { readFile } from "node:fs/promises";
+import { isAbsolute, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import pg from "pg";
 
 const { Pool } = pg;
+const PROJECT_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const APPLY = process.argv.includes("--apply");
 const APPLY_MEMBERSHIPS =
   process.argv.includes("--apply-memberships") || APPLY;
 const MUTATES_DATABASE = APPLY || APPLY_MEMBERSHIPS;
 const VERBOSE = process.argv.includes("--verbose");
 const TARGET_PROJECT_REF = "itolluaivfoxnaohbsdk";
-const SOURCE_URL = new URL(
-  "../Alerta_Mayor_ELEPEM_v01/data/elepem_publicos_v01.json",
-  import.meta.url,
-);
+
+function argumentValue(name) {
+  const inlinePrefix = `--${name}=`;
+  const inline = process.argv.find((argument) => argument.startsWith(inlinePrefix));
+  if (inline) return inline.slice(inlinePrefix.length);
+  const index = process.argv.indexOf(`--${name}`);
+  const next = process.argv[index + 1];
+  return index >= 0 && next && !next.startsWith("--") ? next : "";
+}
+
+const sourceArgument = argumentValue("source");
+if (!sourceArgument) {
+  throw new Error(
+    "Falta --source=ruta. La fuente ELEPEM v01 retirada ya no tiene una ruta predeterminada.",
+  );
+}
+const sourcePath = resolve(PROJECT_ROOT, sourceArgument);
+const sourceRelativePath = relative(PROJECT_ROOT, sourcePath);
+if (!sourceRelativePath || sourceRelativePath.startsWith("..") || isAbsolute(sourceRelativePath)) {
+  throw new Error("--source debe apuntar a un archivo dentro del workspace.");
+}
 const EXCLUDED_SOURCE_IDS = new Map([
   [
     "ELP-0085",
@@ -202,7 +222,7 @@ const KNOWN_DISTINCT_FROM_EXISTING = new Map([
   ],
 ]);
 
-const sourceEntities = JSON.parse(await readFile(SOURCE_URL, "utf8"));
+const sourceEntities = JSON.parse(await readFile(sourcePath, "utf8"));
 
 if (!Array.isArray(sourceEntities) || sourceEntities.length === 0) {
   throw new Error("La fuente ELEPEM no contiene registros.");

@@ -12,6 +12,7 @@
     "test:matching": "node --test scripts/tests/facility-matching.test.mjs scripts/tests/candidate-review.test.mjs",
     "test:candidate-review": "node --test scripts/tests/team-session.test.mjs scripts/tests/facility-candidate-review.test.mjs",
     "test:private-map": "node --test scripts/tests/private-candidate-map.test.mjs",
+    "test:intake": "node --test scripts/tests/intake-integration.test.mjs scripts/tests/n8n-workflow-sandbox.test.mjs",
     "test:normalized-backfill": "node --test scripts/tests/normalized-elepem-backfill.test.mjs scripts/tests/elepem-data-source.test.mjs",
     "discovery:osm:dry-run": "node scripts/discover-osm-candidates.mjs --dry-run",
     "discover:osm": "node scripts/discover-osm-candidates.mjs --live --acknowledge-overpass",
@@ -31,6 +32,9 @@
     "db:backfill:normalized": "node scripts/backfill-normalized-elepem.mjs",
     "db:import:candidates": "node --env-file=.env.local scripts/import-discovery-candidates.mjs",
     "db:import:social-candidates": "node --env-file=.env.local scripts/import-social-candidates.mjs",
+    "db:import:reviewed-department": "node --env-file=.env scripts/import-reviewed-department-candidates.mjs",
+    "data:close-department": "node scripts/close-department.mjs",
+    "data:national-metrics": "node scripts/generate-national-metrics.mjs",
     "discovery:geocode:ide": "node scripts/geocode-manual-discovery-candidates.mjs",
     "db:sync:candidate-matches": "node --env-file=.env.local scripts/sync-candidate-match-suggestions.mjs",
     "db:import:residenciales": "node --env-file=.env.local scripts/import-residenciales.mjs"

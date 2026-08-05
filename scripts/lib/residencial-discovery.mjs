@@ -435,8 +435,13 @@ export function redactRestrictedContent(candidates) {
 
 export async function readExistingLocal(path) {
   const parsed = JSON.parse(await readFile(path, "utf8"));
-  if (!Array.isArray(parsed)) throw new Error("La fuente local existente no es una lista.");
-  return parsed.map((row) => ({
+  const rows = Array.isArray(parsed)
+    ? parsed
+    : Array.isArray(parsed?.facilities)
+      ? parsed.facilities
+      : null;
+  if (!rows) throw new Error("La fuente local existente no contiene una lista de sedes.");
+  return rows.map((row) => ({
     id: String(row.entity_id || row.id),
     name: String(row.name || ""),
     department: String(row.department || ""),

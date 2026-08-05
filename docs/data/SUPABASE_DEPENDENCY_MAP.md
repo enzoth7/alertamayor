@@ -85,7 +85,11 @@ Las Edge Functions tienen `verify_jwt=false` y usan token de capacidad. Las pol�
 ## Archivos y sistemas paralelos
 
 - `app/data/facilities.json`: solo importación; no runtime.
-- `Alerta_Mayor_ELEPEM_v01/data/*`: evidencia y snapshots normalizados; no runtime.
+- `data/discovery/osm/descubrimiento_osm_piloto_2026-07-31/*`: evidencia
+  reproducible del piloto OSM; no runtime.
+- Los insumos fuente legacy v01 fueron retirados del árbol de trabajo. Sus
+  nombres, conteos y hashes históricos se conservan en los artefactos de
+  migración; no deben volver a usarse como entradas operativas implícitas.
 - `data/discovery/*`: entradas/salidas auditables; varias todavía no importadas.
 - `ELEPEM OSINT`: aplicación FastAPI/SQLAlchemy con Postgres local y modelo alternativo (`registry_imports`, `official_registry_records`, `candidates`, `candidate_sources`, `match_comparisons`, `review_items`, `audit_events`). Next.js no lo consume.
 
@@ -98,4 +102,3 @@ Las Edge Functions tienen `verify_jwt=false` y usan token de capacidad. Las pol�
 5. Cambiar `/api/residenciales` detrás de un switch reversible.
 6. Cambiar matching/importadores a `known_facilities_exclusion_view`.
 7. Retirar dependencias de la cola legada solo después de reconciliar sus 40 filas.
-

@@ -174,6 +174,30 @@ test("un posible traslado no se confirma automáticamente", () => {
   assert.equal(classifyFacilityMatch(match), "possible_match");
 });
 
+test("compara todos los teléfonos y señales digitales tipadas", () => {
+  const match = scoreFacilityMatch(
+    {
+      name: "Residencial Ejemplo",
+      department: "Rocha",
+      phones: ["099 111 111", "099 222 222"],
+      emails: ["contacto@ejemplo.uy"],
+      socialUrls: ["https://www.instagram.com/residencial.ejemplo/"],
+    },
+    {
+      id: "MULTI-CONTACT",
+      name: "Ejemplo",
+      department: "Rocha",
+      phones: ["099 222 222"],
+      emails: ["contacto@ejemplo.uy"],
+      socialUrls: ["https://instagram.com/residencial.ejemplo"],
+    },
+  );
+  assert.equal(match.phoneExact, true);
+  assert.equal(match.emailExact, true);
+  assert.equal(match.socialUrlExact, true);
+  assert.equal(classifyFacilityMatch(match), "probable_match");
+});
+
 test("distingue sucursales de una cadena por dirección", () => {
   const ranked = rankFacilityMatches(
     {
@@ -249,4 +273,26 @@ test("un falso positivo cercano sin identidad textual queda bajo", () => {
   );
   assert.equal(match.hasStrongIdentity, false);
   assert.ok(match.score < 0.55);
+});
+
+test("ignora el código postal y equipara BVAR con Bulevar", () => {
+  const match = scoreFacilityMatch(
+    {
+      name: "Residencia María Carolina",
+      department: "Paysandú",
+      locality: "Paysandú",
+      address: "Bulevar Artigas 2800",
+    },
+    {
+      id: "EXC-OFFICIAL-ELP-0720",
+      name: "Residencia MARIA CAROLINA",
+      department: "Paysandú",
+      locality: "PAYSANDU",
+      address: "BVAR ARTIGAS 2800, 60000 Paysandú, Departamento de Paysandú",
+    },
+  );
+  assert.equal(match.doorNumberMatch, true);
+  assert.equal(match.doorNumberConflict, false);
+  assert.equal(match.hasAddressIdentity, true);
+  assert.equal(classifyFacilityMatch(match), "probable_match");
 });

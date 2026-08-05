@@ -10,7 +10,7 @@ async function insertReturningId(client, sql, values, fallbackSql, fallbackValue
   return String(fallback.rows[0].id);
 }
 
-export async function applyNormalizedBackfill(client, plan) {
+export async function applyNormalizedBackfill(client, plan, { manageTransaction = true } = {}) {
   const ids = {
     sourceCatalog: new Map(),
     sourceRuns: new Map(),
@@ -21,7 +21,7 @@ export async function applyNormalizedBackfill(client, plan) {
     candidates: new Map(),
   };
 
-  await client.query("begin isolation level serializable");
+  if (manageTransaction) await client.query("begin isolation level serializable");
   await client.query("set local statement_timeout = '120s'");
   await client.query("set local lock_timeout = '5s'");
   try {
@@ -90,11 +90,13 @@ export async function applyNormalizedBackfill(client, plan) {
         client,
         `
           insert into elepem_core.source_catalog (
-            source_key, display_name, source_type, base_url, authority_level,
-            storage_policy, source_license
-          ) values ($1, $2, $3, $4, $5, $6, $7)
+            source_key, display_name, source_type, source_channel, base_url,
+            authority_level, storage_policy, source_license
+          ) values ($1, $2, $3, $4, $5, $6, $7, $8)
           on conflict (source_key) do update set
             display_name = excluded.display_name,
+            source_type = excluded.source_type,
+            source_channel = excluded.source_channel,
             base_url = excluded.base_url,
             authority_level = excluded.authority_level,
             storage_policy = excluded.storage_policy,
@@ -105,6 +107,7 @@ export async function applyNormalizedBackfill(client, plan) {
           row.sourceKey,
           row.displayName,
           row.sourceType,
+          row.sourceChannel,
           row.baseUrl,
           row.authorityLevel,
           row.storagePolicy,
@@ -550,9 +553,9 @@ export async function applyNormalizedBackfill(client, plan) {
       );
     }
 
-    await client.query("commit");
+    if (manageTransaction) await client.query("commit");
   } catch (error) {
-    await client.query("rollback");
+    if (manageTransaction) await client.query("rollback");
     throw error;
   }
 

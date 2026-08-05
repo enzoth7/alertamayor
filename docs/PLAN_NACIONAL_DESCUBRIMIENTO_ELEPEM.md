@@ -3,7 +3,8 @@
 
 **Proyecto:** Alerta Mayor  
 **Fecha del plan:** 2026-08-02  
-**Versión:** 2 — Supabase como fuente operativa única de verdad  
+**Versión:** 3 — Supabase como fuente operativa única de verdad y procedencia visible
+**Última actualización:** 2026-08-04
 **Archivo de referencia para Codex:** `docs/PLAN_NACIONAL_DESCUBRIMIENTO_ELEPEM.md`
 
 ---
@@ -421,6 +422,62 @@ other_public_social
 #### `source_catalog`
 
 Catálogo de fuentes: MSP, MIDES, PACP, OSM, sitio propio, Instagram, Facebook, directorio, medio local, investigación ChatGPT, sugerencia ciudadana y otras.
+
+##### Taxonomía operativa de procedencia
+
+Cada observación debe pertenecer a uno de estos canales visibles y filtrables:
+
+```text
+official_sources
+public_maps
+public_social_sources
+other_public_sources
+manual_editorial
+```
+
+Etiquetas públicas en español:
+
+```text
+Fuentes oficiales
+Mapas públicos
+Fuentes públicas de redes sociales
+Otras fuentes públicas
+Reviews
+```
+
+El canal no reemplaza al proveedor o emisor. Cada observación debe conservar,
+como mínimo:
+
+```text
+source_channel
+provider_or_authority
+source_type
+source_url_or_document_reference
+source_date
+retrieved_at
+input_file
+input_hash
+source_record_key
+claims_supported
+limitations
+```
+
+Reglas de clasificación:
+
+- MSP, MIDES, PACP, intendencias y otros organismos se registran como
+  `official_sources` solamente cuando existe un documento o página oficial
+  identificable.
+- Un CSV o JSON transformado desde un documento oficial es un insumo derivado:
+  debe conservar el organismo emisor y la referencia al documento original.
+- OpenStreetMap y una verificación puntual permitida de Google Maps se muestran
+  como `public_maps`, conservando además el proveedor concreto.
+- Instagram, Facebook y otras páginas sociales públicas se muestran como
+  `public_social_sources`, conservando plataforma, URL pública y fecha de
+  consulta.
+- Una sede puede tener varios canales y proveedores simultáneamente. Los
+  filtros de procedencia son acumulativos, no mutuamente excluyentes.
+- El primer hallazgo se conserva como origen de descubrimiento; las fuentes
+  posteriores se agregan como corroboración y nunca sobrescriben el origen.
 
 #### `source_runs`
 
@@ -964,6 +1021,8 @@ Stop after Step 4.
 
 ## Paso 5. Crear el modelo paralelo y hacer el backfill en un entorno de prueba
 
+**Estado al 2026-08-04:** completado en entorno desechable y aplicado luego, con confirmación explícita, como modelo paralelo en `itolluaivfoxnaohbsdk`. Resultado: 893 sedes, 801 mappings legacy, 175 candidatos privados, 0 publicaciones automáticas y 0 errores de integridad. El runtime permanece en `legacy`; continúa el Paso 6.
+
 No ejecutar primero en producción. Crear las nuevas estructuras al lado de las actuales y cargar copias reconciliables.
 
 ### Salidas de control
@@ -1189,6 +1248,48 @@ Run focused tests and git diff --check.
 
 Stop after Step 7.
 ```
+
+---
+
+## Ruta operativa acelerada para los pasos 8 a 20
+
+Para no bloquear las nuevas funciones de WhatsApp y Reviews, el trabajo se
+ejecutará por lotes pequeños sobre la estructura normalizada existente.
+
+Orden inmediato:
+
+```text
+Paso 9 una vez
+por departamento: Paso 10 → Paso 12 → Paso 13 → Paso 14 → Paso 17 → Paso 19 → Paso 20
+después: Paso 8 → Paso 11 → Paso 15 → Paso 16
+```
+
+Esta ruta cambia la prioridad, no los criterios de aceptación. No permite
+publicar automáticamente, importar casos ambiguos como sedes canónicas ni
+omitir procedencia, revisión o pruebas.
+
+Los registros se separan así:
+
+```text
+facilities          = una sede física canónica resuelta
+facility_candidates = pista privada nueva, dudosa o pendiente
+merged/rejected     = decisión revisada con vínculo y auditoría; no borrado silencioso
+```
+
+El lote inicial queda fijado en cinco departamentos: Paysandú, Artigas, Rocha,
+Canelones y Montevideo. Durazno queda expresamente en un lote posterior.
+
+Los archivos ubicados bajo `Base de Datos/` son evidencia original inmutable y
+solo pueden leerse. Antes de validar, normalizar o importar, Codex debe crear una
+copia trazable en `data/discovery/` o en otra ruta operativa fuera de ese árbol,
+conservando ruta de origen, fecha y hash. Nunca se editan, renombran, mueven,
+reemplazan ni eliminan los originales.
+
+Para Paysandú deben considerarse conjuntamente, sin sobrescribir procedencia,
+los insumos originales de `Base de Datos/Scraping/SerpAPI/` y
+`Base de Datos/Scraping/Paysandu/instagram_paysandu_candidates_2026-08-02.json`.
+Montevideo usa como insumo original el paquete de
+`Base de Datos/Scraping/Montevideo/` y debe copiarse antes de procesarse.
 
 ---
 
@@ -1426,6 +1527,11 @@ data/discovery/[departamento]/
 ---
 
 ## Paso 11. Verificación controlada con Google Maps
+
+**Decisión del lote inicial (2026-08-04): omitido.** Los cinco departamentos
+seleccionados no ejecutarán este paso. No se consultará Google Places ni se
+vincularán `place_id` durante esta entrega. La omisión no reduce los requisitos
+de deduplicación, procedencia, revisión humana o publicación privada.
 
 Google se usa después de que ChatGPT haya producido candidatos.
 
@@ -1705,6 +1811,25 @@ Irregular
 Peligroso
 ```
 
+### Reviews visibles en la aplicación
+
+La interfaz puede usar el título `Reviews`. Cada registro almacenado localmente
+debe declarar su procedencia real, fecha y autoría institucional o fuente.
+
+Se permiten reviews editoriales cargadas manualmente por el equipo cuando se
+identifiquen como contenido propio y no se presenten como opiniones de usuarios
+o como extracción automática.
+
+De Google Maps solamente se puede conservar y mostrar el `place_id`, el enlace
+externo y los metadatos de verificación permitidos. No se copiarán a Supabase
+comentarios, autores, estrellas, promedios, cantidades de reseñas ni payloads de
+Google. La alternativa pública es un enlace `Ver opiniones en Google Maps` que
+abre la ficha externa.
+
+Una review propia no puede atribuirse a Google Maps. Si la aplicación incorpora
+una puntuación editorial propia, debe presentarse como tal y mantener su método,
+fecha y responsable.
+
 ---
 
 ## Paso 17. Cerrar el departamento
@@ -1733,6 +1858,10 @@ El informe debe contener:
 - conflictos;
 - cobertura insuficiente;
 - fecha de cierre provisional.
+- conteo por canal de procedencia;
+- emisores o proveedores cubiertos;
+- registros con procedencia incompleta;
+- distinción entre origen de descubrimiento y fuentes de corroboración.
 
 Un departamento se declara:
 
@@ -1749,6 +1878,13 @@ completo al 100 %
 ---
 
 ## Paso 18. Orden departamental
+
+### Lotes de entrega acelerada
+
+- Lote inicial fijado: Paysandú, Artigas, Rocha, Canelones y Montevideo.
+- Lote posterior confirmado: Durazno.
+- El orden nacional que sigue se conserva como referencia; no obliga a terminar
+  los diecinueve departamentos antes de comenzar las nuevas funciones.
 
 Primero:
 
@@ -1813,6 +1949,12 @@ false_positive
 not_elepem
 reviewed_and_imported
 publicly_approved
+official_sources_count
+public_maps_count
+public_social_sources_count
+other_public_sources_count
+manual_editorial_count
+missing_provenance_count
 ```
 
 No asumir:
@@ -1848,6 +1990,10 @@ Además:
 - ninguna coordenada inventada;
 - ninguna etapa administrativa colapsada;
 - ninguna publicación automática.
+- cada observación tiene canal, proveedor o emisor, fecha y referencia;
+- los filtros de procedencia no eliminan fuentes concurrentes;
+- ninguna review o puntuación de Google fue copiada a Supabase;
+- las reviews manuales no están atribuidas a usuarios ni a fuentes externas.
 
 ---
 

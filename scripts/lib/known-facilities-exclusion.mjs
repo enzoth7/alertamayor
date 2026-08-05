@@ -5,6 +5,15 @@ import { EXCLUDED_SOURCE_IDS, SOURCE_MERGE_GROUPS } from "./elepem-v01-reviewed-
 
 const MAX_OBSERVATION_LENGTH = 500;
 
+const CANONICAL_DEPARTMENTS = new Map([
+  ["artigas", "Artigas"], ["canelones", "Canelones"], ["cerro largo", "Cerro Largo"],
+  ["colonia", "Colonia"], ["durazno", "Durazno"], ["flores", "Flores"], ["florida", "Florida"],
+  ["lavalleja", "Lavalleja"], ["maldonado", "Maldonado"], ["montevideo", "Montevideo"],
+  ["paysandu", "Paysand\u00fa"], ["rio negro", "R\u00edo Negro"], ["rivera", "Rivera"],
+  ["rocha", "Rocha"], ["salto", "Salto"], ["san jose", "San Jos\u00e9"], ["soriano", "Soriano"],
+  ["tacuarembo", "Tacuaremb\u00f3"], ["treinta y tres", "Treinta y Tres"],
+]);
+
 function text(value, maximum = 1000) {
   return typeof value === "string" ? value.trim().slice(0, maximum) : "";
 }
@@ -333,6 +342,7 @@ function attachCandidateDetails(entry, details, conflicts) {
 }
 
 function finaliseEntry(entry) {
+  entry.department = CANONICAL_DEPARTMENTS.get(normalizeText(entry.department)) || entry.department;
   entry.names.sort((a, b) => a.value.localeCompare(b.value, "es-UY"));
   entry.aliases.sort((a, b) => a.value.localeCompare(b.value, "es-UY"));
   entry.historical_names.sort((a, b) => a.value.localeCompare(b.value, "es-UY"));

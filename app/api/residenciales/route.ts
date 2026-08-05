@@ -29,6 +29,8 @@ type ResidentialRow = Record<string, unknown> & {
   mides_social: boolean;
   pacp: boolean;
   other_source: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
 function deriveStatusGroup(row: ResidentialRow): Facility["statusGroup"] {
@@ -47,8 +49,18 @@ function isOtherSource(row: ResidentialRow) {
     !row.msp_final &&
     !row.msp_registro_historico &&
     !row.mides_social &&
-    (row.other_source || row.pacp)
+    row.other_source && !row.pacp
   );
+}
+
+function sourceCategories(row: ResidentialRow, otherSource: boolean): Facility["sourceCategories"] {
+  const categories = new Set<NonNullable<Facility["sourceCategories"]>[number]>();
+  if (row.msp_final || row.msp_registro_historico || row.mides_social || row.pacp) categories.add("official");
+  const label = String(row.source_label || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (/openstreetmap|google maps|mapas? public|\bmapa\b/.test(label)) categories.add("public_maps");
+  if (/instagram|facebook|redes? sociales?|social/.test(label)) categories.add("social_public");
+  if (otherSource || categories.size === 0) categories.add("other_public");
+  return [...categories];
 }
 
 export async function GET() {
@@ -76,6 +88,8 @@ export async function GET() {
         mides_social,
         pacp,
         other_source
+        ,created_at
+        ,updated_at
       from ${relation}
       order by department, name, id
     `);
@@ -97,7 +111,7 @@ export async function GET() {
         statusStage: row.status_stage,
         statusShort:
           otherSource && !row.pacp
-            ? "No figura en las tres listas auditadas · conserva fuente previa"
+            ? "Webs y directorios públicos · pendiente de clasificación detallada"
             : row.status_short,
         sourceLabel: row.source_label,
         mspFinal: row.msp_final,
@@ -107,7 +121,10 @@ export async function GET() {
         otherSource,
         pendingVerification: row.status_group === "verificar",
         appDiscovered: row.status_group === "app",
+        sourceCategories: sourceCategories(row, otherSource),
         privateCandidate: false,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
       };
     });
 

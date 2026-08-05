@@ -11,7 +11,7 @@ import { TeamVisitsWorkflow } from "./team/TeamVisitsWorkflow";
 import { IntakeReportForm } from "./IntakeReportForm";
 import { ReportStatusLookup } from "./ReportStatusLookup";
 import { TeamIntakeInbox } from "./team/TeamIntakeInbox";
-import { TeamFacilityCandidateQueue } from "./team/TeamFacilityCandidateQueue";
+import { OrganizationFacilityRegistry } from "./team/OrganizationFacilityRegistry";
 import { useResidenciales } from "../hooks/useResidenciales";
 import type { Facility } from "./map-types";
 
@@ -60,7 +60,6 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
   const [loginError, setLoginError] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [menu, setMenu] = useState(false);
-  const [largeText, setLargeText] = useState(false);
   const [preselectedFacility, setPreselectedFacility] = useState<Facility | null>(null);
   const [followCode, setFollowCode] = useState<string>("");
 
@@ -112,7 +111,7 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
         const authenticated = Boolean(data && typeof data === "object" && "authenticated" in data && data.authenticated === true);
         if (!active) return;
         if (authenticated) {
-          router.replace("/organizacion/equipos");
+          router.replace("/organizacion/residenciales");
         } else {
           window.sessionStorage.removeItem(ACCESS_SESSION_KEY);
           setAccessMode("chooser");
@@ -134,7 +133,7 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
 
   useEffect(() => {
     if (accessMode === "person" && personBlockedView) router.replace("/personas");
-    if (accessMode === "organization" && organizationBlockedView) router.replace("/organizacion/equipos");
+    if (accessMode === "organization" && organizationBlockedView) router.replace("/organizacion/residenciales");
   }, [accessMode, organizationBlockedView, personBlockedView, router]);
 
   const saveAccessMode = (mode: "person" | "organization") => {
@@ -173,7 +172,7 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
       setPassword("");
       saveAccessMode("organization");
       // Redirigir al portal de organización
-      router.push("/organizacion/equipos");
+      router.push("/organizacion/residenciales");
     } catch (error) {
       setLoginError(error instanceof Error ? error.message : "No se pudo ingresar.");
     } finally {
@@ -185,10 +184,10 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
     setMenu(false);
     if (portal === "organization" || isOrganization) {
       if (next === "denuncia" || next === "seguimiento") {
-        router.push("/organizacion/equipos");
+        router.push("/organizacion/residenciales");
         return;
       }
-      router.push(orgViewPaths[next] ?? "/organizacion/equipos");
+      router.push(orgViewPaths[next] ?? "/organizacion/residenciales");
       return;
     }
     // Portal personas
@@ -219,18 +218,18 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
     return <main className="accessGate accessGateLoading"><span>Abriendo la vista correspondiente…</span></main>;
   }
 
-  return <main className={`site ${accessMode === "person" ? "personSite" : "organizationSite"} ${largeText ? "largeText" : ""}`}>
+  return <main className={`site ${accessMode === "person" ? "personSite" : "organizationSite"}`}>
     <header className="top"><div className="topin">
       <button className="brand" onClick={resetAccess} aria-label="Volver a elegir entre persona y organización"><img src="/alertamayor.png" alt="Alerta mayor" className="brandLogo" /><span>Alerta mayor</span></button>
       <nav className={menu ? "nav open" : "nav"}>{navItems.map(([key, label]) => <button key={key} className={view === key ? "active" : ""} onClick={() => go(key)}>{label}</button>)}</nav>
-      <div className="tools"><button className="menuToggle" onClick={() => setMenu(!menu)} aria-label="Abrir menú"><Menu size={17}/> Menú</button><button onClick={() => setLargeText(!largeText)}>A+ Texto</button><button className="profileReset" onClick={resetAccess} aria-label={isOrganization ? "Salir de la organización" : "Cambiar perfil"}><LogOut size={16}/><span>{isOrganization ? "Salir" : "Cambiar perfil"}</span></button></div>
+      <div className="tools"><button className="menuToggle" onClick={() => setMenu(!menu)} aria-label="Abrir menú"><Menu size={17}/> Menú</button><button className="profileReset" onClick={resetAccess} aria-label={isOrganization ? "Salir de la organización" : "Cambiar perfil"}><LogOut size={16}/><span>{isOrganization ? "Salir" : "Cambiar perfil"}</span></button></div>
     </div></header>
     <div className="shell">
       <div className="banner"><ShieldAlert size={20}/><span><strong>PROTOTIPO ACADÉMICO</strong> · Usá sólo datos de demostración. Las comunicaciones se guardan para que el equipo las vea en su bandeja, pero no se envían a ningún organismo ni representan un servicio oficial.</span></div>
       {view === "inicio" && <HomeView go={go} isOrganization={isOrganization}/>}
       {view === "denuncia" && <IntakeReportForm onHome={() => go("inicio")} onFollow={(code) => { if (code) setFollowCode(code); go("seguimiento"); }} initialFacility={preselectedFacility}/>}
       {view === "seguimiento" && <ReportStatusLookup onHome={() => go("inicio")} initialCode={followCode}/>}
-      {view === "residenciales" && (isOrganization ? <TeamFacilityCandidateQueue/> : <UruguayRegistry onReport={(facility) => {
+      {view === "residenciales" && (isOrganization ? <OrganizationFacilityRegistry/> : <UruguayRegistry onReport={(facility) => {
         if (facility) {
           try {
             window.sessionStorage.setItem("alerta-mayor-preselected-facility", JSON.stringify(facility));

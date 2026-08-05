@@ -69,6 +69,21 @@ end;
 $$;
 
 do $$
+begin
+  if not exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'elepem_core'
+      and table_name = 'source_catalog'
+      and column_name = 'source_channel'
+      and is_nullable = 'NO'
+  ) then
+    raise exception 'source_catalog.source_channel is missing or nullable';
+  end if;
+end;
+$$;
+
+do $$
 declare
   view_name text;
   security_options text[];

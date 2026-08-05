@@ -1,0 +1,18 @@
+export type JsonRecord = Record<string, unknown>;
+export const MAX_INTAKE_REQUEST_BYTES: number;
+export const MAX_EVIDENCE_FILE_BYTES: number;
+export const MAX_EVIDENCE_FILES: number;
+export const CASE_CODE_PATTERN: RegExp;
+export const UPLOAD_TOKEN_PATTERN: RegExp;
+export const ALLOWED_EVIDENCE_MIME_TYPES: Set<string>;
+export const EVIDENCE_EXTENSIONS: Record<string, string>;
+export function isRecord(value: unknown): value is JsonRecord;
+export function intakeText(value: unknown, maxLength?: number): string;
+export function intakeTextList(value: unknown, maxItems?: number, maxLength?: number): string[];
+export function buildReportPayload(value: unknown, options?: { source?: "web" | "whatsapp_sandbox"; isSandbox?: boolean; now?: Date }): JsonRecord | null;
+export function newCaseCode(now?: Date, randomBytes?: Uint8Array): string;
+export function newUploadToken(randomBytes?: Uint8Array): string;
+export function cleanEvidenceFileName(value: unknown): string;
+export function sha256Hex(value: string | Buffer | Uint8Array | ArrayBuffer): string;
+export function sameSecret(left: unknown, right: unknown): boolean;
+export function evidenceSignatureMatches(buffer: Buffer | Uint8Array | ArrayBuffer, mimeType: string): boolean;

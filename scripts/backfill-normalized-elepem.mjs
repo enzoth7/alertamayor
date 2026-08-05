@@ -20,14 +20,20 @@ import {
 const { Pool } = pg;
 const DEFAULTS = {
   remoteSnapshot: "data/discovery/normalized-backfill-source-2026-08-03.json",
-  officialJson: "Alerta_Mayor_ELEPEM_v01/data/elepem_publicos_v01.json",
-  officialCsv: "Alerta_Mayor_ELEPEM_v01/data/elepem_publicos_v01.csv",
-  sourceRecords: "Alerta_Mayor_ELEPEM_v01/data/registros_fuente_v01.csv",
-  sourceCatalog: "Alerta_Mayor_ELEPEM_v01/data/fuentes_publicas_v01.csv",
   osm: "data/discovery/osm-elepem-candidates-2026-08-02.json",
   paysandu: "data/discovery/instagram_paysandu_candidates_2026-08-02.json",
   artigas: "data/discovery/artigas_department_elepem_public_candidates_2026-08-02.json",
 };
+
+function requiredInputArgument(args, name) {
+  const value = typeof args[name] === "string" ? args[name].trim() : "";
+  if (!value) {
+    throw new Error(
+      `Falta --${name}=ruta. Los insumos fuente v01 retirados ya no tienen una ruta predeterminada.`,
+    );
+  }
+  return value;
+}
 
 async function readInput(relativePath, format) {
   const path = resolve(PROJECT_ROOT, relativePath);
@@ -145,7 +151,7 @@ function auditMarkdown({
   const integrityRows = Object.entries(after.integrity)
     .map(([name, value]) => `| ${name} | ${value} |`)
     .join("\n");
-  return `# Auditoría de backfill normalizado — 2026-08-03
+  return `# Auditoría de backfill normalizado — ${validAuditDate(inputs)}
 
 Estado: ejecutado únicamente en \`${target.targetId}\` (${target.host}:${target.port}/${target.database}).
 
@@ -193,7 +199,7 @@ ${integrityRows}
 ## Rollback y reaplicación
 
 - Rollback estructural probado en este target local: ${rollbackTested ? "sí" : "no"}.
-- El rollback preserva las 804 filas heredadas, candidatos, observaciones y los 30 IDs OSM originales; elimina únicamente el esquema canónico y los IDs oficiales cuya sede propietaria se retira.
+- El rollback preserva las ${plan.summary.legacyRows} filas heredadas, candidatos, observaciones y los IDs externos originales; elimina únicamente el esquema canónico y los IDs cuya sede canónica propietaria se retira.
 - La reaplicación restaura el modelo y los enlaces al catálogo de fuentes.
 
 ## Conflictos
@@ -204,9 +210,15 @@ Se emitieron ${plan.conflicts.length} filas en el CSV de conflictos. Las fusione
 
 - Este informe demuestra el backfill local, no un corte de producción.
 - Las sedes quedan \`publication_status = private\` y \`review_status = needs_review\`.
-- Los candidatos de Paysandú y Artigas quedan en nivel C y revisión pendiente.
+- Los candidatos privados conservan su nivel de evidencia y estado de revisión existente.
 - El snapshot privado se conserva en \`data/discovery\`, ruta ignorada por Git.
 `;
+}
+
+function validAuditDate(inputs) {
+  const snapshot = inputs.find((input) => input.relativePath.includes("normalized-backfill-source"));
+  const match = snapshot?.relativePath.match(/(\d{4}-\d{2}-\d{2})/);
+  return match?.[1] ?? new Date().toISOString().slice(0, 10);
 }
 
 async function main() {
@@ -214,10 +226,10 @@ async function main() {
   const dateStamp = uruguayDateStamp();
   const loaded = await Promise.all([
     readInput(String(args["remote-snapshot"] || DEFAULTS.remoteSnapshot), "json"),
-    readInput(String(args["official-json"] || DEFAULTS.officialJson), "json"),
-    readInput(String(args["official-csv"] || DEFAULTS.officialCsv), "csv"),
-    readInput(String(args["source-records"] || DEFAULTS.sourceRecords), "csv"),
-    readInput(String(args["source-catalog"] || DEFAULTS.sourceCatalog), "csv"),
+    readInput(requiredInputArgument(args, "official-json"), "json"),
+    readInput(requiredInputArgument(args, "official-csv"), "csv"),
+    readInput(requiredInputArgument(args, "source-records"), "csv"),
+    readInput(requiredInputArgument(args, "source-catalog"), "csv"),
     readInput(String(args.osm || DEFAULTS.osm), "json"),
     readInput(String(args.paysandu || DEFAULTS.paysandu), "json"),
     readInput(String(args.artigas || DEFAULTS.artigas), "json"),
@@ -353,7 +365,7 @@ async function main() {
       "resolution",
     ];
     const conflictLines = [conflictHeader.join(",")];
-    for (const [index, row] of plan.conflicts.entries()) {
+    for (const row of plan.conflicts) {
       const conflictId = `CONFLICT-${createHash("sha256")
         .update(JSON.stringify(row))
         .digest("hex")

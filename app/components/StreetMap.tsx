@@ -2,32 +2,29 @@
 
 import { useEffect, useRef } from "react";
 import L from "leaflet";
+import {
+  canonicalDepartment,
+  evidenceDescription,
+  facilityDisplayCategory,
+  facilityDisplayLabel,
+  isVerificationFacility,
+  sourceCategoryLabels,
+} from "./facility-presentation";
 import type { Facility } from "./map-types";
 
 const colors = {
   habilitado: "#087443",
-  registro: "#d97706",
+  registro: "#eab308",
   mides: "#0891b2",
-  otra_fuente: "#64748b",
-  verificar: "#6941c6",
-  app: "#111111",
-  candidate_private: "#e11d48",
-} satisfies Record<Facility["statusGroup"], string>;
+  verification: "#e11d48",
+};
 
 function membershipBadges(facility: Facility) {
+  if (isVerificationFacility(facility)) return [["A verificar", "red"]] as [string, string][];
   return [
     facility.mspFinal && ["Habilitación final MSP", "green"],
+    facility.mspRegistroHistorico && ["Registro histórico MSP", "amber"],
     facility.midesSocial && ["Certificado Social MIDES", "cyan"],
-    facility.mspRegistroHistorico && ["Registro MSP histórico", "amber"],
-    facility.pacp && ["Proveedor PACP", "gray"],
-    facility.otherSource &&
-      !facility.pacp && ["Otra fuente / fuera de listas auditadas", "gray"],
-    facility.pendingVerification && ["Pendiente de verificación", "violet"],
-    facility.appDiscovered && ["Encontrado por la app", "black"],
-    facility.privateCandidate && [
-      `Candidato OSM del piloto · evidencia ${facility.privateCandidateEvidenceTier || "C"}`,
-      "red",
-    ],
   ].filter(Boolean) as [string, string][];
 }
 
@@ -44,7 +41,7 @@ function createPopup(facility: Facility) {
   popup.appendChild(address);
 
   const location = document.createElement("p");
-  location.textContent = `${facility.locality} · ${facility.department}`;
+  location.textContent = `${facility.locality} · ${canonicalDepartment(facility.department)}`;
   popup.appendChild(location);
 
   const badges = document.createElement("div");
@@ -58,8 +55,21 @@ function createPopup(facility: Facility) {
   popup.appendChild(badges);
 
   const status = document.createElement("b");
-  status.textContent = facility.statusShort;
+  status.textContent = `Estado en el mapa: ${facilityDisplayLabel(facility)}`;
   popup.appendChild(status);
+
+  const sourceCategories = sourceCategoryLabels(facility);
+  if (sourceCategories.length) {
+    const provenance = document.createElement("p");
+    provenance.textContent = `Fuente de hallazgo: ${sourceCategories.join(" · ")}`;
+    popup.appendChild(provenance);
+  }
+
+  if (facility.privateCandidate) {
+    const evidence = document.createElement("p");
+    evidence.textContent = `Evidencia ${facility.privateCandidateEvidenceTier || "C"}: ${evidenceDescription(facility.privateCandidateEvidenceTier)}`;
+    popup.appendChild(evidence);
+  }
 
   const source = document.createElement("small");
   source.textContent = facility.sourceLabel;
@@ -73,6 +83,7 @@ export default function StreetMap({ facilities, selectedId, onSelect }: { facili
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
   const fittedFacilitiesRef = useRef("");
+  const previousSelectedIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -101,14 +112,14 @@ export default function StreetMap({ facilities, selectedId, onSelect }: { facili
     markers.clearLayers();
     facilities.forEach((facility) => {
       const isSelected = selectedId === facility.id;
-      const isPilotCandidate = facility.statusGroup === "candidate_private";
+      const displayCategory = facilityDisplayCategory(facility);
+      const requiresVerification = displayCategory === "verification";
       const marker = L.circleMarker([facility.lat, facility.lng], {
-        radius: isSelected ? 11 : isPilotCandidate ? 8 : ["verificar", "app"].includes(facility.statusGroup) ? 7 : 6,
-        color: isSelected ? "#155eef" : isPilotCandidate ? "#881337" : "#fff",
+        radius: isSelected ? 11 : requiresVerification ? 8 : 6,
+        color: isSelected ? "#155eef" : "#fff",
         weight: isSelected ? 3 : 2,
-        fillColor: colors[facility.statusGroup],
+        fillColor: colors[displayCategory],
         fillOpacity: 0.92,
-        dashArray: facility.privateCandidate ? "4 3" : undefined,
       });
       marker.on("click", () => {
         onSelect(facility.id);
@@ -142,6 +153,21 @@ export default function StreetMap({ facilities, selectedId, onSelect }: { facili
       map.flyTo([target.lat, target.lng], 16, { duration: 1 });
     }
   }, [selectedId, facilities]);
+
+  // Al quitar una selección, volver al encuadre general de los resultados.
+  useEffect(() => {
+    const map = mapRef.current;
+    const previousSelectedId = previousSelectedIdRef.current;
+    previousSelectedIdRef.current = selectedId;
+    if (!map || previousSelectedId === null || selectedId !== null) return;
+
+    if (facilities.length) {
+      const bounds = L.latLngBounds(facilities.map(({ lat, lng }) => [lat, lng]));
+      map.flyToBounds(bounds, { padding: [28, 28], maxZoom: 14, duration: 0.8 });
+    } else {
+      map.flyTo([-32.8, -56], 6, { duration: 0.8 });
+    }
+  }, [facilities, selectedId]);
 
   return <div ref={containerRef} className="leafletRegistryMap" aria-label="Mapa de residenciales"/>;
 }

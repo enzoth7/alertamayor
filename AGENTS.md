@@ -27,6 +27,15 @@ privada de revisión humana.
 - Nunca utilizar credenciales de producción en pruebas.
 - No alterar rutas públicas o la interfaz existente fuera de la tarea indicada.
 
+## Archivo maestro inmutable
+
+- Todo el árbol `Base de Datos/` contiene insumos originales y es de solo lectura para Codex.
+- Codex no puede editar, formatear, renombrar, mover, reemplazar ni borrar ningún archivo dentro de `Base de Datos/`.
+- Las validaciones sobre esos archivos deben ser de solo lectura.
+- Para procesar un insumo, crear una copia trazable fuera de `Base de Datos/`, preferentemente en `data/discovery/`, conservando ruta de origen, fecha y hash.
+- Las normalizaciones, deduplicaciones, reportes e importaciones se ejecutan sobre la copia o sobre la base operativa, nunca sobre el original.
+- Si un comando pudiera escribir dentro de `Base de Datos/`, detenerlo y cambiar la salida a una ruta operativa segura.
+
 ## Investigación pública y reparto de tareas
 
 - Codex no hará scraping directo de la interfaz de Google Maps, Instagram ni Facebook.

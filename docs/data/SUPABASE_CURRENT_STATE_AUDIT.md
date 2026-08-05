@@ -1,5 +1,7 @@
 # Auditoría del estado actual de Supabase
 
+> Documento histórico previo a la migración. El modelo paralelo normalizado se aplicó el 2026-08-04; el estado posterior está en `data/migration/production_normalized_migration_2026-08-04_2026-08-04T21-56-11-230Z.json`. El runtime aún lee la capa legacy hasta el Paso 6.
+
 Fecha de auditoría: 2026-08-03
 Proyecto: Alerta Mayor
 Referencia Supabase: `itolluaivfoxnaohbsdk`
@@ -92,9 +94,9 @@ Referencia del asesor: https://supabase.com/docs/guides/database/database-linter
 
 | Archivo o sistema | Conteo | Función actual | Estado frente a fuente única |
 |---|---:|---|---|
-| `Alerta_Mayor_ELEPEM_v01/data/elepem_publicos_v01.json` | 810 | Snapshot normalizado/evidencia | No es runtime; requiere mapeo semántico |
-| `Alerta_Mayor_ELEPEM_v01/data/registros_fuente_v01.csv` | 1.357 | Registros de fuente | Evidencia fuera de Supabase |
-| `Alerta_Mayor_ELEPEM_v01/data/fuentes_publicas_v01.csv` | 22 | Catálogo de fuentes | Debe alimentar `source_catalog` |
+| Snapshot normalizado ELEPEM v01 (artefacto retirado) | 810 | Evidencia histórica | No es runtime; hash conservado en la auditoría de backfill |
+| Registros de fuente ELEPEM v01 (artefacto retirado) | 1.357 | Evidencia histórica | No es una entrada operativa; hash conservado en la auditoría de backfill |
+| Catálogo de fuentes ELEPEM v01 (artefacto retirado) | 22 | Evidencia histórica | No debe alimentar `source_catalog` sin una importación revisada |
 | `app/data/facilities.json` | 237 | Fuente del importador legado | No es runtime; debe deprecarse tras reconciliar |
 | `data/discovery/residenciales-live-2026-08-02.json` | 804 | Exportación de Supabase | Snapshot auditable, no maestro |
 | `data/discovery/osm-*-2026-08-02.json` | 32 | Candidatos OSM | 32 observaciones y 30 candidatos ya reflejados parcialmente |

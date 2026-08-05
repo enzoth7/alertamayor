@@ -19,24 +19,28 @@
       "count": 804
     },
     {
-      "relativePath": "Alerta_Mayor_ELEPEM_v01/data/elepem_publicos_v01.json",
+      "historicalSource": "ELEPEM v01 / elepem_publicos_v01.json",
       "sha256": "ac45072162aef9a642aee61620334505cfed75f2fa8165fe8406143660799657",
-      "count": 810
+      "count": 810,
+      "availability": "retired_from_worktree"
     },
     {
-      "relativePath": "Alerta_Mayor_ELEPEM_v01/data/elepem_publicos_v01.csv",
+      "historicalSource": "ELEPEM v01 / elepem_publicos_v01.csv",
       "sha256": "bf103aaf633c68c0a692ee7f8350c155378872260eaba6d62043d67038986d44",
-      "count": 810
+      "count": 810,
+      "availability": "retired_from_worktree"
     },
     {
-      "relativePath": "Alerta_Mayor_ELEPEM_v01/data/registros_fuente_v01.csv",
+      "historicalSource": "ELEPEM v01 / registros_fuente_v01.csv",
       "sha256": "5eb50ea9e8b927ca62749b368a1e1466b6f0e1231558ea279272cd13d5dfbefc",
-      "count": 1357
+      "count": 1357,
+      "availability": "retired_from_worktree"
     },
     {
-      "relativePath": "Alerta_Mayor_ELEPEM_v01/data/fuentes_publicas_v01.csv",
+      "historicalSource": "ELEPEM v01 / fuentes_publicas_v01.csv",
       "sha256": "1b8be079e4f529081eb4dac52f2c955be73c2add4d6e00f69824549175d45a10",
-      "count": 22
+      "count": 22,
+      "availability": "retired_from_worktree"
     },
     {
       "relativePath": "data/discovery/osm-elepem-candidates-2026-08-02.json",

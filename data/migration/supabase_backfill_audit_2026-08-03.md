@@ -9,13 +9,17 @@ El proyecto remoto se usó solo para generar un snapshot en una transacción `RE
 | Archivo | Filas/registros | SHA-256 |
 |---|---:|---|
 | `data/discovery/normalized-backfill-source-2026-08-03.json` | 804 | `9b3d33058619b55d2ca72f05f1ae83a7bb22340aa0e6b0e43c75e8fdf965e1d2` |
-| `Alerta_Mayor_ELEPEM_v01/data/elepem_publicos_v01.json` | 810 | `ac45072162aef9a642aee61620334505cfed75f2fa8165fe8406143660799657` |
-| `Alerta_Mayor_ELEPEM_v01/data/elepem_publicos_v01.csv` | 810 | `bf103aaf633c68c0a692ee7f8350c155378872260eaba6d62043d67038986d44` |
-| `Alerta_Mayor_ELEPEM_v01/data/registros_fuente_v01.csv` | 1357 | `5eb50ea9e8b927ca62749b368a1e1466b6f0e1231558ea279272cd13d5dfbefc` |
-| `Alerta_Mayor_ELEPEM_v01/data/fuentes_publicas_v01.csv` | 22 | `1b8be079e4f529081eb4dac52f2c955be73c2add4d6e00f69824549175d45a10` |
+| `ELEPEM v01 · elepem_publicos_v01.json` (artefacto fuente retirado) | 810 | `ac45072162aef9a642aee61620334505cfed75f2fa8165fe8406143660799657` |
+| `ELEPEM v01 · elepem_publicos_v01.csv` (artefacto fuente retirado) | 810 | `bf103aaf633c68c0a692ee7f8350c155378872260eaba6d62043d67038986d44` |
+| `ELEPEM v01 · registros_fuente_v01.csv` (artefacto fuente retirado) | 1357 | `5eb50ea9e8b927ca62749b368a1e1466b6f0e1231558ea279272cd13d5dfbefc` |
+| `ELEPEM v01 · fuentes_publicas_v01.csv` (artefacto fuente retirado) | 22 | `1b8be079e4f529081eb4dac52f2c955be73c2add4d6e00f69824549175d45a10` |
 | `data/discovery/osm-elepem-candidates-2026-08-02.json` | 32 | `94a0c3fb6ef3d6327cf9bab7f6c840b2888fdf0467176accbd6bf69a04fc4ce3` |
 | `data/discovery/instagram_paysandu_candidates_2026-08-02.json` | 14 | `7f1a76557a16aad76c5dae4f17fb2b78ec87fc8bab7780cc30130698983659c7` |
 | `data/discovery/artigas_department_elepem_public_candidates_2026-08-02.json` | 9 | `75a4acf17bf578f4c01a245cf1dcaffd0ab4aa07c3d8a4278c549f2784f2e0f2` |
+
+Los cuatro artefactos fuente v01 marcados como retirados no son entradas
+operativas actuales. La tabla conserva su nombre lógico, conteo y hash como
+trazabilidad de la ejecución histórica.
 
 ## Plan calculado
 

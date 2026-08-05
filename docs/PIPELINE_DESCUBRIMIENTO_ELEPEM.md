@@ -215,7 +215,7 @@ El piloto del 2026-07-31 comparó OpenStreetMap con los 787 registros vivos:
 - 0 candidatos promovidos al padrón público.
 
 Los archivos reproducibles están en
-`Alerta_Mayor_ELEPEM_v01/data/descubrimiento_osm_piloto_2026-07-31/`.
+`data/discovery/osm/descubrimiento_osm_piloto_2026-07-31/`.
 
 ## Seguridad y operación
 

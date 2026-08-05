@@ -18,9 +18,9 @@ const { Pool } = pg;
 const PROJECT_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const LOCAL_EXISTING_PATH = path.join(
   PROJECT_ROOT,
-  "Alerta_Mayor_ELEPEM_v01",
   "data",
-  "elepem_publicos_v01.json",
+  "discovery",
+  "residenciales-live-2026-08-02.json",
 );
 const OVERPASS_ENDPOINTS = [
   "https://overpass-api.de/api/interpreter",

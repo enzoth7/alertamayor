@@ -1,33 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { querySupabaseDatabase } from "../../../../../lib/supabase-db";
+import {
+  ALLOWED_EVIDENCE_MIME_TYPES,
+  CASE_CODE_PATTERN,
+  cleanEvidenceFileName,
+  EVIDENCE_EXTENSIONS,
+  evidenceSignatureMatches,
+  MAX_EVIDENCE_FILE_BYTES,
+  MAX_EVIDENCE_FILES,
+  sameSecret,
+  sha256Hex,
+  UPLOAD_TOKEN_PATTERN,
+} from "../../../../../lib/intake-report.mjs";
 
 export const runtime = "nodejs";
-
-const CASE_CODE_PATTERN = /^AM-\d{8}-[A-F0-9]{8}$/;
-const UPLOAD_TOKEN_PATTERN = /^[A-Za-z0-9_-]{32}$/;
-const MAX_FILE_BYTES = 10 * 1024 * 1024;
-const ALLOWED_MIME_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/heic",
-  "image/heif",
-  "application/pdf",
-  "text/plain",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "audio/webm",
-  "audio/ogg",
-  "audio/mp4",
-  "audio/wav",
-  "audio/mpeg",
-  "audio/mp3",
-  "audio/aac",
-  "audio/m4a",
-  "audio/x-m4a",
-  "audio/3gpp",
-  "audio/3gpp2",
-]);
 
 function supabaseHeaders(publishableKey: string): Record<string, string> {
   const authKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || publishableKey;
@@ -35,6 +21,12 @@ function supabaseHeaders(publishableKey: string): Record<string, string> {
     apikey: authKey,
     Authorization: `Bearer ${authKey}`,
   };
+}
+
+function supabaseServiceHeaders(): Record<string, string> | null {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) return null;
+  return { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` };
 }
 
 export async function POST(request: NextRequest, context: { params: Promise<{ caseCode: string }> }) {
@@ -60,13 +52,23 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
   if (!UPLOAD_TOKEN_PATTERN.test(uploadToken)) {
     return NextResponse.json({ error: "La autorización para adjuntar el archivo no es válida." }, { status: 403 });
   }
-  if (!file.size || file.size > MAX_FILE_BYTES) {
+  if (!file.size || file.size > MAX_EVIDENCE_FILE_BYTES) {
     return NextResponse.json({ error: "Cada archivo puede pesar hasta 10 MB." }, { status: 413 });
   }
   const cleanType = file.type.split(";")[0].trim().toLowerCase();
-  if (!ALLOWED_MIME_TYPES.has(cleanType) && !cleanType.startsWith("audio/")) {
+  if (!ALLOWED_EVIDENCE_MIME_TYPES.has(cleanType)) {
     return NextResponse.json({ error: "Ese tipo de archivo no está permitido." }, { status: 415 });
   }
+  const fileBuffer = Buffer.from(await file.arrayBuffer());
+  if (!evidenceSignatureMatches(fileBuffer, cleanType)) {
+    return NextResponse.json({ error: "El contenido no coincide con el tipo de archivo declarado." }, { status: 415 });
+  }
+  const fileHash = sha256Hex(fileBuffer);
+  const cleanName = cleanEvidenceFileName(file.name);
+  const sourceChannelValue = input.get("sourceChannel");
+  const sourceMessageIdValue = input.get("sourceMessageId");
+  const sourceChannel = sourceChannelValue === "whatsapp_sandbox" ? "whatsapp_sandbox" : "web";
+  const sourceMessageId = typeof sourceMessageIdValue === "string" ? sourceMessageIdValue.trim().slice(0, 100) : null;
 
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -74,35 +76,15 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
     return NextResponse.json({ error: "La carga de archivos no está configurada." }, { status: 503 });
   }
 
-  const extensionMap: Record<string, string> = {
-    "image/jpeg": "jpg",
-    "image/png": "png",
-    "image/webp": "webp",
-    "image/heic": "heic",
-    "image/heif": "heif",
-    "application/pdf": "pdf",
-    "text/plain": "txt",
-    "application/msword": "doc",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
-    "audio/webm": "webm",
-    "audio/ogg": "ogg",
-    "audio/mp4": "mp4",
-    "audio/wav": "wav",
-    "audio/mpeg": "mp3",
-    "audio/mp3": "mp3",
-    "audio/aac": "aac",
-    "audio/m4a": "m4a",
-    "audio/x-m4a": "m4a",
-    "audio/3gpp": "3gp",
-    "audio/3gpp2": "3g2",
-  };
-
-  const extension = extensionMap[cleanType] || file.name.split(".").pop() || "bin";
+  const extension = EVIDENCE_EXTENSIONS[cleanType] || cleanName.split(".").pop() || "bin";
 
   const forwarded = new FormData();
   forwarded.set("caseCode", caseCode);
   forwarded.set("capabilityToken", uploadToken);
-  forwarded.set("file", file, file.name);
+  forwarded.set("sha256", fileHash);
+  forwarded.set("sourceChannel", sourceChannel);
+  if (sourceMessageId) forwarded.set("sourceMessageId", sourceMessageId);
+  forwarded.set("file", new Blob([new Uint8Array(fileBuffer)], { type: cleanType }), cleanName);
 
   try {
     const response = await fetch(`${supabaseUrl}/functions/v1/upload-intake-evidence`, {
@@ -118,17 +100,24 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
       return NextResponse.json(result, { status: 201 });
     }
 
-    // FALLBACK DIRECTO: Si la Edge Function en la nube responde error (ej 415), subir directo por REST/Storage API
-    console.warn(`Edge Function error ${response.status}. Executing direct Supabase storage upload fallback for ${cleanType}...`);
+    // The direct fallback is privileged and must never use a publishable key.
+    const serviceHeaders = supabaseServiceHeaders();
+    if (!serviceHeaders) {
+      return NextResponse.json({ error: "No se pudo validar y guardar el archivo." }, { status: response.status >= 400 ? response.status : 502 });
+    }
+    console.warn("Evidence edge upload failed; attempting the private server fallback.", { status: response.status });
 
     let reportId: string | null = null;
 
     try {
-      const rows = await querySupabaseDatabase<{ id: string }>(
-        "SELECT id FROM public.intake_reports WHERE case_code = $1 LIMIT 1",
+      const rows = await querySupabaseDatabase<{ id: string; report_payload: Record<string, unknown> }>(
+        "SELECT id, report_payload FROM public.intake_reports WHERE case_code = $1 LIMIT 1",
         [caseCode]
       );
-      if (rows && rows[0]?.id) {
+      const storedToken = rows[0]?.report_payload && typeof rows[0].report_payload.evidenceUploadToken === "string"
+        ? rows[0].report_payload.evidenceUploadToken
+        : "";
+      if (rows[0]?.id && storedToken && sameSecret(storedToken, uploadToken)) {
         reportId = rows[0].id;
       }
     } catch (err) {
@@ -136,19 +125,25 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
     }
 
     if (!reportId) {
-      return NextResponse.json({ error: "No se encontró la comunicación." }, { status: 404 });
+      return NextResponse.json({ error: "No se encontró la comunicación o la autorización no es válida." }, { status: 404 });
+    }
+
+    const countRows = await querySupabaseDatabase<{ count: string }>(
+      "SELECT count(*)::text AS count FROM public.intake_report_attachments WHERE report_id = $1",
+      [reportId],
+    );
+    if (Number(countRows[0]?.count || 0) >= MAX_EVIDENCE_FILES) {
+      return NextResponse.json({ error: "La comunicación ya alcanzó el máximo de 5 archivos." }, { status: 409 });
     }
 
     const attachmentId = crypto.randomUUID();
     const objectPath = `${reportId}/${attachmentId}.${extension}`;
-    const fileBuffer = await file.arrayBuffer();
-
     const storageRes = await fetch(`${supabaseUrl}/storage/v1/object/intake-evidence/${objectPath}`, {
       method: "POST",
       headers: {
-        ...supabaseHeaders(publishableKey),
+        ...serviceHeaders,
         "Content-Type": cleanType,
-        "Cache-Control": "3600",
+        "Cache-Control": "0, private, no-store",
         "x-upsert": "false",
       },
       body: fileBuffer,
@@ -163,15 +158,17 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
 
     try {
       await querySupabaseDatabase(
-        `INSERT INTO public.intake_report_attachments (id, report_id, object_path, file_name, mime_type, size_bytes)
-   VALUES ($1, $2, $3, $4, $5, $6)`,
-        [attachmentId, reportId, objectPath, file.name, cleanType, file.size]
+        `INSERT INTO public.intake_report_attachments (
+           id, report_id, object_path, file_name, mime_type, size_bytes,
+           sha256_hex, source_channel, source_message_id, validation_status
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'signature_validated')`,
+        [attachmentId, reportId, objectPath, cleanName, cleanType, file.size, fileHash, sourceChannel, sourceMessageId]
       );
     } catch (dbErr) {
       console.error("Error inserting attachment metadata:", dbErr);
       await fetch(`${supabaseUrl}/storage/v1/object/intake-evidence/${objectPath}`, {
         method: "DELETE",
-        headers: supabaseHeaders(publishableKey),
+        headers: serviceHeaders,
       }).catch(() => undefined);
       return NextResponse.json({ error: "No se pudo registrar la información del archivo." }, { status: 502 });
     }
@@ -179,7 +176,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ ca
     return NextResponse.json({
       attachment: {
         id: attachmentId,
-        fileName: file.name,
+        fileName: cleanName,
         mimeType: cleanType,
         sizeBytes: file.size,
       },

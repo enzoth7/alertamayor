@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -148,7 +148,7 @@ function explanation(components: Record<string, unknown>) {
   return parts.length ? parts.join(" · ") : "Sin señales suficientes";
 }
 
-export function TeamFacilityCandidateQueue() {
+export function TeamFacilityCandidateQueue({ viewFilter, hideMap = false, embedded = false }: { viewFilter?: ReactNode; hideMap?: boolean; embedded?: boolean } = {}) {
   const [candidates, setCandidates] = useState<FacilityCandidate[]>([]);
   const [reviewer, setReviewer] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -277,20 +277,21 @@ export function TeamFacilityCandidateQueue() {
   };
 
   return <section className="candidateQueue" aria-label="Cola privada de candidatos">
-    <header className="candidateQueueHeader">
+    <header className={`candidateQueueHeader ${embedded ? "candidateQueueEmbeddedHeader" : ""}`}>
       <div>
-        <div className="eyebrow">Acceso interno · evidencia y revisión humana</div>
-        <h1>Cola de verificación de residenciales</h1>
-        <p>Estos registros aparecen como capa roja del piloto en el mapa de Personas cuando hay sesión de equipo. Una pista C necesita corroboración antes de verificarse.</p>
+        {!embedded && <div className="eyebrow">Acceso interno · evidencia y revisión humana</div>}
+        {embedded ? <h2>Revisión de residenciales</h2> : <h1>Cola de verificación de residenciales</h1>}
+        <p>{embedded ? "Seleccioná un registro para revisar sus fuentes y guardar una decisión." : "Estos registros aparecen como capa roja del piloto en el mapa de Personas cuando hay sesión de equipo. Una pista C necesita corroboración antes de verificarse."}</p>
       </div>
       <button type="button" onClick={() => void load()} disabled={loading}>
         <RefreshCw size={17} className={loading ? "candidateSpin" : ""}/> Actualizar
       </button>
     </header>
 
-    <div className="candidateQueueGuard"><ShieldCheck size={21}/><span><strong>Revisión protegida.</strong> Revisor: {reviewer || "sesión de equipo"}. La capa piloto no copia datos a <code>public.residenciales</code>.</span></div>
+    {!embedded && <div className="candidateQueueGuard"><ShieldCheck size={21}/><span><strong>Revisión protegida.</strong> Revisor: {reviewer || "sesión de equipo"}. La capa piloto no copia datos a <code>public.residenciales</code>.</span></div>}
 
     <div className="candidateFilters">
+      {viewFilter}
       <label>Departamento<select value={department} onChange={(event) => setDepartment(event.target.value)}><option value="">Todos</option>{departments.map((value) => <option key={value}>{value}</option>)}</select></label>
       <label>Localidad<select value={locality} onChange={(event) => setLocality(event.target.value)}><option value="">Todas</option>{localities.map((value) => <option key={value}>{value}</option>)}</select></label>
       <label>Fuente<select value={source} onChange={(event) => setSource(event.target.value)}><option value="">Todas</option>{sources.map((value) => <option key={value}>{value}</option>)}</select></label>
@@ -302,7 +303,7 @@ export function TeamFacilityCandidateQueue() {
     {success && <div className="candidateMessage candidateSuccess"><CheckCircle2 size={18}/>{success}</div>}
     {loading ? <div className="candidateLoading"><LoaderCircle className="candidateSpin"/> Cargando cola privada…</div> :
       <>
-      <section className="candidateMapPanel" aria-label="Mapa de candidatos OSM del piloto">
+      {!hideMap && <section className="candidateMapPanel" aria-label="Mapa de candidatos OSM del piloto">
         <header>
           <div><strong>Mapa del descubrimiento OSM</strong><span>{mappedCandidates.length} candidatos visibles con los filtros actuales</span></div>
           <span className="candidateMapLegend"><i/> Evidencia C · pendiente de revisión</span>
@@ -312,7 +313,7 @@ export function TeamFacilityCandidateQueue() {
           selectedId={mapSelectedId}
           onSelect={selectMapCandidate}
         /> : <div className="candidateEmpty">No hay candidatos con coordenadas para estos filtros.</div>}
-      </section>
+      </section>}
       <div className="candidateQueueLayout">
         <aside className="candidateListPanel">
           <header><span>{filtered.length} candidatos</span><strong>Revisión pendiente</strong></header>

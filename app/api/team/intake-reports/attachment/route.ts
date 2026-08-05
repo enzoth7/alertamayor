@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
         "Content-Type": contentType,
         "Content-Length": String(arrayBuffer.byteLength),
         "Accept-Ranges": "bytes",
-        "Cache-Control": "public, max-age=3600",
+        "Cache-Control": "private, no-store, max-age=0",
       },
     });
   } catch (error) {
