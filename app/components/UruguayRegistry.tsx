@@ -166,12 +166,12 @@ export default function UruguayRegistry({
       {candidateDisplay !== "public" && privateCandidatesAvailable && privateCandidatesError && <div className="notice registryDataStatus registryDataError" role="alert">{privateCandidatesError}</div>}
       <div className="registryQuickSummary" aria-label="Resumen y filtros rápidos">
         <RegistryKpi activeHelp={activeKpiHelp} className={`statCard-blue ${!status ? "selected" : ""}`} help="Total consolidado de residenciales." helpId="all" label="Todos" onActivate={() => setStatus("")} onToggleHelp={setActiveKpiHelp} value={summaryKpiScope.length} />
-        <RegistryKpi activeHelp={activeKpiHelp} className={`statCard-green ${status === "habilitado" ? "selected" : ""}`} help="Incluidos en la lista de habilitación final MSP." helpId="msp-final" label="Habilitados" onActivate={() => setStatus(status === "habilitado" ? "" : "habilitado")} onToggleHelp={setActiveKpiHelp} value={summaryTotals.habilitado} />
-        <RegistryKpi activeHelp={activeKpiHelp} className={`statCard-amber ${status === "mides" ? "selected" : ""}`} help="Con Certificado Social emitido por MIDES." helpId="mides" label="Certificados" onActivate={() => setStatus(status === "mides" ? "" : "mides")} onToggleHelp={setActiveKpiHelp} value={summaryTotals.mides} />
+        <RegistryKpi activeHelp={activeKpiHelp} className={`statCard-green ${status === "habilitado" ? "selected" : ""}`} help="Incluidos en la lista de habilitación final MSP de junio de 2026." helpId="msp-final" label="Habilitados" onActivate={() => setStatus(status === "habilitado" ? "" : "habilitado")} onToggleHelp={setActiveKpiHelp} value={summaryTotals.habilitado} />
+        <RegistryKpi activeHelp={activeKpiHelp} className={`statCard-amber ${status === "mides" ? "selected" : ""}`} help="Con Certificado Social emitido por MIDES en enero de 2026." helpId="mides" label="Certificados" onActivate={() => setStatus(status === "mides" ? "" : "mides")} onToggleHelp={setActiveKpiHelp} value={summaryTotals.mides} />
         <RegistryKpi activeHelp={activeKpiHelp} className={`statCard-gray ${status === "verificar" ? "selected" : ""}`} help="No figuran ni como habilitados ni como certificados." helpId="unconfirmed" label="Situación no confirmada" onActivate={() => setStatus(status === "verificar" ? "" : "verificar")} onToggleHelp={setActiveKpiHelp} value={summaryTotals.unconfirmed} />
       </div>
       <p className="registryOverlapNote">
-        La situación no confirmada reúne los registros que no figuran ni como habilitados ni como certificados.
+        Algunos residenciales están incluidos tanto en la lista de <strong> Habilitados como en la de Certificados.</strong>
       </p>
       <div className="registrySearchFirst">
         <label className="searchField">

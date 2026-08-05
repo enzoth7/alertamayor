@@ -55,3 +55,31 @@
  GET /api/team/session 200 in 40ms
  GET /api/team/facility-candidates/unlocated 200 in 48ms
  GET /api/team/facility-candidates 200 in 922ms
+ GET /api/team/session 200 in 63ms
+ GET /api/team/session 200 in 56ms
+ GET /api/team/facility-candidates/unlocated 200 in 143ms
+ GET /api/team/facility-candidates/unlocated 200 in 146ms
+ GET /api/team/facility-candidates 200 in 1061ms
+ GET /api/team/facility-candidates 200 in 1140ms
+ GET /api/team/session 200 in 33ms
+ GET /api/team/facility-candidates/unlocated 200 in 36ms
+ GET /api/team/facility-candidates 200 in 679ms
+ GET /api/team/session 200 in 50ms
+ GET /api/team/facility-candidates/unlocated 200 in 54ms
+ GET /api/team/facility-candidates 200 in 701ms
+ GET /api/team/session 200 in 79ms
+ GET /api/team/session 200 in 24ms
+ GET /api/team/facility-candidates/unlocated 200 in 95ms
+ GET /api/team/facility-candidates/unlocated 200 in 97ms
+ GET /api/team/facility-candidates 200 in 1074ms
+ GET /api/team/facility-candidates 200 in 1108ms
+ ✓ Compiled in 645ms (839 modules)
+ GET /api/team/session 200 in 156ms
+ GET /api/team/facility-candidates/unlocated 200 in 88ms
+ GET /api/team/facility-candidates 200 in 700ms
+ GET /api/team/session 200 in 16ms
+ GET /api/team/facility-candidates/unlocated 200 in 29ms
+ GET /api/team/facility-candidates 200 in 755ms
+ GET /api/team/session 200 in 24ms
+ GET /api/team/facility-candidates/unlocated 200 in 33ms
+ GET /api/team/facility-candidates 200 in 515ms
