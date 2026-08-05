@@ -9,10 +9,7 @@ import type {
 import { canonicalDepartment } from "../facility-presentation";
 import type { Facility } from "../map-types";
 import UruguayRegistry from "../UruguayRegistry";
-import { TeamFacilityCandidateQueue } from "./TeamFacilityCandidateQueue";
 import "./OrganizationFacilityRegistry.css";
-
-export type OrganizationRegistryView = "all" | "public" | "verification";
 
 const EMPTY_CANDIDATE_SUMMARY: PrivateCandidateSummary = {
   total: 0,
@@ -27,60 +24,28 @@ const EMPTY_CANDIDATE_SUMMARY: PrivateCandidateSummary = {
   queueCandidates: [],
 };
 
-function OrganizationRegistryViewFilter({
-  value,
-  onChange,
-}: {
-  value: OrganizationRegistryView;
-  onChange: (value: OrganizationRegistryView) => void;
-}) {
-  return (
-    <label className="organizationRegistryViewFilter">
-      <b>Vista</b>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value as OrganizationRegistryView)}
-        aria-label="Vista de residenciales"
-      >
-        <option value="all">Todos</option>
-        <option value="public">Públicos</option>
-        <option value="verification">A verificar</option>
-      </select>
-    </label>
-  );
-}
-
 export function OrganizationFacilityRegistry() {
-  const [registryView, setRegistryView] = useState<OrganizationRegistryView>("all");
   const [candidateSummary, setCandidateSummary] = useState<PrivateCandidateSummary>(EMPTY_CANDIDATE_SUMMARY);
   const [legacyVerificationFacilities, setLegacyVerificationFacilities] = useState<Facility[]>([]);
   const [verificationMapFacilities, setVerificationMapFacilities] = useState<Facility[]>([]);
   const updateCandidateSummary = useCallback((summary: PrivateCandidateSummary) => {
     setCandidateSummary(summary);
   }, []);
-  const viewFilter = (
-    <OrganizationRegistryViewFilter value={registryView} onChange={setRegistryView} />
-  );
-
   return (
     <section className="organizationRegistryWorkspace">
       <UruguayRegistry
-        candidateDisplay={registryView}
-        filterControl={viewFilter}
-        onShowAll={() => setRegistryView("all")}
-        onShowVerification={() => setRegistryView("verification")}
+        candidateDisplay="all"
         onCandidateSummary={updateCandidateSummary}
         onLegacyVerificationFacilities={setLegacyVerificationFacilities}
         onVerificationMapFacilities={setVerificationMapFacilities}
       />
-      {registryView !== "public" && (candidateSummary.total > 0 || legacyVerificationFacilities.length > 0) && (
+      {(candidateSummary.total > 0 || legacyVerificationFacilities.length > 0) && (
         <CandidateInventorySummary
           legacyFacilities={legacyVerificationFacilities}
           summary={candidateSummary}
           verificationMapFacilities={verificationMapFacilities}
         />
       )}
-      {registryView === "verification" && <TeamFacilityCandidateQueue hideMap embedded />}
     </section>
   );
 }
@@ -96,7 +61,6 @@ function CandidateInventorySummary({
 }) {
   const [query, setQuery] = useState("");
   const [department, setDepartment] = useState("");
-  const [source, setSource] = useState<"" | CandidateSourceCategory>("");
   const [coordinates, setCoordinates] = useState("");
   const [selectedCandidate, setSelectedCandidate] = useState<PrivateQueueCandidate | null>(null);
 
@@ -170,10 +134,9 @@ function CandidateInventorySummary({
         || (coordinates === "mapped" ? candidate.hasCoordinates : !candidate.hasCoordinates);
       return (!normalizedQuery || haystack.includes(normalizedQuery))
         && (!department || canonicalDepartment(candidate.department) === department)
-        && (!source || candidate.sourceCategories.includes(source))
         && matchesCoordinates;
     });
-  }, [coordinates, department, inventoryCandidates, query, source]);
+  }, [coordinates, department, inventoryCandidates, query]);
 
   const totalVerificationCount = inventoryCandidates.length;
   const visibleMapCount = inventoryCandidates.filter((candidate) => candidate.hasCoordinates).length;
@@ -182,13 +145,13 @@ function CandidateInventorySummary({
   return (
     <section className="candidateInventorySummary" aria-labelledby="candidate-inventory-title">
       <header className="candidateInventoryHeading">
-        <h2 id="candidate-inventory-title">Todas las residencias a verificar</h2>
+        <h2 id="candidate-inventory-title">Todas las residencias con situación no confirmada</h2>
       </header>
 
       <div className="candidateInventoryPrimaryKpis" aria-label="Resumen de residenciales a verificar">
         <article className="candidateInventoryPrimaryKpi isTotal">
           <strong>{totalVerificationCount}</strong>
-          <span>A verificar</span>
+          <span>Total</span>
         </article>
         <article className="candidateInventoryPrimaryKpi isMapped">
           <strong>{visibleMapCount}</strong>
@@ -211,16 +174,6 @@ function CandidateInventorySummary({
             <select value={department} onChange={(event) => setDepartment(event.target.value)}>
               <option value="">Todos</option>
               {departments.map((name) => <option key={name} value={name}>{name}</option>)}
-            </select>
-          </label>
-          <label>
-            <b>Fuente</b>
-            <select value={source} onChange={(event) => setSource(event.target.value as "" | CandidateSourceCategory)}>
-              <option value="">Todas</option>
-              <option value="official">Fuentes oficiales</option>
-              <option value="public_maps">Mapas públicos</option>
-              <option value="social_public">Redes sociales públicas</option>
-              <option value="other_public">Webs y directorios públicos</option>
             </select>
           </label>
           <label>
@@ -278,9 +231,6 @@ function CandidateInventoryRow({
   candidate: PrivateQueueCandidate;
   onViewMore: (candidate: PrivateQueueCandidate) => void;
 }) {
-  const statusLabel = candidate.pendingImport
-    ? "Pendiente de incorporar"
-    : STATUS_LABELS[candidate.status] || candidate.status || "Sin estado";
   return (
     <article className="candidateInventoryRow">
       <div className="candidateInventoryRowCopy">
@@ -289,11 +239,6 @@ function CandidateInventoryRow({
         <small>{candidate.locality} · {candidate.department}</small>
       </div>
       <div className="candidateInventoryBadges">
-        <span className={`candidateInventoryBadge candidateInventoryBadge-status candidateInventoryBadge-${candidate.pendingImport ? "pending" : candidate.status}`}>{statusLabel}</span>
-        <span className="candidateInventoryBadge">Evidencia {candidate.evidenceTier}</span>
-        {candidate.sourceCategories.map((category) => (
-          <span className={`candidateInventoryBadge candidateInventoryBadge-source-${category}`} key={category}>{SOURCE_LABELS[category]}</span>
-        ))}
         <span className={`candidateInventoryBadge ${candidate.hasCoordinates ? "candidateInventoryBadge-mapped" : "candidateInventoryBadge-unmapped"}`}>
           {candidate.hasCoordinates ? "Con coordenadas" : "Sin coordenadas"}
         </span>

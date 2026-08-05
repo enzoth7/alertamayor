@@ -1,0 +1,57 @@
+
+> alerta-elepem@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.5.22
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.20:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 2.3s
+ ○ Compiling /api/team/session ...
+ ✓ Compiled /api/team/session in 690ms (299 modules)
+ GET /api/team/session 200 in 482ms
+ GET /api/team/session 200 in 924ms
+ ✓ Compiled /api/team/facility-candidates/unlocated in 279ms (311 modules)
+ GET /api/team/facility-candidates/unlocated 200 in 432ms
+ GET /api/team/facility-candidates/unlocated 200 in 433ms
+ GET /api/team/facility-candidates 200 in 3217ms
+ GET /api/team/facility-candidates 200 in 3414ms
+ ○ Compiling /organizacion/residenciales ...
+ ✓ Compiled /organizacion/residenciales in 2.2s (853 modules)
+ GET /organizacion/residenciales 200 in 2562ms
+ GET /api/team/session 200 in 31ms
+ ✓ Compiled /api/residenciales in 392ms (841 modules)
+ GET /api/team/session 200 in 458ms
+ GET /api/team/facility-candidates/unlocated 200 in 64ms
+ GET /api/team/session 200 in 18ms
+ GET /api/team/facility-candidates/unlocated 200 in 45ms
+ GET /api/residenciales 200 in 1636ms
+ GET /api/team/facility-candidates 200 in 1189ms
+ GET /api/team/facility-candidates 200 in 1338ms
+ ✓ Compiled /_not-found in 247ms (842 modules)
+ GET /sw.js 404 in 450ms
+ GET /api/team/session 200 in 48ms
+ GET /api/team/facility-candidates/unlocated 200 in 62ms
+ GET /api/team/facility-candidates 200 in 737ms
+ GET /api/team/session 200 in 23ms
+ GET /api/team/facility-candidates/unlocated 200 in 42ms
+ GET /api/team/facility-candidates 200 in 408ms
+ GET /api/team/session 200 in 54ms
+ GET /api/team/facility-candidates/unlocated 200 in 54ms
+ GET /api/team/facility-candidates 200 in 624ms
+ GET /api/team/session 200 in 25ms
+ GET /api/team/session 200 in 23ms
+ GET /api/team/facility-candidates/unlocated 200 in 65ms
+ GET /api/team/facility-candidates/unlocated 200 in 66ms
+ GET /api/team/facility-candidates 200 in 414ms
+ GET /api/team/facility-candidates 200 in 892ms
+ GET /api/residenciales 200 in 934ms
+ GET /api/residenciales 200 in 734ms
+ GET /api/team/session 200 in 28ms
+ GET /api/team/facility-candidates/unlocated 200 in 53ms
+ GET /api/team/facility-candidates 200 in 934ms
+ GET /api/team/session 200 in 40ms
+ GET /api/team/facility-candidates/unlocated 200 in 48ms
+ GET /api/team/facility-candidates 200 in 922ms

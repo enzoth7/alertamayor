@@ -1,6 +1,6 @@
 import type { Facility } from "./map-types";
 
-export type FacilityDisplayCategory = "habilitado" | "registro" | "mides" | "verification";
+export type FacilityDisplayCategory = "habilitado" | "mides" | "unconfirmed";
 
 const URUGUAY_DEPARTMENTS: Record<string, string> = {
   artigas: "Artigas",
@@ -35,26 +35,26 @@ export function canonicalDepartment(value: string | null | undefined) {
 }
 
 export function hasOfficialAdministrativeRecord(facility: Facility) {
-  return facility.mspFinal || facility.mspRegistroHistorico || facility.midesSocial;
+  return facility.mspFinal || facility.midesSocial;
 }
 
-export function isVerificationFacility(facility: Facility) {
+export function isUnconfirmedFacility(facility: Facility) {
   return !hasOfficialAdministrativeRecord(facility);
 }
 
+export const isVerificationFacility = isUnconfirmedFacility;
+
 export function facilityDisplayCategory(facility: Facility): FacilityDisplayCategory {
-  if (isVerificationFacility(facility)) return "verification";
   if (facility.mspFinal) return "habilitado";
-  if (facility.mspRegistroHistorico) return "registro";
-  return "mides";
+  if (facility.midesSocial) return "mides";
+  return "unconfirmed";
 }
 
 export function facilityDisplayLabel(facility: Facility) {
   const category = facilityDisplayCategory(facility);
-  if (category === "habilitado") return "Habilitación final MSP";
-  if (category === "registro") return "Registro histórico MSP";
-  if (category === "mides") return "Certificado Social MIDES";
-  return "A verificar";
+  if (category === "habilitado") return "Habilitado";
+  if (category === "mides") return "Certificado";
+  return "Situación no confirmada";
 }
 
 function normalizedIdentity(value: string | null | undefined) {

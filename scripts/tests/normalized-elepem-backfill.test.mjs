@@ -167,6 +167,22 @@ test("name equality alone never merges different physical addresses", () => {
   assert.equal(plan.summary.officialMatchMethods.unmatched, 1);
 });
 
+test("an official authorization never propagates to a legacy site at another address", () => {
+  const plan = build({
+    legacyRows: [legacy({ msp_final: false, msp_registro_historico: false })],
+    officialRows: [official({
+      msp_final: true,
+      address: "Calle Dos 456",
+      msp_registro_historico: false,
+    })],
+  });
+  const legacyFacility = plan.facilities.find((row) => row.facilityKey.includes("TEST-001"));
+  const legacyFinalEvent = plan.administrativeEvents.find((row) =>
+    row.facilityKey === legacyFacility?.facilityKey && row.administrativeStage === "authorization_final",
+  );
+  assert.equal(legacyFinalEvent, undefined);
+});
+
 test("social research stores only URL metadata and keeps candidate at tier C", () => {
   const plan = build({
     legacyRows: [legacy()],

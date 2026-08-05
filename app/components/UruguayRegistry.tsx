@@ -1,8 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Building2, ChevronDown, ChevronUp, MapPinned, RotateCcw, Search, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, ChevronUp, RotateCcw, Search, X } from "lucide-react";
 import { useResidenciales } from "../hooks/useResidenciales";
 import { usePrivateCandidateMapLayer } from "../hooks/usePrivateCandidateMapLayer";
 import type { PrivateCandidateSummary } from "../hooks/usePrivateCandidateMapLayer";
@@ -12,11 +12,9 @@ import {
   evidenceDescription,
   facilityDisplayCategory,
   facilityDisplayLabel,
-  hasOfficialAdministrativeRecord,
   isVerificationFacility,
-  sourceCategoryLabels,
 } from "./facility-presentation";
-import type { Facility, FacilityStatus, MapMode } from "./map-types";
+import type { Facility, FacilityStatus } from "./map-types";
 
 const StreetMap = dynamic(() => import("./StreetMap"), {
   ssr: false,
@@ -32,41 +30,25 @@ function matchesAdministrativeStatus(
   status: FacilityStatus,
 ) {
   if (status === "habilitado") return facility.mspFinal;
-  if (status === "registro") return facility.mspRegistroHistorico;
   if (status === "mides") return facility.midesSocial;
   if (status === "otra_fuente") return facility.otherSource;
   if (status === "app") return facility.appDiscovered;
   if (status === "candidate_private") return facility.privateCandidate === true;
-  return facility.pendingVerification;
+  return isVerificationFacility(facility);
 }
 
 type UruguayRegistryProps = {
   onReport?: (facility?: Facility) => void;
   candidateDisplay?: "all" | "public" | "verification";
-  filterControl?: ReactNode;
-  onShowAll?: () => void;
-  onShowVerification?: () => void;
   onCandidateSummary?: (summary: PrivateCandidateSummary) => void;
   onLegacyVerificationFacilities?: (facilities: Facility[]) => void;
   onVerificationMapFacilities?: (facilities: Facility[]) => void;
 };
 
-type SourceCategoryFilter = "" | "official" | "public_maps" | "social_public" | "other_public";
 type PrivateWorkflowStatus = "" | "needs_review" | "possible_match" | "verified_new";
-
-function matchesSourceCategory(facility: Facility, category: SourceCategoryFilter) {
-  if (!category) return true;
-  // En este filtro, "Fuentes oficiales" representa exclusivamente los tres
-  // respaldos administrativos que determinan el color del punto.
-  if (category === "official") return hasOfficialAdministrativeRecord(facility);
-  return facility.sourceCategories?.includes(category) === true;
-}
 
 export default function UruguayRegistry({
   candidateDisplay = "all",
-  filterControl,
-  onShowAll,
-  onShowVerification,
   onCandidateSummary,
   onLegacyVerificationFacilities,
   onVerificationMapFacilities,
@@ -82,9 +64,7 @@ export default function UruguayRegistry({
   const [query, setQuery] = useState("");
   const [department, setDepartment] = useState("");
   const [status, setStatus] = useState<"" | FacilityStatus>("");
-  const [sourceCategory, setSourceCategory] = useState<SourceCategoryFilter>("");
   const [privateWorkflowStatus, setPrivateWorkflowStatus] = useState<PrivateWorkflowStatus>("");
-  const [mode, setMode] = useState<MapMode>("streets");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [activeKpiHelp, setActiveKpiHelp] = useState<string | null>(null);
@@ -108,11 +88,6 @@ export default function UruguayRegistry({
   );
 
   useEffect(() => {
-    const requestedMode = new URLSearchParams(window.location.search).get("map") as MapMode | null;
-    if (requestedMode && ["streets", "list"].includes(requestedMode)) setMode(requestedMode);
-  }, []);
-
-  useEffect(() => {
     if (candidateDisplay === "verification") setStatus("");
     else setPrivateWorkflowStatus("");
     setSelectedId(null);
@@ -133,10 +108,9 @@ export default function UruguayRegistry({
 
   const statusIndependentWithoutDepartment = useMemo(() => facilities.filter((facility) => {
     const haystack = normalize(`${facility.name} ${facility.address} ${facility.locality} ${facility.department} ${facility.statusShort} ${facility.sourceLabel}`);
-    return matchesSourceCategory(facility, sourceCategory)
-      && (!privateWorkflowStatus || facility.privateCandidateStatus === privateWorkflowStatus)
+    return (!privateWorkflowStatus || facility.privateCandidateStatus === privateWorkflowStatus)
       && (!query || haystack.includes(normalize(query)));
-  }), [facilities, privateWorkflowStatus, query, sourceCategory]);
+  }), [facilities, privateWorkflowStatus, query]);
 
   const baseWithoutDepartment = useMemo(
     () => statusIndependentWithoutDepartment.filter(
@@ -156,14 +130,13 @@ export default function UruguayRegistry({
     : null;
   const summaryKpiScope = useMemo(() => consolidatedFacilities.filter((facility) => {
     const haystack = normalize(`${facility.name} ${facility.address} ${facility.locality} ${facility.department} ${facility.statusShort} ${facility.sourceLabel}`);
-    return matchesSourceCategory(facility, sourceCategory)
-      && (!query || haystack.includes(normalize(query)))
+    return (!query || haystack.includes(normalize(query)))
       && (!department || canonicalDepartment(facility.department) === department);
-  }), [consolidatedFacilities, department, query, sourceCategory]);
+  }), [consolidatedFacilities, department, query]);
   const summaryTotals = useMemo(() => ({
     habilitado: summaryKpiScope.filter((facility) => facility.mspFinal).length,
-    registro: summaryKpiScope.filter((facility) => facility.mspRegistroHistorico).length,
     mides: summaryKpiScope.filter((facility) => facility.midesSocial).length,
+    unconfirmed: summaryKpiScope.filter(isVerificationFacility).length,
   }), [summaryKpiScope]);
   const visibleOfficialCount = visible.filter((facility) => !isVerificationFacility(facility)).length;
   const visibleVerificationCount = visible.filter(isVerificationFacility).length;
@@ -176,7 +149,7 @@ export default function UruguayRegistry({
   const orderedResults = visible;
 
   function resetFilters() {
-    setQuery(""); setDepartment(""); setStatus(""); setSourceCategory(""); setPrivateWorkflowStatus("");
+    setQuery(""); setDepartment(""); setStatus(""); setPrivateWorkflowStatus("");
     setSelectedId(null);
     setDetailId(null);
   }
@@ -191,16 +164,14 @@ export default function UruguayRegistry({
       {error && <div className="notice registryDataStatus registryDataError" role="alert">{error}</div>}
       {candidateDisplay !== "public" && privateCandidatesAvailable && privateCandidatesLoading && <div className="notice registryDataStatus" role="status">Actualizando residenciales a verificar…</div>}
       {candidateDisplay !== "public" && privateCandidatesAvailable && privateCandidatesError && <div className="notice registryDataStatus registryDataError" role="alert">{privateCandidatesError}</div>}
-      <div className={`registryQuickSummary ${onShowVerification ? "hasVerificationKpi" : ""}`} aria-label="Resumen y filtros rápidos">
-        <RegistryKpi activeHelp={activeKpiHelp} className={`statCard-blue ${candidateDisplay !== "verification" && !status ? "selected" : ""}`} help="Total de residenciales de la vista." helpId="all" label="Todos" onActivate={() => { if (candidateDisplay === "verification") onShowAll?.(); setStatus(""); }} onToggleHelp={setActiveKpiHelp} value={summaryKpiScope.length} />
-        <RegistryKpi activeHelp={activeKpiHelp} className={`statCard-green ${candidateDisplay !== "verification" && status === "habilitado" ? "selected" : ""}`} help="Con habilitación final vigente del MSP." helpId="msp-final" label="Habilitación final MSP" onActivate={() => { if (candidateDisplay === "verification") onShowAll?.(); setStatus(status === "habilitado" ? "" : "habilitado"); }} onToggleHelp={setActiveKpiHelp} value={summaryTotals.habilitado} />
-        <RegistryKpi activeHelp={activeKpiHelp} className={`statCard-registry-yellow ${candidateDisplay !== "verification" && status === "registro" ? "selected" : ""}`} help="Incluidos en el registro histórico del MSP." helpId="msp-registry" label="Registro histórico MSP" onActivate={() => { if (candidateDisplay === "verification") onShowAll?.(); setStatus(status === "registro" ? "" : "registro"); }} onToggleHelp={setActiveKpiHelp} value={summaryTotals.registro} />
-        <RegistryKpi activeHelp={activeKpiHelp} className={`statCard-cyan ${candidateDisplay !== "verification" && status === "mides" ? "selected" : ""}`} help="Con Certificado Social emitido por MIDES." helpId="mides" label="Certificado Social MIDES" onActivate={() => { if (candidateDisplay === "verification") onShowAll?.(); setStatus(status === "mides" ? "" : "mides"); }} onToggleHelp={setActiveKpiHelp} value={summaryTotals.mides} />
-        {onShowVerification && <RegistryKpi activeHelp={activeKpiHelp} className={`statCard-red ${candidateDisplay === "verification" ? "selected" : ""}`} help="Sin respaldo oficial; requieren revisión." helpId="verification" label="A verificar" onActivate={onShowVerification} onToggleHelp={setActiveKpiHelp} value={summaryKpiScope.filter(isVerificationFacility).length} />}
+      <div className="registryQuickSummary" aria-label="Resumen y filtros rápidos">
+        <RegistryKpi activeHelp={activeKpiHelp} className={`statCard-blue ${!status ? "selected" : ""}`} help="Total consolidado de residenciales." helpId="all" label="Todos" onActivate={() => setStatus("")} onToggleHelp={setActiveKpiHelp} value={summaryKpiScope.length} />
+        <RegistryKpi activeHelp={activeKpiHelp} className={`statCard-green ${status === "habilitado" ? "selected" : ""}`} help="Incluidos en la lista de habilitación final MSP." helpId="msp-final" label="Habilitados" onActivate={() => setStatus(status === "habilitado" ? "" : "habilitado")} onToggleHelp={setActiveKpiHelp} value={summaryTotals.habilitado} />
+        <RegistryKpi activeHelp={activeKpiHelp} className={`statCard-amber ${status === "mides" ? "selected" : ""}`} help="Con Certificado Social emitido por MIDES." helpId="mides" label="Certificados" onActivate={() => setStatus(status === "mides" ? "" : "mides")} onToggleHelp={setActiveKpiHelp} value={summaryTotals.mides} />
+        <RegistryKpi activeHelp={activeKpiHelp} className={`statCard-gray ${status === "verificar" ? "selected" : ""}`} help="No figuran ni como habilitados ni como certificados." helpId="unconfirmed" label="Situación no confirmada" onActivate={() => setStatus(status === "verificar" ? "" : "verificar")} onToggleHelp={setActiveKpiHelp} value={summaryTotals.unconfirmed} />
       </div>
       <p className="registryOverlapNote">
-        Las acreditaciones se cuentan por separado: <strong>un mismo residencial puede
-        figurar en más de una lista</strong>. Los candidatos del piloto no son una acreditación.
+        La situación no confirmada reúne los registros que no figuran ni como habilitados ni como certificados.
       </p>
       <div className="registrySearchFirst">
         <label className="searchField">
@@ -210,38 +181,35 @@ export default function UruguayRegistry({
       </div>
     </section>
 
-    <div className={`registryMapLayout ${mode === "list" ? "mapListOnly" : ""}`}>
+    <div className="registryMapLayout">
       <aside className="card registryFiltersPanel" aria-label="Filtros del mapa">
         <div className="registryFiltersHeading">
           <div><span>Filtrar resultados</span><small>Elegí una o más opciones</small></div>
           <button
             type="button"
             className="registryClearFilters"
-            disabled={!(query || department || status || sourceCategory || privateWorkflowStatus || selectedId)}
+            disabled={!(query || department || status || privateWorkflowStatus || selectedId)}
             aria-label="Restablecer filtros y mapa"
             title="Restablecer filtros y mapa"
             onClick={resetFilters}
           ><RotateCcw size={17}/></button>
         </div>
         <div className="registryToolbar">
-        {filterControl}
         <label><b>Departamento</b><select value={department} onChange={(event) => setDepartment(event.target.value)}><option value="">Todos</option>{departmentCounts.map(([name]) => <option key={name}>{name}</option>)}</select></label>
         {candidateDisplay === "verification" ? <label><b>Estado de tratamiento</b><select value={privateWorkflowStatus} onChange={(event) => setPrivateWorkflowStatus(event.target.value as PrivateWorkflowStatus)}><option value="">Todos</option><option value="needs_review">Necesita revisión</option><option value="possible_match">Posible coincidencia</option><option value="verified_new">Nuevo verificado</option></select></label> : <label><b>Situación administrativa</b><select value={status} onChange={(event) => {
           const nextStatus = event.target.value as "" | FacilityStatus;
           setStatus(nextStatus);
-        }}><option value="">Todas</option><option value="habilitado">Habilitación final MSP</option><option value="registro">Certificado de registro MSP (histórico)</option><option value="mides">Certificado Social MIDES</option></select></label>}
-          <label><b>Fuente de hallazgo</b><select value={sourceCategory} onChange={(event) => setSourceCategory(event.target.value as SourceCategoryFilter)}><option value="">Todas</option><option value="official">Fuentes oficiales</option><option value="public_maps">Mapas públicos</option><option value="social_public">Fuentes públicas de redes sociales</option><option value="other_public">Webs y directorios públicos</option></select></label>
+        }}><option value="">Todos</option><option value="habilitado">Habilitados</option><option value="mides">Certificados</option><option value="verificar">Situación no confirmada</option></select></label>}
         </div>
-        <div className="mapModes"><strong>Vista</strong><button className={mode === "streets" ? "active" : ""} onClick={() => setMode("streets")}><MapPinned size={18}/> Mapa</button><button className={mode === "list" ? "active" : ""} onClick={() => setMode("list")}><Building2 size={18}/> Lista</button></div>
       </aside>
-      {mode !== "list" && <div className="registryMapColumn" ref={mapColumnRef}>
+      <div className="registryMapColumn" ref={mapColumnRef}>
         <StreetMap facilities={visible} selectedId={selected?.id ?? null} onSelect={setSelectedId}/>
         {detailedFacility && <FacilityMapDialog facility={detailedFacility} onClose={() => setDetailId(null)} />}
-      </div>}
+      </div>
 
       <aside className="card registryResults">
         <div className="resultsHead"><h2>Residenciales encontrados</h2><output className="resultCount">{visible.length}</output></div>
-        <p className="resultsMeta">{visibleOfficialCount} con respaldo oficial{visibleVerificationCount > 0 ? ` + ${visibleVerificationCount} a verificar` : ""}</p>
+        <p className="resultsMeta">{visibleOfficialCount} habilitados o certificados{visibleVerificationCount > 0 ? ` + ${visibleVerificationCount} con situación no confirmada` : ""}</p>
         <div className="registryResultsScroll">
           {orderedResults.map((facility) => (
             <FacilityAccordionCard
@@ -251,7 +219,6 @@ export default function UruguayRegistry({
               onViewMore={(selectedFacility) => {
                 setSelectedId(selectedFacility.id);
                 setDetailId(selectedFacility.id);
-                setMode("streets");
                 window.requestAnimationFrame(() => mapColumnRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
               }}
               key={facility.id}
@@ -295,9 +262,8 @@ function RegistryKpi({ activeHelp, className, help, helpId, label, onActivate, o
 function badgeTone(facility: Facility) {
   const category = facilityDisplayCategory(facility);
   if (category === "habilitado") return "green";
-  if (category === "registro") return "amber";
-  if (category === "mides") return "cyan";
-  return "red";
+  if (category === "mides") return "amber";
+  return "gray";
 }
 
 function FacilityPrimaryBadge({ facility }: { facility: Facility }) {
@@ -308,30 +274,17 @@ function FacilityPrimaryBadge({ facility }: { facility: Facility }) {
 
 function FacilityMembershipBadges({ facility }: { facility: Facility }) {
   if (isVerificationFacility(facility)) return <FacilityPrimaryBadge facility={facility} />;
+
   const badges = [
-    facility.mspFinal && {
-      label: "Habilitación final MSP",
-      tone: "green",
-    },
-    facility.mspRegistroHistorico && {
-      label: "Registro histórico MSP",
-      tone: "amber",
-    },
-    facility.midesSocial && {
-      label: "Certificado Social MIDES",
-      tone: "cyan",
-    },
+    facility.mspFinal && { label: "Habilitado", tone: "green" },
+    facility.midesSocial && { label: "Certificado", tone: "amber" },
   ].filter(Boolean) as { label: string; tone: string }[];
 
-  return (
-    <span className="facilityBadges" aria-label="Fuentes y situación administrativa">
-      {badges.map((badge) => (
-        <span className={`sourceBadge sourceBadge-${badge.tone}`} key={badge.label}>
-          {badge.label}
-        </span>
-      ))}
-    </span>
-  );
+  return <span className="facilityBadges" aria-label="Situaciones confirmadas">
+    {badges.map((badge) => (
+      <span className={`sourceBadge sourceBadge-${badge.tone}`} key={badge.label}>{badge.label}</span>
+    ))}
+  </span>;
 }
 
 function FacilityAccordionCard({
@@ -379,7 +332,6 @@ function FacilityAccordionCard({
       {isOpen && (
         <div className="facilityAccordionBody">
           {facility.address && <p className="facilityAddress"><strong>Dirección:</strong> {facility.address}</p>}
-          {sourceCategoryLabels(facility).length > 0 && <p className="facilityDetailFact"><strong>Fuente de hallazgo:</strong> {sourceCategoryLabels(facility).join(" · ")}</p>}
           <div className="facilityAccordionActions">
             <button type="button" className="reportContinue facilityViewMoreBtn" onClick={() => onViewMore(facility)}>Ver más</button>
           </div>
@@ -398,7 +350,6 @@ function FacilityMapDialog({ facility, onClose }: { facility: Facility; onClose:
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [onClose]);
 
-  const sources = sourceCategoryLabels(facility);
   const formatDate = (value?: string) => {
     if (!value) return "Sin fecha registrada";
     const parsed = new Date(value);
@@ -423,7 +374,6 @@ function FacilityMapDialog({ facility, onClose }: { facility: Facility; onClose:
       <div><dt>Situación principal</dt><dd>{facilityDisplayLabel(facility)}</dd></div>
       <div><dt>Etapa registrada</dt><dd>{facility.statusStage || "Sin detalle"}</dd></div>
       <div><dt>Resumen registrado</dt><dd>{facility.statusShort || "Sin detalle"}</dd></div>
-      <div><dt>Fuente de hallazgo</dt><dd>{sources.length ? sources.join(" · ") : "Sin clasificación"}</dd></div>
       <div><dt>Fuente registrada</dt><dd>{facility.sourceLabel || "Sin detalle"}</dd></div>
       <div><dt>Ubicación registrada</dt><dd>{facility.precisionLabel || "Sin detalle"}</dd></div>
       <div><dt>Coordenadas</dt><dd>{facility.lat}, {facility.lng}</dd></div>

@@ -20,6 +20,19 @@ export function normalizeText(value) {
     .trim();
 }
 
+function groupMembershipForLegacy(legacy, group, field) {
+  if (!group) return false;
+  if (!legacy) return group.members.some((row) => booleanValue(row[field]));
+  const legacyAddress = normalizeText(legacy.address);
+  const legacyDepartment = normalizeText(legacy.department);
+  if (!legacyAddress || !legacyDepartment) return false;
+  return group.members.some((row) =>
+    booleanValue(row[field]) &&
+    normalizeText(row.address) === legacyAddress &&
+    normalizeText(row.department) === legacyDepartment,
+  );
+}
+
 export function parseCsv(text) {
   const records = [];
   let row = [];
@@ -633,13 +646,13 @@ export function buildBackfillPlan({
       : stableKey("FAC-OFFICIAL", group.representativeId, group.representativeId);
     const flags = {
       mspFinal:
-        booleanValue(legacy?.msp_final) || group?.members.some((row) => booleanValue(row.msp_final)),
+        booleanValue(legacy?.msp_final) || groupMembershipForLegacy(legacy, group, "msp_final"),
       historical:
         booleanValue(legacy?.msp_registro_historico) ||
-        group?.members.some((row) => booleanValue(row.msp_registro_historico)),
+        groupMembershipForLegacy(legacy, group, "msp_registro_historico"),
       mides:
-        booleanValue(legacy?.mides_social) || group?.members.some((row) => booleanValue(row.mides_social)),
-      pacp: booleanValue(legacy?.pacp) || group?.members.some((row) => booleanValue(row.pacp)),
+        booleanValue(legacy?.mides_social) || groupMembershipForLegacy(legacy, group, "mides_social"),
+      pacp: booleanValue(legacy?.pacp) || groupMembershipForLegacy(legacy, group, "pacp"),
     };
     const lifecycleStatus = legacy
       ? "current"

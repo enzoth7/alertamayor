@@ -7,25 +7,20 @@ import {
   evidenceDescription,
   facilityDisplayCategory,
   facilityDisplayLabel,
-  isVerificationFacility,
   sourceCategoryLabels,
 } from "./facility-presentation";
 import type { Facility } from "./map-types";
 
 const colors = {
   habilitado: "#087443",
-  registro: "#eab308",
-  mides: "#0891b2",
-  verification: "#e11d48",
+  mides: "#d97706",
+  unconfirmed: "#64748b",
 };
 
 function membershipBadges(facility: Facility) {
-  if (isVerificationFacility(facility)) return [["A verificar", "red"]] as [string, string][];
-  return [
-    facility.mspFinal && ["Habilitación final MSP", "green"],
-    facility.mspRegistroHistorico && ["Registro histórico MSP", "amber"],
-    facility.midesSocial && ["Certificado Social MIDES", "cyan"],
-  ].filter(Boolean) as [string, string][];
+  const category = facilityDisplayCategory(facility);
+  const tone = category === "habilitado" ? "green" : category === "mides" ? "amber" : "gray";
+  return [[facilityDisplayLabel(facility), tone]] as [string, string][];
 }
 
 function createPopup(facility: Facility) {
@@ -61,7 +56,7 @@ function createPopup(facility: Facility) {
   const sourceCategories = sourceCategoryLabels(facility);
   if (sourceCategories.length) {
     const provenance = document.createElement("p");
-    provenance.textContent = `Fuente de hallazgo: ${sourceCategories.join(" · ")}`;
+    provenance.textContent = `Procedencia: ${sourceCategories.join(" · ")}`;
     popup.appendChild(provenance);
   }
 
@@ -113,7 +108,7 @@ export default function StreetMap({ facilities, selectedId, onSelect }: { facili
     facilities.forEach((facility) => {
       const isSelected = selectedId === facility.id;
       const displayCategory = facilityDisplayCategory(facility);
-      const requiresVerification = displayCategory === "verification";
+      const requiresVerification = displayCategory === "unconfirmed";
       const marker = L.circleMarker([facility.lat, facility.lng], {
         radius: isSelected ? 11 : requiresVerification ? 8 : 6,
         color: isSelected ? "#155eef" : "#fff",

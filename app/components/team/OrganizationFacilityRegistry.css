@@ -75,15 +75,15 @@
 }
 
 .candidateInventoryPrimaryKpi.isTotal {
-  border-color: #c60f3d;
-  background: #c60f3d;
+  border-color: #111827;
+  background: #111827;
   color: #fff;
 }
 
 .candidateInventoryPrimaryKpi.isMapped {
-  border-color: #f97316;
-  background: #ffedd5;
-  color: #9a3412;
+  border-color: #94a3b8;
+  background: #e2e8f0;
+  color: #334155;
 }
 
 .candidateInventoryPrimaryKpi.isUnmapped {
@@ -334,7 +334,7 @@
 
 .candidateInventoryFilters {
   display: grid;
-  grid-template-columns: minmax(260px, 1.6fr) repeat(3, minmax(180px, 1fr));
+  grid-template-columns: minmax(260px, 1.6fr) repeat(2, minmax(180px, 1fr));
   gap: 12px;
   padding: 16px;
   border: 1px solid #d9e4ef;
