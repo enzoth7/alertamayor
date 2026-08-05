@@ -52,12 +52,20 @@ test("cuenta las vinculaciones canonicas como coincidencias resueltas", () => {
 
 test("no cuenta el indice interno como una fuente publica", () => {
   const data = fixture();
-  data.source.records[0].sources.unshift({
-    source_type: "exclusion_index",
-    url: null,
-    observed_at: "2026-08-04",
-    independent_family: "project_index",
-  });
+  data.source.records[0].sources.unshift(
+    {
+      source_type: "exclusion_index",
+      url: null,
+      observed_at: "2026-08-04",
+      independent_family: "project_index",
+    },
+    {
+      source_type: "project_exclusion_index",
+      url: null,
+      observed_at: "2026-08-04",
+      independent_family: "project_baseline",
+    },
+  );
   const { report } = buildDepartmentClosure(data);
   assert.equal(report.provenance.observationCount, 2);
   assert.equal(report.provenance.missingProvenanceCount, 0);
@@ -77,6 +85,19 @@ test("acepta cobertura territorial por subregiones", () => {
   assert.deepEqual(report.coverage.localitiesSearched, ["Salinas", "Marindia"]);
   assert.equal(report.coverage.territorialReview[0].area, "Costa");
   assert.match(report.coverage.insufficientCoverage[0], /log granular/);
+});
+
+test("acepta cobertura territorial por zonas y areas", () => {
+  const data = fixture();
+  delete data.source.methodology.localities_searched;
+  data.source.methodology.zones = [{ zone: "Vergara y Rincón", areas: ["Vergara", "Rincón"] }];
+  data.source.coverage_review = [{ zone: "Vergara y Rincón", result: "Revisión documentada." }];
+  const { report } = buildDepartmentClosure(data);
+  assert.deepEqual(report.coverage.localitiesSearched, ["Vergara", "Rincón"]);
+  assert.deepEqual(report.coverage.territorialReview, [
+    { area: "Vergara y Rincón", result: "Revisión documentada." },
+  ]);
+  assert.equal(report.metadata.status, "revisado sistemáticamente");
 });
 
 test("acepta coverage_review como resumen con localidades y zonas metodolÃ³gicas", () => {

@@ -51,7 +51,8 @@ function hasCompleteProvenance(source) {
 function isInternalMatchingReference(source) {
   const type = sourceType(source).toLocaleLowerCase("es-UY");
   const family = String(source.independent_family || "").trim().toLocaleLowerCase("es-UY");
-  return type === "exclusion_index" || family === "project_index";
+  return ["exclusion_index", "project_exclusion_index"].includes(type) ||
+    ["project_index", "project_baseline"].includes(family);
 }
 
 export function buildDepartmentClosure({ source, matching, review, imported, inputHashes, closedAt }) {
@@ -107,7 +108,12 @@ export function buildDepartmentClosure({ source, matching, review, imported, inp
   const localitiesSearched = methodology.localities_searched || scope.localities_searched ||
     coverageReviewSummary.localities_and_zones_searched || [
     ...new Set((methodology.subregions || []).flatMap((subregion) => subregion.localities || [])),
-  ];
+  ].filter(Boolean);
+  if (localitiesSearched.length === 0) {
+    localitiesSearched.push(...new Set((methodology.zones || []).flatMap((zone) =>
+      Array.isArray(zone.areas) && zone.areas.length > 0 ? zone.areas : [zone.zone].filter(Boolean),
+    )));
+  }
   const systematicallyReviewed = localitiesSearched.length > 0;
   const coverageGaps = Array.isArray(source.coverage_gaps)
     ? source.coverage_gaps
@@ -116,7 +122,7 @@ export function buildDepartmentClosure({ source, matching, review, imported, inp
       .map((item) => ({ area: item.area, result: item.result }));
   const territorialReview = coverageReviewRows.length > 0
     ? coverageReviewRows.map((item) => ({
-      area: item.name || item.area,
+      area: item.name || item.area || item.zone,
       result: item.summary || item.result,
     }))
     : (methodology.zones || []).map((item) => ({

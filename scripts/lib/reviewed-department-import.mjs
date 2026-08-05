@@ -74,7 +74,8 @@ function isInternalMatchingReference(value) {
   const source = record(value);
   const type = text(source.source_type || source.type, 120).toLocaleLowerCase("es-UY");
   const family = text(source.independent_family, 160).toLocaleLowerCase("es-UY");
-  return type === "exclusion_index" || family === "project_index";
+  return ["exclusion_index", "project_exclusion_index"].includes(type) ||
+    ["project_index", "project_baseline"].includes(family);
 }
 
 function dateOnly(value) {

@@ -5,9 +5,9 @@ La cifra nacional de **1.481** se conserva únicamente como referencia históric
 ## Estado del snapshot
 
 - 1084 entradas en el índice de exclusión; 32 sin departamento resoluble.
-- 5 de 19 departamentos tienen total histórico departamental disponible en el repositorio.
-- 7 departamentos tienen métricas del pipeline: Artigas, Canelones, Durazno, Montevideo, Paysandú, Rocha, Tacuarembó.
-- Cerrado sistemáticamente: Artigas, Canelones, Durazno, Paysandú, Rocha, Tacuarembó.
+- 6 de 19 departamentos tienen total histórico departamental disponible en el repositorio.
+- 8 departamentos tienen métricas del pipeline: Artigas, Canelones, Durazno, Montevideo, Paysandú, Rocha, Tacuarembó, Treinta y Tres.
+- Cerrado sistemáticamente: Artigas, Canelones, Durazno, Paysandú, Rocha, Tacuarembó, Treinta y Tres.
 - Publicaciones aprobadas por estos lotes: 0.
 
 ## Departamentos procesados
@@ -21,5 +21,6 @@ La cifra nacional de **1.481** se conserva únicamente como referencia históric
 | Paysandú | step17_closed_systematically | s/d | 44 | 59 | 0 | 7 | 0 |
 | Rocha | step17_closed_systematically | 43 | 19 | 22 | 3 | 14 | 0 |
 | Tacuarembó | step17_closed_systematically | 23 | 11 | 36 | 4 | 20 | 0 |
+| Treinta y Tres | step17_closed_systematically | 15 | 2 | 32 | 6 | 21 | 0 |
 
 Los valores nulos indican que esa fase todavía no se ejecutó o que el insumo departamental no existe; no equivalen a cero.

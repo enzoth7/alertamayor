@@ -126,3 +126,22 @@ test("omite el indice de exclusion como fuente publica", async () => {
   assert.equal(observations.every((item) => /^https?:\/\//.test(item.sourceUrl)), true);
   assert.equal(plan.summary.facilityMatches, 10);
 });
+
+test("omite las variantes internas del indice usadas por Treinta y Tres", async () => {
+  const [sourceDocument, reviewDocument, exclusionDocument] = await Promise.all([
+    document("data/discovery/treinta_y_tres/treinta_y_tres_chatgpt_public_candidates_2026-08-04.json"),
+    document("data/reports/treinta_y_tres_step13_human_review_2026-08-04.json"),
+    document("data/exclusion/known_facilities_exclusion_index_2026-08-04.json"),
+  ]);
+  const plan = buildReviewedDepartmentImportPlan({
+    sourceDocument,
+    reviewDocument,
+    exclusionDocument,
+    inputHash: "a".repeat(64),
+  });
+  const observations = [...plan.candidates, ...plan.facilityMatches].flatMap((item) => item.sources);
+  assert.equal(observations.some((item) => item.sourceType === "project_exclusion_index"), false);
+  assert.equal(observations.every((item) => /^https?:\/\//.test(item.sourceUrl)), true);
+  assert.equal(plan.summary.candidates, 21);
+  assert.equal(plan.summary.facilityMatches, 2);
+});

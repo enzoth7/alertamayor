@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-05T01:20:13.5706776Z",
+  "generated_at": "2026-08-05T01:47:00.3976233Z",
   "policy": "Base de Datos/ es inmutable; estas son copias operativas exactas verificadas por SHA-256.",
   "files": [
     {"source_path":"Base de Datos/Scraping/SerpAPI/candidates.json","copy_path":"data/discovery/serpapi/candidates.json","sha256":"ca133abee87295f47894d269a15df32261d52d6e8e5b8ddde5970223eaf53be1","bytes":397562,"source_modified_at":"2026-08-04T03:14:50.0336362Z"},
@@ -18,6 +18,10 @@
     {"source_path":"Base de Datos/Scraping/Tacuarembó/tacuarembo_chatgpt_public_candidates_2026-08-04.json","copy_path":"data/discovery/tacuarembo/tacuarembo_chatgpt_public_candidates_2026-08-04.json","sha256":"3e789f6711792263eab13e1c623227920f89bf11615bfdba7d977d0d1c7a9d17","bytes":112773,"source_modified_at":"2026-08-04T23:12:07.6983918Z"},
     {"source_path":"Base de Datos/Scraping/Tacuarembó/tacuarembo_chatgpt_public_research_report_2026-08-04.md","copy_path":"data/discovery/tacuarembo/tacuarembo_chatgpt_public_research_report_2026-08-04.md","sha256":"724cfe2170fe96197e5fec902c563849a706b330c3154cdeb188ffb04e74cb09","bytes":16053,"source_modified_at":"2026-08-04T23:12:46.3615540Z"},
     {"source_path":"Base de Datos/Scraping/Tacuarembó/tacuarembo_chatgpt_public_review_2026-08-04.csv","copy_path":"data/discovery/tacuarembo/tacuarembo_chatgpt_public_review_2026-08-04.csv","sha256":"fcb81727f743fda2500c5bf51c449f83b21e5554c61d0fef8b9e5db69a62c3ac","bytes":22856,"source_modified_at":"2026-08-04T23:11:24.1011747Z"},
-    {"source_path":"Base de Datos/Scraping/Tacuarembó/tacuarembo_chatgpt_search_log_2026-08-04.md","copy_path":"data/discovery/tacuarembo/tacuarembo_chatgpt_search_log_2026-08-04.md","sha256":"ce23d53e3c933faeea6559131cc0e032f95cb5f4836d35597a5275fe9de50d0f","bytes":6626,"source_modified_at":"2026-08-04T23:13:04.3164731Z"}
+    {"source_path":"Base de Datos/Scraping/Tacuarembó/tacuarembo_chatgpt_search_log_2026-08-04.md","copy_path":"data/discovery/tacuarembo/tacuarembo_chatgpt_search_log_2026-08-04.md","sha256":"ce23d53e3c933faeea6559131cc0e032f95cb5f4836d35597a5275fe9de50d0f","bytes":6626,"source_modified_at":"2026-08-04T23:13:04.3164731Z"},
+    {"source_path":"Base de Datos/Scraping/Treinta y Tres/treinta_y_tres_chatgpt_public_candidates_2026-08-04.json","copy_path":"data/discovery/treinta_y_tres/treinta_y_tres_chatgpt_public_candidates_2026-08-04.json","sha256":"b3e7176156e939a95bdb9d5f9b0127d45356b3b6932e8030ae1e49768c371d62","bytes":110392,"source_modified_at":"2026-08-04T21:37:41.5620417Z"},
+    {"source_path":"Base de Datos/Scraping/Treinta y Tres/treinta_y_tres_chatgpt_public_research_report_2026-08-04.md","copy_path":"data/discovery/treinta_y_tres/treinta_y_tres_chatgpt_public_research_report_2026-08-04.md","sha256":"ce1ae50c0c10c780bd72e26f7f517ffc73284c57fe688feaf1fd95cfbd810d91","bytes":15367,"source_modified_at":"2026-08-04T21:38:20.7618620Z"},
+    {"source_path":"Base de Datos/Scraping/Treinta y Tres/treinta_y_tres_chatgpt_public_review_2026-08-04.csv","copy_path":"data/discovery/treinta_y_tres/treinta_y_tres_chatgpt_public_review_2026-08-04.csv","sha256":"c88018b6ca167f9cf9484f6dafab4af06cc1f3e19ce965aa2acfc9670a5673de","bytes":24395,"source_modified_at":"2026-08-04T21:36:18.7442670Z"},
+    {"source_path":"Base de Datos/Scraping/Treinta y Tres/treinta_y_tres_chatgpt_search_log_2026-08-04.md","copy_path":"data/discovery/treinta_y_tres/treinta_y_tres_chatgpt_search_log_2026-08-04.md","sha256":"b3c55e72604a58d85761eab6666475600e62f07cb7ccf109010e8419d0fc90f1","bytes":5741,"source_modified_at":"2026-08-04T21:38:44.6718560Z"}
   ]
 }
