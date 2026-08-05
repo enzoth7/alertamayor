@@ -41,11 +41,15 @@ function sha256(value) {
   return createHash("sha256").update(String(value)).digest("hex");
 }
 
-function approvedRows(document) {
+function approvedRows(document, reviewDocument = null) {
+  const approvedKeys = reviewDocument
+    ? new Set((reviewDocument.approved || []).map((item) => item.candidateKey))
+    : null;
   return (document.results || []).filter((item) =>
     item.status === "strict_exact_pending_human_coordinate_review" &&
     item.humanCoordinateReviewStatus === "pending" &&
-    Number.isFinite(item.latitude) && Number.isFinite(item.longitude),
+    Number.isFinite(item.latitude) && Number.isFinite(item.longitude) &&
+    (!approvedKeys || approvedKeys.has(item.candidateKey)),
   );
 }
 
@@ -69,7 +73,8 @@ async function inspect(client, rows) {
       if (!candidate) return [];
       const coordinatesConflict = candidate.lat !== null && candidate.lng !== null &&
         (Math.abs(Number(candidate.lat) - row.latitude) > 1e-9 || Math.abs(Number(candidate.lng) - row.longitude) > 1e-9);
-      return candidate.status !== "verified_new" || !["A", "B"].includes(candidate.evidence_tier) ||
+      return !["needs_review", "verified_new"].includes(candidate.status) ||
+        !["A", "B", "C"].includes(candidate.evidence_tier) ||
         candidate.public_eligible !== false || coordinatesConflict
         ? [{ candidateKey: row.candidateKey, status: candidate.status, evidenceTier: candidate.evidence_tier, coordinatesConflict }]
         : [];
@@ -125,7 +130,8 @@ async function apply(client, rows, reviewer, inputHash) {
       `, [row.candidateKey]);
       const current = currentResult.rows[0];
       if (!current) throw new Error(`${row.candidateKey}: candidato inexistente.`);
-      if (current.status !== "verified_new" || !["A", "B"].includes(current.evidence_tier) || current.public_eligible !== false) {
+      if (!["needs_review", "verified_new"].includes(current.status) ||
+          !["A", "B", "C"].includes(current.evidence_tier) || current.public_eligible !== false) {
         throw new Error(`${row.candidateKey}: estado incompatible con la aprobacion de coordenadas.`);
       }
       if (current.lat !== null && current.lng !== null &&
@@ -184,7 +190,7 @@ async function apply(client, rows, reviewer, inputHash) {
       `, [current.id, observationId, reviewer]);
       links += linked.rowCount;
 
-      const note = `${current.review_note ? `${current.review_note} ` : ""}Coordenada IDE Uruguay aprobada manualmente por ${reviewer} el 2026-08-04.`.slice(0, 2000);
+      const note = `${current.review_note ? `${current.review_note} ` : ""}Coordenada IDE Uruguay aprobada manualmente por ${reviewer} el ${completedAt.slice(0, 10)}.`.slice(0, 2000);
       const updatedResult = await client.query(`
         update discovery_private.facility_candidates
         set lat=$2, lng=$3, human_reviewed=true, reviewed_at=$4,
@@ -195,15 +201,16 @@ async function apply(client, rows, reviewer, inputHash) {
       `, [current.id, row.latitude, row.longitude, completedAt, reviewer, note]);
       candidatesUpdated += updatedResult.rowCount;
       const updated = updatedResult.rows[0];
+      const reviewAction = current.status === "verified_new" ? "verified_new" : "needs_more_evidence";
       const event = await client.query(`
         insert into discovery_private.facility_candidate_review_events (
           candidate_id, action, previous_status, new_status,
           previous_evidence_tier, new_evidence_tier, matched_residencial_id,
           reviewer_identifier, review_note, corrections, candidate_before,
           candidate_after, created_at
-        ) values ($1,'verified_new',$2,$3,$4,$5,null,$6,$7,$8::jsonb,$9::jsonb,$10::jsonb,$11)
+        ) values ($1,$2,$3,$4,$5,$6,null,$7,$8,$9::jsonb,$10::jsonb,$11::jsonb,$12)
         returning id
-      `, [current.id, current.status, updated.status, current.evidence_tier,
+      `, [current.id, reviewAction, current.status, updated.status, current.evidence_tier,
         updated.evidence_tier, reviewer,
         "Coordenada IDE Uruguay revisada y aprobada; no autoriza publicacion.",
         JSON.stringify({ latitude: row.latitude, longitude: row.longitude, coordinateSource: "ide_uy" }),
@@ -246,9 +253,17 @@ async function main() {
   const inputPath = safeInput(args.input);
   const outputPath = safeOutput(args.output);
   const raw = await readFile(inputPath, "utf8");
-  const rows = approvedRows(JSON.parse(raw));
-  if (rows.length !== 25) throw new Error(`Se esperaban 25 coordenadas aprobadas y se encontraron ${rows.length}.`);
+  const reviewPath = args.review ? safeInput(args.review) : null;
+  const reviewRaw = reviewPath ? await readFile(reviewPath, "utf8") : null;
+  const reviewDocument = reviewRaw ? JSON.parse(reviewRaw) : null;
+  const rows = approvedRows(JSON.parse(raw), reviewDocument);
+  const expectedCount = Number(args["expected-count"] || reviewDocument?.approved?.length || 25);
+  const approvedKeys = reviewDocument?.approved?.map((item) => item.candidateKey) || [];
+  if (reviewDocument && new Set(approvedKeys).size !== approvedKeys.length) throw new Error("La revision contiene claves duplicadas.");
+  if (reviewDocument && String(reviewDocument.reviewer) !== String(args.reviewer)) throw new Error("El revisor no coincide con el artefacto de aprobacion.");
+  if (rows.length !== expectedCount) throw new Error(`Se esperaban ${expectedCount} coordenadas aprobadas y se encontraron ${rows.length}.`);
   const inputHash = sha256(raw);
+  const reviewHash = reviewRaw ? sha256(reviewRaw) : null;
   const pool = createSupabasePool("alertamayor-approved-ide-coordinates");
   const client = await pool.connect();
   try {
@@ -259,6 +274,8 @@ async function main() {
         apply: args.apply === true,
         reviewer: String(args.reviewer).slice(0, 200),
         inputHash,
+        reviewHash,
+        approvedCandidateKeys: rows.map((row) => row.candidateKey),
         privateOnly: true,
         automaticPublication: false,
       },

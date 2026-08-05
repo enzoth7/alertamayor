@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { ideQueryUrl, selectStrictIdeResult } from "./lib/ide-geocoding.mjs";
+import { createSupabasePool } from "./lib/supabase-script-db.mjs";
 import { repairMojibakeDeep } from "./lib/text-encoding.mjs";
 
 const USER_AGENT = "AlertaMayorDiscovery/1.0 (controlled IDE Uruguay geocoding; contacto: equipo@alertamayor.local)";
@@ -11,50 +12,111 @@ function argument(flag) {
   return process.argv[index + 1];
 }
 
-async function fetchJson(url) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15_000);
-  try {
-    const response = await fetch(url, {
-      headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
-      signal: controller.signal,
-    });
-    if (!response.ok) throw new Error(`IDE respondiÃ³ HTTP ${response.status}`);
-    return await response.json();
-  } finally {
-    clearTimeout(timeout);
-  }
+function optionalArgument(flag) {
+  const index = process.argv.indexOf(flag);
+  return index >= 0 && process.argv[index + 1] ? process.argv[index + 1] : null;
 }
 
-const sourcePaths = argument("--sources").split(",").map((value) => resolve(value.trim()));
-const reviewPaths = argument("--reviews").split(",").map((value) => resolve(value.trim()));
+async function fetchJson(url) {
+  let lastError;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+    try {
+      const response = await fetch(url, {
+        headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error(`IDE respondiÃ³ HTTP ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      lastError = error;
+      if (attempt < 2) await new Promise((resolvePromise) => setTimeout(resolvePromise, 500 * (attempt + 1)));
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+  throw lastError;
+}
+
 const outputPath = resolve(argument("--output"));
-if (sourcePaths.length !== reviewPaths.length) throw new Error("--sources y --reviews deben tener la misma cantidad de archivos.");
 if (!process.argv.includes("--live") || !process.argv.includes("--acknowledge-ide")) {
   throw new Error("Se requieren --live y --acknowledge-ide.");
 }
 
+const useOfficialDatabaseSelection = process.argv.includes("--supabase-official-unlocated");
 const candidates = [];
-for (let index = 0; index < sourcePaths.length; index += 1) {
-  const [source, review] = await Promise.all([
-    readFile(sourcePaths[index], "utf8").then(JSON.parse),
-    readFile(reviewPaths[index], "utf8").then(JSON.parse),
-  ]);
-  const records = new Map((source.records || []).map((record) => [record.candidate_key, record]));
-  for (const decision of review.decisions || []) {
-    if (decision.humanDecision !== "verified_new" || decision.eligibleForStep14 !== true) continue;
-    const record = records.get(decision.candidateKey);
-    if (!record?.address) continue;
-    candidates.push({
-      candidateKey: decision.candidateKey,
-      name: record.observed_name,
-      department: record.department,
-      locality: record.locality,
-      address: record.address,
-      evidenceTier: decision.evidenceTier,
-      reviewedBy: decision.reviewerIdentifier,
-      reviewedAt: decision.reviewedAt,
-    });
+let scope = "Solo candidatos verified_new con evidencia A/B y direcciÃ³n independiente.";
+if (useOfficialDatabaseSelection) {
+  const pool = createSupabasePool("alertamayor-ide-official-unlocated-readonly");
+  const client = await pool.connect();
+  try {
+    await client.query("begin transaction read only");
+    await client.query("set local statement_timeout = '30s'");
+    const selected = await client.query(`
+      select distinct on (candidate.id)
+        candidate.candidate_key as "candidateKey",
+        candidate.normalized_name as name,
+        candidate.normalized_department as department,
+        candidate.normalized_locality as locality,
+        candidate.normalized_address as address,
+        candidate.status as "candidateStatus",
+        candidate.evidence_tier as "evidenceTier",
+        candidate.reviewed_by as "reviewedBy",
+        candidate.reviewed_at as "reviewedAt"
+      from discovery_private.facility_candidates as candidate
+      join discovery_private.facility_candidate_sources as candidate_source
+        on candidate_source.candidate_id = candidate.id
+      join discovery_private.facility_source_observations as observation
+        on observation.id = candidate_source.observation_id
+      where observation.source_type = 'official'
+        and (candidate.lat is null or candidate.lng is null)
+        and nullif(trim(candidate.normalized_address), '') is not null
+        and candidate.status in ('needs_review', 'verified_new')
+        and candidate.public_eligible = false
+      order by candidate.id, observation.retrieved_at desc
+    `);
+    candidates.push(...selected.rows);
+    await client.query("commit");
+  } catch (error) {
+    try { await client.query("rollback"); } catch {}
+    throw error;
+  } finally {
+    client.release();
+    await pool.end();
+  }
+  scope = "Candidatos privados con fuente oficial, direcciÃ³n y sin coordenadas; consulta IDE sin escritura en Supabase.";
+} else {
+  const sourcesArgument = optionalArgument("--sources");
+  const reviewsArgument = optionalArgument("--reviews");
+  if (!sourcesArgument || !reviewsArgument) {
+    throw new Error("Se requieren --sources y --reviews, o --supabase-official-unlocated.");
+  }
+  const sourcePaths = sourcesArgument.split(",").map((value) => resolve(value.trim()));
+  const reviewPaths = reviewsArgument.split(",").map((value) => resolve(value.trim()));
+  if (sourcePaths.length !== reviewPaths.length) throw new Error("--sources y --reviews deben tener la misma cantidad de archivos.");
+  for (let index = 0; index < sourcePaths.length; index += 1) {
+    const [source, review] = await Promise.all([
+      readFile(sourcePaths[index], "utf8").then(JSON.parse),
+      readFile(reviewPaths[index], "utf8").then(JSON.parse),
+    ]);
+    const records = new Map((source.records || []).map((record) => [record.candidate_key, record]));
+    for (const decision of review.decisions || []) {
+      if (decision.humanDecision !== "verified_new" || decision.eligibleForStep14 !== true) continue;
+      const record = records.get(decision.candidateKey);
+      if (!record?.address) continue;
+      candidates.push({
+        candidateKey: decision.candidateKey,
+        name: record.observed_name,
+        department: record.department,
+        locality: record.locality,
+        address: record.address,
+        candidateStatus: "verified_new",
+        evidenceTier: decision.evidenceTier,
+        reviewedBy: decision.reviewerIdentifier,
+        reviewedAt: decision.reviewedAt,
+      });
+    }
   }
 }
 
@@ -99,7 +161,8 @@ const report = {
     generatedAt: new Date().toISOString(),
     source: "IDE Uruguay",
     sourceBaseUrl: "https://direcciones.ide.uy",
-    scope: "Solo candidatos verified_new con evidencia A/B y direcciÃ³n independiente.",
+    scope,
+    selectionMode: useOfficialDatabaseSelection ? "supabase_official_unlocated" : "reviewed_department_files",
     humanCoordinateReviewRequired: true,
     supabaseWrites: 0,
     publicResidencialesWrites: 0,
