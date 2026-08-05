@@ -108,3 +108,21 @@ test("separa candidatos privados de vinculaciones a instalaciones existentes", a
   assert.equal(plan.facilityMatches.filter((item) => item.historical).length, 9);
   assert.equal(plan.candidates.some((item) => item.publicEligible), false);
 });
+
+test("omite el indice de exclusion como fuente publica", async () => {
+  const [sourceDocument, reviewDocument, exclusionDocument] = await Promise.all([
+    document("data/discovery/tacuarembo/tacuarembo_chatgpt_public_candidates_2026-08-04.json"),
+    document("data/reports/tacuarembo_step13_human_review_2026-08-04.json"),
+    document("data/exclusion/known_facilities_exclusion_index_2026-08-04.json"),
+  ]);
+  const plan = buildReviewedDepartmentImportPlan({
+    sourceDocument,
+    reviewDocument,
+    exclusionDocument,
+    inputHash: "f".repeat(64),
+  });
+  const observations = [...plan.candidates, ...plan.facilityMatches].flatMap((item) => item.sources);
+  assert.equal(observations.some((item) => item.sourceType === "exclusion_index"), false);
+  assert.equal(observations.every((item) => /^https?:\/\//.test(item.sourceUrl)), true);
+  assert.equal(plan.summary.facilityMatches, 10);
+});

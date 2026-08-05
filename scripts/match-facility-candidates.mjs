@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import {
   classifyFacilityMatch,
+  normalizeText,
   rankFacilityMatches,
 } from "../lib/facility-matching.mjs";
 
@@ -181,21 +182,29 @@ function matchedCandidate(value, existingFacilities, limit) {
     ...(Array.isArray(exclusionDetail.exact_name_ids) ? exclusionDetail.exact_name_ids : []),
     ...(Array.isArray(exclusionDetail.exact_address_ids) ? exclusionDetail.exact_address_ids : []),
   ].map((value) => text(value, 300)).filter(Boolean);
-  const explicitExclusionId = exclusionReference.match(
-    /EXC-(?:CANDIDATE|OFFICIAL)-[A-Z0-9-]+/i,
-  )?.[0] || detailExclusionIds[0] || null;
+  const explicitExclusionIds = [
+    exclusionReference.match(/EXC-(?:CANDIDATE|OFFICIAL)-[A-Z0-9-]+/i)?.[0],
+    ...detailExclusionIds,
+  ].filter(Boolean);
   const alreadyKnownEntries = existingFacilities.filter((item) =>
     item.id === candidateId || item.candidateKeys.includes(candidateId));
   const comparisonPool = existingFacilities.filter((item) =>
     item.id !== candidateId && !item.candidateKeys.includes(candidateId));
   const matches = rankFacilityMatches(normalized, comparisonPool, limit);
-  const explicitEntry = explicitExclusionId
-    ? existingFacilities.find((item) => item.id === explicitExclusionId)
-    : null;
+  const explicitEntry = explicitExclusionIds
+    .map((id) => existingFacilities.find((item) => item.id === id))
+    .find((item) => item && item.subjectType !== "private_candidate" &&
+      (!normalized.department || !item.department ||
+        normalizeText(item.department) === normalizeText(normalized.department))) || null;
+  const explicitExclusionId = explicitEntry?.id || null;
   const explicitMatch = explicitEntry
     ? rankFacilityMatches(normalized, [explicitEntry], 1)[0]
     : null;
-  const automaticStatus = classifyFacilityMatch(matches[0]);
+  const classifiedStatus = classifyFacilityMatch(matches[0]);
+  const automaticStatus = classifiedStatus === "probable_match" &&
+    matches[0]?.facility.subjectType === "private_candidate"
+    ? "possible_match"
+    : classifiedStatus;
   const references = sourceReferences(row).map((reference, index) => ({
     ...reference,
     sourceRole: index === 0 ? "discovery_origin" : "corroboration",

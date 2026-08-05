@@ -70,6 +70,13 @@ function sourceChannel(value) {
   return "other_public";
 }
 
+function isInternalMatchingReference(value) {
+  const source = record(value);
+  const type = text(source.source_type || source.type, 120).toLocaleLowerCase("es-UY");
+  const family = text(source.independent_family, 160).toLocaleLowerCase("es-UY");
+  return type === "exclusion_index" || family === "project_index";
+}
+
 function dateOnly(value) {
   const raw = text(value, 40);
   return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : null;
@@ -195,6 +202,7 @@ export function buildReviewedDepartmentImportPlan({ sourceDocument, reviewDocume
     };
     if (!candidate.name || !candidate.normalizedName) throw new Error(`${candidateKey}: nombre inválido.`);
     const sources = (Array.isArray(source.sources) ? source.sources : [])
+      .filter((item) => !isInternalMatchingReference(item))
       .map((item, index) => observationFor(candidate, item, index, reviewedAt));
     if (sources.length === 0) throw new Error(`${candidateKey}: no tiene fuentes.`);
     if (evidenceTier === "B" && new Set(sources.map((item) => item.independenceKey)).size < 2) {
@@ -252,6 +260,7 @@ export function buildReviewedDepartmentImportPlan({ sourceDocument, reviewDocume
       reviewNote: text(decision.reviewerNote || decision.recommendationRationale, 2_000),
     };
     match.sources = (Array.isArray(source.sources) ? source.sources : [])
+      .filter((item) => !isInternalMatchingReference(item))
       .map((item, index) => observationFor(match, item, index, reviewedAt))
       .map((item) => ({
         ...item,

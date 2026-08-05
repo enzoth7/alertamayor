@@ -48,6 +48,12 @@ function hasCompleteProvenance(source) {
   return Boolean(sourceType(source) && source.url && source.observed_at);
 }
 
+function isInternalMatchingReference(source) {
+  const type = sourceType(source).toLocaleLowerCase("es-UY");
+  const family = String(source.independent_family || "").trim().toLocaleLowerCase("es-UY");
+  return type === "exclusion_index" || family === "project_index";
+}
+
 export function buildDepartmentClosure({ source, matching, review, imported, inputHashes, closedAt }) {
   const decisions = review.decisions || [];
   const records = source.records || [];
@@ -64,7 +70,7 @@ export function buildDepartmentClosure({ source, matching, review, imported, inp
   const facilityMatchKeys = new Set((imported.plan?.facilityMatches || []).map((match) => match.candidateKey));
   const decisionByKey = new Map(decisions.map((decision) => [decision.candidateKey, decision]));
   const allSources = records.flatMap((record) =>
-    (record.sources || []).map((item, index) => ({
+    (record.sources || []).filter((item) => !isInternalMatchingReference(item)).map((item, index) => ({
       candidateKey: record.candidate_key,
       source: item,
       channel: sourceChannel(item),

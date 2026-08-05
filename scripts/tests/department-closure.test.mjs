@@ -50,6 +50,19 @@ test("cuenta las vinculaciones canonicas como coincidencias resueltas", () => {
   assert.equal(report.resolved[0].linkedExistingFacility, true);
 });
 
+test("no cuenta el indice interno como una fuente publica", () => {
+  const data = fixture();
+  data.source.records[0].sources.unshift({
+    source_type: "exclusion_index",
+    url: null,
+    observed_at: "2026-08-04",
+    independent_family: "project_index",
+  });
+  const { report } = buildDepartmentClosure(data);
+  assert.equal(report.provenance.observationCount, 2);
+  assert.equal(report.provenance.missingProvenanceCount, 0);
+});
+
 test("genera CSV escapado", () => {
   const csv = toCsv([{ candidate_key: "r:1", name: 'Casa "Uno"' }]);
   assert.match(csv, /"Casa ""Uno"""/);

@@ -211,16 +211,19 @@ export function usePrivateCandidateMapLayer() {
         if (!candidateResponse.ok || !Array.isArray(data.candidates)) {
           throw new Error(data.error || "No se pudo cargar la capa privada de candidatos.");
         }
-        if (!unlocatedResponse.ok || !Array.isArray(unlocated.candidates)) {
-          throw new Error(unlocated.error || "No se pudo cargar la lista interna de candidatos sin ubicar.");
-        }
+        const manualCandidates = unlocatedResponse.ok && Array.isArray(unlocated.candidates)
+          ? unlocated.candidates
+          : [];
+        const manualCandidatesWarning = manualCandidates.length === 0 && !unlocatedResponse.ok
+          ? unlocated.error || "No se pudo cargar la lista interna de candidatos sin ubicar."
+          : "";
         if (requestId === latestRequest) {
           const databaseQueueCandidates = data.candidates.map(mapQueueCandidate);
           const databaseMappedKeys = new Set(databaseQueueCandidates
             .filter((candidate) => candidate.hasCoordinates)
             .map((candidate) => candidate.candidateKey));
           const databaseFacilities = mapPrivateCandidatesToFacilities(data.candidates) as Facility[];
-          const manualFacilities = unlocated.candidates
+          const manualFacilities = manualCandidates
             .filter((candidate) => !databaseMappedKeys.has(candidate.candidateKey))
             .map(mapManualCandidateToFacility)
             .filter((candidate): candidate is Facility => candidate !== null);
@@ -230,7 +233,7 @@ export function usePrivateCandidateMapLayer() {
           const queuedKeys = new Set(data.candidates
             .map((candidate) => typeof candidate.candidate_key === "string" ? candidate.candidate_key : "")
             .filter(Boolean));
-          const manualCandidatesByKey = new Map(unlocated.candidates.map((candidate) => [candidate.candidateKey, candidate]));
+          const manualCandidatesByKey = new Map(manualCandidates.map((candidate) => [candidate.candidateKey, candidate]));
           const queueCandidates = databaseQueueCandidates.map((mapped) => {
             const manualCandidate = manualCandidatesByKey.get(mapped.candidateKey);
             if (!manualCandidate?.hasCoordinates) return mapped;
@@ -240,7 +243,7 @@ export function usePrivateCandidateMapLayer() {
               sourceCategories: [...new Set([...mapped.sourceCategories, ...manualSourceCategories(manualCandidate)])],
             };
           });
-          const pendingImportCandidates: PrivateQueueCandidate[] = unlocated.candidates
+          const pendingImportCandidates: PrivateQueueCandidate[] = manualCandidates
             .filter((candidate) => !candidate.hasCoordinates && !queuedKeys.has(candidate.candidateKey))
             .map((candidate) => ({
               candidateKey: candidate.candidateKey,
@@ -266,7 +269,7 @@ export function usePrivateCandidateMapLayer() {
             mappedFromDatabase: databaseFacilities.length,
             mappedFromManualSources: manualFacilities.length,
             visibleOnMap: databaseFacilities.length + manualFacilities.length,
-            unlocatedCandidates: unlocated.candidates
+            unlocatedCandidates: manualCandidates
               .filter((candidate) => !candidate.hasCoordinates)
               .map((candidate) => ({
                 candidateKey: candidate.candidateKey,
@@ -281,8 +284,8 @@ export function usePrivateCandidateMapLayer() {
             queueCandidates: [...queueCandidates, ...pendingImportCandidates],
           });
           setFacilities([...databaseFacilities, ...manualFacilities]);
-          setUnlocatedCandidates(unlocated.candidates);
-          setError("");
+          setUnlocatedCandidates(manualCandidates);
+          setError(manualCandidatesWarning);
         }
       } catch (loadError) {
         if (controller.signal.aborted || requestId !== latestRequest) return;

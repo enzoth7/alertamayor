@@ -28,6 +28,13 @@ function text(value, maximum = 2_000) {
   return typeof value === "string" ? value.trim().slice(0, maximum) : "";
 }
 
+function isInternalMatchingReference(value) {
+  const source = record(value);
+  const type = text(source.source_type || source.type, 120).toLocaleLowerCase("es-UY");
+  const family = text(source.independent_family, 160).toLocaleLowerCase("es-UY");
+  return type === "exclusion_index" || family === "project_index";
+}
+
 function sourceIndependenceKey(value) {
   const source = record(value);
   const explicit = text(source.independent_family, 160).toLocaleLowerCase("es-UY");
@@ -46,7 +53,8 @@ function isMspOrMidesSource(value) {
 }
 
 function effectiveEvidenceTier(source) {
-  const sources = Array.isArray(source.sources) ? source.sources : [];
+  const sources = (Array.isArray(source.sources) ? source.sources : [])
+    .filter((item) => !isInternalMatchingReference(item));
   if (source.evidence_tier === "A" && sources.some(isMspOrMidesSource)) return "A";
   const independent = new Set(sources.map(sourceIndependenceKey).filter(Boolean));
   if (["A", "B"].includes(source.evidence_tier) && independent.size >= 2) return "B";
