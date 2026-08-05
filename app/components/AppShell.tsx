@@ -12,10 +12,11 @@ import { IntakeReportForm } from "./IntakeReportForm";
 import { ReportStatusLookup } from "./ReportStatusLookup";
 import { TeamIntakeInbox } from "./team/TeamIntakeInbox";
 import { OrganizationFacilityRegistry } from "./team/OrganizationFacilityRegistry";
+import { ReviewMockup } from "./team/ReviewMockup";
 import { useResidenciales } from "../hooks/useResidenciales";
 import type { Facility } from "./map-types";
 
-export type View = "inicio" | "denuncia" | "seguimiento" | "residenciales" | "equipos" | "fuentes";
+export type View = "inicio" | "denuncia" | "seguimiento" | "residenciales" | "review" | "equipos" | "fuentes";
 type AccessMode = "loading" | "chooser" | "person" | "organization";
 export type Portal = "person" | "organization";
 
@@ -30,6 +31,7 @@ const personViewPaths: Partial<Record<View, string>> = {
 
 const orgViewPaths: Partial<Record<View, string>> = {
   residenciales: "/organizacion/residenciales",
+  review: "/organizacion/review",
   equipos: "/organizacion/equipos",
   fuentes: "/organizacion/fuentes",
 };
@@ -124,11 +126,11 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
     return () => { active = false; };
   }, [portal, router]);
 
-  const personBlockedView = view === "equipos" || view === "fuentes";
+  const personBlockedView = view === "review" || view === "equipos" || view === "fuentes";
   const organizationBlockedView = view === "denuncia" || view === "seguimiento";
   const isOrganization = accessMode === "organization";
   const navItems: [View, string][] = isOrganization
-    ? [["residenciales", "Residenciales"], ["equipos", "Equipos"], ["fuentes", "Fuentes"]]
+    ? [["residenciales", "Residenciales"], ["review", "Review"], ["equipos", "Equipos"], ["fuentes", "Fuentes"]]
     : [["inicio", "Inicio"], ["residenciales", "Residenciales"]];
 
   useEffect(() => {
@@ -191,7 +193,7 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
       return;
     }
     // Portal personas
-    if (next === "equipos" || next === "fuentes") {
+    if (next === "review" || next === "equipos" || next === "fuentes") {
       router.push("/personas");
       return;
     }
@@ -240,6 +242,7 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
       }}/>) }
       {isOrganization && view === "equipos" && <Team initialFacility={preselectedFacility}/>}
       {isOrganization && view === "fuentes" && <Sources/>}
+      {isOrganization && view === "review" && <ReviewMockup/>}
     </div>
   </main>;
 }

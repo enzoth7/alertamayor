@@ -8,78 +8,11 @@
    - Environments: .env
 
  ✓ Starting...
- ✓ Ready in 2.3s
- ○ Compiling /api/team/session ...
- ✓ Compiled /api/team/session in 690ms (299 modules)
- GET /api/team/session 200 in 482ms
- GET /api/team/session 200 in 924ms
- ✓ Compiled /api/team/facility-candidates/unlocated in 279ms (311 modules)
- GET /api/team/facility-candidates/unlocated 200 in 432ms
- GET /api/team/facility-candidates/unlocated 200 in 433ms
- GET /api/team/facility-candidates 200 in 3217ms
- GET /api/team/facility-candidates 200 in 3414ms
- ○ Compiling /organizacion/residenciales ...
- ✓ Compiled /organizacion/residenciales in 2.2s (853 modules)
- GET /organizacion/residenciales 200 in 2562ms
- GET /api/team/session 200 in 31ms
- ✓ Compiled /api/residenciales in 392ms (841 modules)
- GET /api/team/session 200 in 458ms
- GET /api/team/facility-candidates/unlocated 200 in 64ms
- GET /api/team/session 200 in 18ms
- GET /api/team/facility-candidates/unlocated 200 in 45ms
- GET /api/residenciales 200 in 1636ms
- GET /api/team/facility-candidates 200 in 1189ms
- GET /api/team/facility-candidates 200 in 1338ms
- ✓ Compiled /_not-found in 247ms (842 modules)
- GET /sw.js 404 in 450ms
- GET /api/team/session 200 in 48ms
- GET /api/team/facility-candidates/unlocated 200 in 62ms
- GET /api/team/facility-candidates 200 in 737ms
- GET /api/team/session 200 in 23ms
- GET /api/team/facility-candidates/unlocated 200 in 42ms
- GET /api/team/facility-candidates 200 in 408ms
- GET /api/team/session 200 in 54ms
- GET /api/team/facility-candidates/unlocated 200 in 54ms
- GET /api/team/facility-candidates 200 in 624ms
- GET /api/team/session 200 in 25ms
- GET /api/team/session 200 in 23ms
- GET /api/team/facility-candidates/unlocated 200 in 65ms
- GET /api/team/facility-candidates/unlocated 200 in 66ms
- GET /api/team/facility-candidates 200 in 414ms
- GET /api/team/facility-candidates 200 in 892ms
- GET /api/residenciales 200 in 934ms
- GET /api/residenciales 200 in 734ms
- GET /api/team/session 200 in 28ms
- GET /api/team/facility-candidates/unlocated 200 in 53ms
- GET /api/team/facility-candidates 200 in 934ms
- GET /api/team/session 200 in 40ms
- GET /api/team/facility-candidates/unlocated 200 in 48ms
- GET /api/team/facility-candidates 200 in 922ms
- GET /api/team/session 200 in 63ms
- GET /api/team/session 200 in 56ms
- GET /api/team/facility-candidates/unlocated 200 in 143ms
- GET /api/team/facility-candidates/unlocated 200 in 146ms
- GET /api/team/facility-candidates 200 in 1061ms
- GET /api/team/facility-candidates 200 in 1140ms
- GET /api/team/session 200 in 33ms
- GET /api/team/facility-candidates/unlocated 200 in 36ms
- GET /api/team/facility-candidates 200 in 679ms
- GET /api/team/session 200 in 50ms
- GET /api/team/facility-candidates/unlocated 200 in 54ms
- GET /api/team/facility-candidates 200 in 701ms
- GET /api/team/session 200 in 79ms
- GET /api/team/session 200 in 24ms
- GET /api/team/facility-candidates/unlocated 200 in 95ms
- GET /api/team/facility-candidates/unlocated 200 in 97ms
- GET /api/team/facility-candidates 200 in 1074ms
- GET /api/team/facility-candidates 200 in 1108ms
- ✓ Compiled in 645ms (839 modules)
- GET /api/team/session 200 in 156ms
- GET /api/team/facility-candidates/unlocated 200 in 88ms
- GET /api/team/facility-candidates 200 in 700ms
- GET /api/team/session 200 in 16ms
- GET /api/team/facility-candidates/unlocated 200 in 29ms
- GET /api/team/facility-candidates 200 in 755ms
- GET /api/team/session 200 in 24ms
- GET /api/team/facility-candidates/unlocated 200 in 33ms
- GET /api/team/facility-candidates 200 in 515ms
+ ✓ Ready in 2.2s
+ ○ Compiling /organizacion/review ...
+ ✓ Compiled /organizacion/review in 1338ms (812 modules)
+ GET /organizacion/review 200 in 1828ms
+ ✓ Compiled /api/team/session in 429ms (832 modules)
+ GET /api/team/session 200 in 575ms
+ ✓ Compiled /_not-found in 317ms (833 modules)
+ GET /sw.js 404 in 627ms
