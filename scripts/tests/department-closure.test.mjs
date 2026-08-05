@@ -7,7 +7,7 @@ function fixture() {
     department: "Rocha",
     methodology: { localities_searched: ["Rocha"], languages: ["español"], source_families: ["fuentes oficiales"] },
     records: [{ candidate_key: "r:1", locality: "Rocha", classification: "probable_new_current", sources: [
-      { source_type: "official_nonprofit_list", url: "https://example.test/a", observed_at: "2026-08-03" },
+      { source_type: "msp_official_nominal_list", url: "https://www.gub.uy/ministerio-salud-publica/example", observed_at: "2026-08-03" },
       { source_type: "facebook_public_page", url: "https://example.test/b", observed_at: "2026-08-03" },
     ] }],
     unresolved_leads_not_imported: [], coverage_gaps: [], results_summary: { records_with_verified_coordinates: 0 },
@@ -25,8 +25,8 @@ function fixture() {
 test("cierra un departamento sin publicación y separa origen de corroboración", () => {
   const { report, unresolved } = buildDepartmentClosure(fixture());
   assert.equal(report.metadata.status, "revisado sistemáticamente");
-  assert.equal(report.provenance.discoveryOriginByChannel.official_sources, 1);
-  assert.equal(report.provenance.corroborationByChannel.public_social_sources, 1);
+  assert.equal(report.provenance.discoveryOriginByChannel.official, 1);
+  assert.equal(report.provenance.corroborationByChannel.social_public, 1);
   assert.equal(report.counts.publiclyApproved, 0);
   assert.equal(unresolved.length, 0);
 });
@@ -35,6 +35,19 @@ test("rechaza un cierre si cambió la tabla pública", () => {
   const data = fixture();
   data.imported.databaseApply.publicResidencialesAfter = 11;
   assert.throws(() => buildDepartmentClosure(data), /tabla pública cambió/);
+});
+
+test("cuenta las vinculaciones canonicas como coincidencias resueltas", () => {
+  const data = fixture();
+  data.review.decisions[0].humanDecision = "link_existing_after_id_resolution";
+  data.review.decisions[0].currentDisposition = "historical_known_match";
+  data.imported.plan.candidates = [];
+  data.imported.plan.facilityMatches = [{ candidateKey: "r:1" }];
+  const { report, unresolved } = buildDepartmentClosure(data);
+  assert.equal(report.counts.knownMatches, 1);
+  assert.equal(report.counts.unresolvedAfterHumanReview, 0);
+  assert.equal(unresolved.length, 0);
+  assert.equal(report.resolved[0].linkedExistingFacility, true);
 });
 
 test("genera CSV escapado", () => {
@@ -51,6 +64,22 @@ test("acepta cobertura territorial por subregiones", () => {
   assert.deepEqual(report.coverage.localitiesSearched, ["Salinas", "Marindia"]);
   assert.equal(report.coverage.territorialReview[0].area, "Costa");
   assert.match(report.coverage.insufficientCoverage[0], /log granular/);
+});
+
+test("acepta coverage_review como resumen con localidades y zonas metodolÃ³gicas", () => {
+  const data = fixture();
+  delete data.source.methodology.localities_searched;
+  data.source.methodology.zones = [{ zone: "Capital y periferia", result: "Primera pasada completa." }];
+  data.source.coverage_review = {
+    localities_and_zones_searched: ["Durazno", "Blanquillo"],
+    coverage_statement: "La ausencia de resultados no prueba ausencia de establecimientos.",
+  };
+  const { report } = buildDepartmentClosure(data);
+  assert.deepEqual(report.coverage.localitiesSearched, ["Durazno", "Blanquillo"]);
+  assert.deepEqual(report.coverage.territorialReview, [
+    { area: "Capital y periferia", result: "Primera pasada completa." },
+  ]);
+  assert.equal(report.coverage.insufficientCoverage[0], data.source.coverage_review.coverage_statement);
 });
 
 test("acepta el formato de cobertura y clasificaciones de Artigas", () => {

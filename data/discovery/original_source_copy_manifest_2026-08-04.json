@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-04T06:30:00Z",
+  "generated_at": "2026-08-05T00:53:31.6108735Z",
   "policy": "Base de Datos/ es inmutable; estas son copias operativas exactas verificadas por SHA-256.",
   "files": [
     {"source_path":"Base de Datos/Scraping/SerpAPI/candidates.json","copy_path":"data/discovery/serpapi/candidates.json","sha256":"ca133abee87295f47894d269a15df32261d52d6e8e5b8ddde5970223eaf53be1","bytes":397562,"source_modified_at":"2026-08-04T03:14:50.0336362Z"},
@@ -10,6 +10,10 @@
     {"source_path":"Base de Datos/Scraping/Montevideo/montevideo_chatgpt_public_candidates_2026-08-04.json","copy_path":"data/discovery/montevideo/montevideo_chatgpt_public_candidates_2026-08-04.json","sha256":"e122a9f966f8846df1919ad9fcd20ad0c403e623e58a234062427b9465249410","bytes":388635,"source_modified_at":"2026-08-04T05:26:57.2716867Z"},
     {"source_path":"Base de Datos/Scraping/Montevideo/montevideo_chatgpt_public_review_2026-08-04.csv","copy_path":"data/discovery/montevideo/montevideo_chatgpt_public_review_2026-08-04.csv","sha256":"5c1dd931543d498c131464d8ea5cda810beeadbf0ec3d32773ea44064b1a031e","bytes":55651,"source_modified_at":"2026-08-04T05:28:38.3158180Z"},
     {"source_path":"Base de Datos/Scraping/Montevideo/montevideo_chatgpt_public_research_report_2026-08-04.md","copy_path":"data/discovery/montevideo/montevideo_chatgpt_public_research_report_2026-08-04.md","sha256":"2af3b3365c85260abc65f3333cfff35e7b229f2605e6c10fd49d6ec794297dfa","bytes":16478,"source_modified_at":"2026-08-04T05:30:54.6565241Z"},
-    {"source_path":"Base de Datos/Scraping/Montevideo/montevideo_chatgpt_search_log_2026-08-04.md","copy_path":"data/discovery/montevideo/montevideo_chatgpt_search_log_2026-08-04.md","sha256":"5f3fb7260f08dc00cd137cb64e078eeeddde871789d00ec06eb84474c572620b","bytes":5603,"source_modified_at":"2026-08-04T05:30:20.4003532Z"}
+    {"source_path":"Base de Datos/Scraping/Montevideo/montevideo_chatgpt_search_log_2026-08-04.md","copy_path":"data/discovery/montevideo/montevideo_chatgpt_search_log_2026-08-04.md","sha256":"5f3fb7260f08dc00cd137cb64e078eeeddde871789d00ec06eb84474c572620b","bytes":5603,"source_modified_at":"2026-08-04T05:30:20.4003532Z"},
+    {"source_path":"Base de Datos/Scraping/Durazno/durazno_chatgpt_public_candidates_2026-08-04.json","copy_path":"data/discovery/durazno/durazno_chatgpt_public_candidates_2026-08-04.json","sha256":"1bc4026384b2292c7c985f622503118c4e468a7f9babd14a69f8328b5b2b76b0","bytes":114779,"source_modified_at":"2026-08-05T00:15:31.6521535Z"},
+    {"source_path":"Base de Datos/Scraping/Durazno/durazno_chatgpt_public_research_report_2026-08-04.md","copy_path":"data/discovery/durazno/durazno_chatgpt_public_research_report_2026-08-04.md","sha256":"f530f60e555c151ffb3f562f782189f10b0b6c247e0ea70f5e6e3dfa2fa4bf30","bytes":14201,"source_modified_at":"2026-08-05T00:16:12.6957642Z"},
+    {"source_path":"Base de Datos/Scraping/Durazno/durazno_chatgpt_public_review_2026-08-04.csv","copy_path":"data/discovery/durazno/durazno_chatgpt_public_review_2026-08-04.csv","sha256":"d3bd7937e2177af1e2cac3f3c5d60b482a1541ada85b2081c5943fdc2ccdb5b8","bytes":27567,"source_modified_at":"2026-08-05T00:15:07.3743470Z"},
+    {"source_path":"Base de Datos/Scraping/Durazno/durazno_chatgpt_search_log_2026-08-04.md","copy_path":"data/discovery/durazno/durazno_chatgpt_search_log_2026-08-04.md","sha256":"9cd40ce9146d7c9fe9796f952c48b1bd174a9587c664283beeeda3c5f1c40dfc","bytes":5496,"source_modified_at":"2026-08-05T00:16:27.5032117Z"}
   ]
 }

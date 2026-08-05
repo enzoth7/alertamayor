@@ -9,6 +9,32 @@ function text(value, maximum = 1_000) {
   return typeof value === "string" ? value.trim().slice(0, maximum) : "";
 }
 
+const OFFICIAL_DEPARTMENTS = [
+  "Artigas", "Canelones", "Cerro Largo", "Colonia", "Durazno", "Flores", "Florida",
+  "Lavalleja", "Maldonado", "Montevideo", "Paysandú", "Río Negro", "Rivera", "Rocha",
+  "Salto", "San José", "Soriano", "Tacuarembó", "Treinta y Tres",
+];
+
+const OFFICIAL_DEPARTMENT_BY_KEY = new Map(
+  OFFICIAL_DEPARTMENTS.map((department) => [normalizeText(department), department]),
+);
+
+function canonicalDepartment(value) {
+  const raw = text(value, 100);
+  return OFFICIAL_DEPARTMENT_BY_KEY.get(normalizeText(raw)) || raw;
+}
+
+function canonicalLocality(value, department) {
+  const raw = text(value, 160);
+  if (!raw) return "";
+  const departmentName = canonicalDepartment(department);
+  const parts = raw.split("/").map((part) => part.trim()).filter(Boolean);
+  if (parts.some((part) => normalizeText(part) === normalizeText(departmentName))) {
+    return departmentName;
+  }
+  return raw;
+}
+
 function sha256(value) {
   return createHash("sha256").update(String(value)).digest("hex");
 }
@@ -27,12 +53,21 @@ function sourceType(value) {
   const source = record(value);
   const fingerprint = `${text(source.source_type || source.type, 120)} ${text(source.url, 1_000)}`.toLocaleLowerCase("es-UY");
   if (/openstreetmap|\bosm\b/.test(fingerprint)) return "openstreetmap";
-  if (/msp|mides|pacp|official|gub\.uy|intendencia|municip/.test(fingerprint)) return "official";
+  if (/\bmsp\b|\bmides\b|ministerio[-_ ](?:de[-_ ])?salud[-_ ]publica|ministerio[-_ ](?:de[-_ ])?desarrollo[-_ ]social/.test(fingerprint)) return "official";
   if (/instagram|facebook|social/.test(fingerprint)) return "social_public_url";
   if (/facility_website|sitio propio|website/.test(fingerprint)) return "facility_website";
   if (/news|medio|radio|prensa/.test(fingerprint)) return "news";
   if (/public_map|map_directory|maptons|directory|directorio|waze|apple.?maps|overture/.test(fingerprint)) return "public_directory";
   return "other";
+}
+
+function sourceChannel(value) {
+  const source = record(value);
+  const fingerprint = `${text(source.source_type || source.type, 120)} ${text(source.url, 1_000)}`.toLocaleLowerCase("es-UY");
+  if (/\bmsp\b|\bmides\b|ministerio[-_ ](?:de[-_ ])?salud[-_ ]publica|ministerio[-_ ](?:de[-_ ])?desarrollo[-_ ]social/.test(fingerprint)) return "official";
+  if (/public_map|map_directory|maptons|openstreetmap|\bosm\b|google.*maps|maps\.google|serpapi|waze|apple.?maps|overture/.test(fingerprint)) return "public_maps";
+  if (/instagram|facebook|social/.test(fingerprint)) return "social_public";
+  return "other_public";
 }
 
 function dateOnly(value) {
@@ -82,6 +117,7 @@ function observationFor(candidate, sourceValue, index, retrievedAt) {
   const observation = {
     candidateKey: candidate.candidateKey,
     sourceType: mappedType,
+    sourceChannel: sourceChannel(source),
     sourceRecordKey,
     sourceUrl: url,
     retrievedAt: timestamp(source.observed_at, retrievedAt),
@@ -100,15 +136,22 @@ function observationFor(candidate, sourceValue, index, retrievedAt) {
   return observation;
 }
 
-export function buildReviewedDepartmentImportPlan({ sourceDocument, reviewDocument, inputHash }) {
+export function buildReviewedDepartmentImportPlan({ sourceDocument, reviewDocument, exclusionDocument, inputHash }) {
   const sourceRows = Array.isArray(record(sourceDocument).records) ? sourceDocument.records : [];
   const sourceByKey = new Map(sourceRows.map((item) => [text(item.candidate_key, 360), record(item)]));
+  const exclusionRows = Array.isArray(record(exclusionDocument).entries) ? exclusionDocument.entries : [];
+  const exclusionById = new Map(exclusionRows.map((item) => [text(item.exclusion_id, 300), record(item)]));
   const reviewedAt = text(record(reviewDocument).metadata?.generatedAt, 80);
   const department = text(record(reviewDocument).metadata?.department, 100);
   const decisions = Array.isArray(record(reviewDocument).decisions) ? reviewDocument.decisions : [];
   const eligible = decisions.filter((item) => item.eligibleForStep14 === true);
+  const linkDecisions = exclusionDocument
+    ? decisions.filter((item) => item.humanDecision === "link_existing_after_id_resolution")
+    : [];
   if (!department || !reviewedAt) throw new Error("La revisión no declara departamento o fecha.");
-  if (eligible.length === 0) throw new Error("No hay decisiones habilitadas para el Paso 14.");
+  if (eligible.length === 0 && linkDecisions.length === 0) {
+    throw new Error("No hay decisiones habilitadas para el Paso 14.");
+  }
   const candidates = eligible.map((decisionValue) => {
     const decision = record(decisionValue);
     const candidateKey = text(decision.candidateKey, 360);
@@ -125,11 +168,13 @@ export function buildReviewedDepartmentImportPlan({ sourceDocument, reviewDocume
     }
     const reviewer = text(decision.reviewerIdentifier, 200);
     if (!reviewer || !decision.reviewedAt) throw new Error(`${candidateKey}: falta identidad o fecha de revisión.`);
+    const departmentName = canonicalDepartment(source.department);
+    const localityName = canonicalLocality(source.locality, departmentName);
     const candidate = {
       candidateKey,
       name: text(source.observed_name, 300),
-      department: text(source.department, 100),
-      locality: text(source.locality, 160),
+      department: departmentName,
+      locality: localityName,
       address: text(source.address, 500) || null,
       status: humanDecision === "verified_new" ? "verified_new" : "needs_review",
       reviewAction: humanDecision,
@@ -142,8 +187,8 @@ export function buildReviewedDepartmentImportPlan({ sourceDocument, reviewDocume
       firstSeenAt: earlierTimestamp(sourceDocument.generated_at, decision.reviewedAt || reviewedAt),
       lastSeenAt: timestamp(reviewedAt, reviewedAt),
       normalizedName: normalizeName(source.observed_name),
-      normalizedDepartment: normalizeText(source.department) || null,
-      normalizedLocality: normalizeText(source.locality) || null,
+      normalizedDepartment: normalizeText(departmentName) || null,
+      normalizedLocality: normalizeText(localityName) || null,
       normalizedAddress: source.address ? normalizeAddress(source.address, source) || null : null,
       lat: null,
       lng: null,
@@ -165,8 +210,70 @@ export function buildReviewedDepartmentImportPlan({ sourceDocument, reviewDocume
     }));
     return candidate;
   });
-  const observations = candidates.flatMap((candidate) => candidate.sources);
+  const facilityMatches = linkDecisions.map((decisionValue) => {
+    const decision = record(decisionValue);
+    const candidateKey = text(decision.candidateKey, 360);
+    const source = sourceByKey.get(candidateKey);
+    if (!source) throw new Error(`No existe el insumo original de ${candidateKey}.`);
+    const reviewer = text(decision.reviewerIdentifier, 200);
+    if (!reviewer || !decision.reviewedAt) throw new Error(`${candidateKey}: falta identidad o fecha de revisión.`);
+    const exclusionId = text(decision.proposedMatchId, 300);
+    const exclusion = exclusionById.get(exclusionId);
+    if (!exclusion) throw new Error(`${candidateKey}: no se resolvió ${exclusionId} en el índice de exclusión.`);
+    const legacyResidencialIds = Array.isArray(exclusion.legacy_residencial_ids)
+      ? [...new Set(exclusion.legacy_residencial_ids.map((value) => text(value, 200)).filter(Boolean))]
+      : [];
+    if (legacyResidencialIds.length === 0) {
+      throw new Error(`${candidateKey}: ${exclusionId} no tiene ID legacy para resolver la sede canónica.`);
+    }
+    const departmentName = canonicalDepartment(source.department);
+    const localityName = canonicalLocality(source.locality, departmentName);
+    const evidenceTier = text(decision.evidenceTier, 1);
+    const historical = text(decision.currentDisposition, 80) === "historical_known_match";
+    const match = {
+      candidateKey,
+      exclusionId,
+      legacyResidencialIds,
+      expectedCanonicalName: text(exclusion.canonical_name, 300),
+      name: text(source.observed_name, 300),
+      department: departmentName,
+      locality: localityName,
+      address: text(source.address, 500) || null,
+      normalizedName: normalizeName(source.observed_name),
+      normalizedDepartment: normalizeText(departmentName) || null,
+      normalizedLocality: normalizeText(localityName) || null,
+      normalizedAddress: source.address ? normalizeAddress(source.address, source) || null : null,
+      lat: null,
+      lng: null,
+      evidenceTier,
+      historical,
+      reviewedAt: timestamp(decision.reviewedAt, reviewedAt),
+      reviewedBy: reviewer,
+      reviewNote: text(decision.reviewerNote || decision.recommendationRationale, 2_000),
+    };
+    match.sources = (Array.isArray(source.sources) ? source.sources : [])
+      .map((item, index) => observationFor(match, item, index, reviewedAt))
+      .map((item) => ({
+        ...item,
+        evidenceRole: historical
+          ? "historical"
+          : evidenceTier === "A" && item.sourceType === "official"
+            ? "evidence_a"
+            : evidenceTier === "B"
+              ? "evidence_b"
+              : "context",
+      }));
+    if (match.sources.length === 0) throw new Error(`${candidateKey}: no tiene fuentes para vincular.`);
+    if (evidenceTier === "B" && new Set(match.sources.map((item) => item.independenceKey)).size < 2) {
+      throw new Error(`${candidateKey}: evidencia B sin dos fuentes independientes.`);
+    }
+    return match;
+  });
+  const observationOwners = [...candidates, ...facilityMatches];
+  const observations = observationOwners.flatMap((item) => item.sources);
   const sourceTypes = [...new Set(observations.map((item) => item.sourceType))].sort();
+  const sourceChannels = Object.fromEntries(["official", "public_maps", "social_public", "other_public"]
+    .map((channel) => [channel, observations.filter((item) => item.sourceChannel === channel).length]));
   const runs = sourceTypes.map((type) => {
     const typeObservations = observations.filter((item) => item.sourceType === type);
     return {
@@ -184,7 +291,7 @@ export function buildReviewedDepartmentImportPlan({ sourceDocument, reviewDocume
       schemaVersion: 1,
       department,
       reviewedAt,
-      reviewerIdentifiers: [...new Set(candidates.map((item) => item.reviewedBy))],
+      reviewerIdentifiers: [...new Set(observationOwners.map((item) => item.reviewedBy))],
       inputHash,
       privateOnly: true,
       publicEligible: false,
@@ -192,14 +299,17 @@ export function buildReviewedDepartmentImportPlan({ sourceDocument, reviewDocume
     },
     summary: {
       candidates: candidates.length,
+      facilityMatches: facilityMatches.length,
       verifiedNew: candidates.filter((item) => item.status === "verified_new").length,
       needsReview: candidates.filter((item) => item.status === "needs_review").length,
       observations: observations.length,
       runs: runs.length,
       sourceTypes,
+      sourceChannels,
     },
     runs,
     candidates,
+    facilityMatches,
   };
 }
 
@@ -213,7 +323,10 @@ export async function inspectReviewedDepartmentImport(client, plan) {
         to_regclass('discovery_private.facility_source_observations') is not null as observations,
         to_regclass('discovery_private.facility_candidates') is not null as candidates,
         to_regclass('discovery_private.facility_candidate_sources') is not null as sources,
-        to_regclass('discovery_private.facility_candidate_review_events') is not null as review_events
+        to_regclass('discovery_private.facility_candidate_review_events') is not null as review_events,
+        to_regclass('elepem_core.legacy_facility_map') is not null as legacy_map,
+        to_regclass('elepem_core.facility_observation_links') is not null as facility_links,
+        to_regclass('elepem_core.audit_log') is not null as audit_log
     `);
     if (Object.values(required.rows[0]).some((value) => value !== true)) {
       throw new Error("Faltan tablas del workflow privado.");
@@ -232,6 +345,44 @@ export async function inspectReviewedDepartmentImport(client, plan) {
       item.evidenceTier === row.evidence_tier &&
       item.reviewedBy === row.reviewed_by &&
       row.public_eligible === false));
+    const legacyIds = [...new Set((plan.facilityMatches || []).flatMap((item) => item.legacyResidencialIds))];
+    const mapped = legacyIds.length > 0 ? await client.query(`
+      select mapping.legacy_residencial_id, mapping.facility_id, mapping.mapping_status,
+             facility.facility_key
+      from elepem_core.legacy_facility_map as mapping
+      left join elepem_core.facilities as facility on facility.id = mapping.facility_id
+      where mapping.legacy_residencial_id = any($1::text[])
+      order by mapping.legacy_residencial_id
+    `, [legacyIds]) : { rows: [] };
+    const mappingByLegacyId = new Map(mapped.rows.map((row) => [row.legacy_residencial_id, row]));
+    const facilityResolutions = (plan.facilityMatches || []).map((item) => {
+      const mappings = item.legacyResidencialIds.map((id) => mappingByLegacyId.get(id)).filter(Boolean);
+      const facilityIds = [...new Set(mappings.filter((row) => row.mapping_status === "mapped" && row.facility_id)
+        .map((row) => String(row.facility_id)))];
+      return {
+        candidateKey: item.candidateKey,
+        exclusionId: item.exclusionId,
+        legacyResidencialIds: item.legacyResidencialIds,
+        facilityIds,
+        facilityKey: facilityIds.length === 1
+          ? mappings.find((row) => String(row.facility_id) === facilityIds[0])?.facility_key || null
+          : null,
+        resolved: facilityIds.length === 1 && mappings.length === item.legacyResidencialIds.length,
+      };
+    });
+    const facilityResolutionConflicts = facilityResolutions.filter((item) => !item.resolved);
+    const plannedObservations = [...plan.candidates, ...(plan.facilityMatches || [])]
+      .flatMap((item) => item.sources);
+    const observationHashes = [...new Set(plannedObservations.map((item) => item.recordHash))];
+    const existingObservations = observationHashes.length > 0 ? await client.query(`
+      select source_type, source_record_key, record_hash
+      from discovery_private.facility_source_observations
+      where record_hash = any($1::text[])
+    `, [observationHashes]) : { rows: [] };
+    const existingObservationKeys = new Set(existingObservations.rows.map((row) =>
+      `${row.source_type}|${row.source_record_key}|${row.record_hash}`));
+    const wouldInsertObservations = plannedObservations.filter((item) =>
+      !existingObservationKeys.has(`${item.sourceType}|${item.sourceRecordKey}|${item.recordHash}`)).length;
     const counts = await client.query(`
       select
         (select count(*)::integer from public.residenciales) as public_residenciales,
@@ -243,10 +394,18 @@ export async function inspectReviewedDepartmentImport(client, plan) {
       requiredTables: required.rows[0],
       existing: existing.rows,
       conflicts,
+      facilityResolutions,
+      facilityResolutionConflicts,
       counts: counts.rows[0],
       wouldInsert: keys.length - existing.rowCount,
       wouldUpdateOrKeep: existing.rowCount,
-      safeToApply: conflicts.length === 0,
+      plannedObservations: plannedObservations.length,
+      wouldInsertObservations,
+      wouldKeepObservations: plannedObservations.length - wouldInsertObservations,
+      plannedCandidateSourceLinks: plan.candidates.reduce((total, item) => total + item.sources.length, 0),
+      plannedFacilitySourceLinks: (plan.facilityMatches || []).reduce((total, item) => total + item.sources.length, 0),
+      wouldLinkFacilities: facilityResolutions.filter((item) => item.resolved).length,
+      safeToApply: conflicts.length === 0 && facilityResolutionConflicts.length === 0,
     };
   } catch (error) {
     try { await client.query("rollback"); } catch {}
@@ -301,8 +460,9 @@ export async function applyReviewedDepartmentImport(client, plan) {
 
     const observationIds = new Map();
     let insertedObservations = 0;
-    for (const candidate of plan.candidates) {
-      for (const observation of candidate.sources) {
+    const observationOwners = [...plan.candidates, ...(plan.facilityMatches || [])];
+    for (const owner of observationOwners) {
+      for (const observation of owner.sources) {
         const runId = runIds.get(observation.sourceType);
         const inserted = await client.query(`
           insert into discovery_private.facility_source_observations (
@@ -327,7 +487,7 @@ export async function applyReviewedDepartmentImport(client, plan) {
           where source_type=$1 and source_record_key=$2 and record_hash=$3
         `, [observation.sourceType, observation.sourceRecordKey, observation.recordHash])).rows[0]?.id;
         if (!id) throw new Error(`No se pudo resolver observación ${observation.sourceRecordKey}.`);
-        observationIds.set(`${candidate.candidateKey}|${observation.sourceRecordKey}`, id);
+        observationIds.set(`${owner.candidateKey}|${observation.sourceRecordKey}`, id);
       }
     }
 
@@ -409,6 +569,63 @@ export async function applyReviewedDepartmentImport(client, plan) {
         candidate.candidateKey]);
       insertedReviewEvents += event.rowCount;
     }
+    let insertedFacilityLinks = 0;
+    let insertedFacilityAuditEvents = 0;
+    const facilityResolutionRows = [];
+    for (const match of plan.facilityMatches || []) {
+      const resolution = await client.query(`
+        select distinct mapping.facility_id, facility.facility_key
+        from elepem_core.legacy_facility_map as mapping
+        join elepem_core.facilities as facility on facility.id = mapping.facility_id
+        where mapping.legacy_residencial_id = any($1::text[])
+          and mapping.mapping_status = 'mapped'
+      `, [match.legacyResidencialIds]);
+      if (resolution.rowCount !== 1) {
+        throw new Error(`${match.candidateKey}: la coincidencia no resuelve una única sede canónica.`);
+      }
+      const facilityId = resolution.rows[0].facility_id;
+      const facilityKey = resolution.rows[0].facility_key;
+      for (const observation of match.sources) {
+        const observationId = observationIds.get(`${match.candidateKey}|${observation.sourceRecordKey}`);
+        const linked = await client.query(`
+          insert into elepem_core.facility_observation_links (
+            facility_id, observation_id, evidence_role, independence_key, linked_by, linked_at
+          ) values ($1,$2,$3,$4,$5,$6)
+          on conflict (facility_id, observation_id) do nothing
+          returning facility_id
+        `, [facilityId, observationId, observation.evidenceRole,
+          observation.independenceKey, match.reviewedBy, match.reviewedAt]);
+        insertedFacilityLinks += linked.rowCount;
+      }
+      const requestId = `department-link:${plan.metadata.inputHash.slice(0, 24)}:${sha256(match.candidateKey).slice(0, 16)}`;
+      const audit = await client.query(`
+        insert into elepem_core.audit_log (
+          entity_type, entity_key, action, actor_identifier,
+          before_state, after_state, request_id, created_at
+        )
+        select 'facility', $1, 'link_source_observations', $2,
+               null, $3::jsonb, $4, $5
+        where not exists (
+          select 1 from elepem_core.audit_log where request_id = $4
+        )
+        returning id
+      `, [facilityKey, match.reviewedBy, JSON.stringify({
+        candidateKey: match.candidateKey,
+        exclusionId: match.exclusionId,
+        legacyResidencialIds: match.legacyResidencialIds,
+        linkedObservationCount: match.sources.length,
+        historical: match.historical,
+      }), requestId, match.reviewedAt]);
+      insertedFacilityAuditEvents += audit.rowCount;
+      facilityResolutionRows.push({
+        candidateKey: match.candidateKey,
+        exclusionId: match.exclusionId,
+        facilityId,
+        facilityKey,
+        linkedObservations: match.sources.length,
+        historical: match.historical,
+      });
+    }
     const afterPublic = await publicCount(client);
     if (beforePublic !== afterPublic) throw new Error("Cambió public.residenciales; se revierte todo.");
     const verification = await client.query(`
@@ -429,6 +646,9 @@ export async function applyReviewedDepartmentImport(client, plan) {
       insertedOrUpdatedCandidates,
       insertedLinks,
       insertedReviewEvents,
+      insertedFacilityLinks,
+      insertedFacilityAuditEvents,
+      facilityResolutions: facilityResolutionRows,
       reconciledCandidates: verification.rowCount,
       publicEligibleCandidates: verification.rows.filter((row) => row.public_eligible).length,
       rows: verification.rows,

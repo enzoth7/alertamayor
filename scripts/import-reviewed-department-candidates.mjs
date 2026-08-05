@@ -47,19 +47,22 @@ function safeOutput(value) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  if (!args.input || !args.review || !args.output) {
-    throw new Error("Faltan --input, --review o --output.");
+  if (!args.input || !args.review || !args.exclusion || !args.output) {
+    throw new Error("Faltan --input, --review, --exclusion o --output.");
   }
   const inputPath = safeInput(args.input);
   const reviewPath = safeInput(args.review);
+  const exclusionPath = safeInput(args.exclusion);
   const outputPath = safeOutput(args.output);
-  const [inputContent, reviewContent] = await Promise.all([
+  const [inputContent, reviewContent, exclusionContent] = await Promise.all([
     readFile(inputPath, "utf8"),
     readFile(reviewPath, "utf8"),
+    readFile(exclusionPath, "utf8"),
   ]);
   const plan = buildReviewedDepartmentImportPlan({
     sourceDocument: JSON.parse(inputContent),
     reviewDocument: JSON.parse(reviewContent),
+    exclusionDocument: JSON.parse(exclusionContent),
     inputHash: createHash("sha256").update(inputContent).digest("hex"),
   });
   const pool = createSupabasePool("alertamayor-reviewed-department-import");

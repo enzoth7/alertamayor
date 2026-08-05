@@ -65,3 +65,46 @@ test("acota first_seen cuando el insumo declara una hora posterior a la revisió
     true,
   );
 });
+
+test("normaliza departamento y localidad sin convertir otros organismos en MSP/MIDES", async () => {
+  const [sourceDocument, reviewDocument] = await Promise.all([
+    document("data/discovery/rocha_chatgpt_public_candidates_2026-08-03.json"),
+    document("data/reports/rocha_step13_human_review_2026-08-04.json"),
+  ]);
+  const source = structuredClone(sourceDocument);
+  const eligibleKey = reviewDocument.decisions.find((item) => item.eligibleForStep14).candidateKey;
+  const row = source.records.find((item) => item.candidate_key === eligibleKey);
+  row.department = "DURAZNO";
+  row.locality = "Santa Bernardina / Durazno";
+  row.sources[0].source_type = "official_bps_resolution";
+  row.sources[0].url = "https://www.bps.gub.uy/example";
+  const plan = buildReviewedDepartmentImportPlan({
+    sourceDocument: source,
+    reviewDocument,
+    inputHash: "d".repeat(64),
+  });
+  const candidate = plan.candidates.find((item) => item.candidateKey === eligibleKey);
+  assert.equal(candidate.department, "Durazno");
+  assert.equal(candidate.locality, "Durazno");
+  assert.notEqual(candidate.sources[0].sourceType, "official");
+});
+
+test("separa candidatos privados de vinculaciones a instalaciones existentes", async () => {
+  const [sourceDocument, reviewDocument, exclusionDocument] = await Promise.all([
+    document("data/discovery/durazno/durazno_chatgpt_public_candidates_2026-08-04.json"),
+    document("data/reports/durazno_step13_human_review_2026-08-04.json"),
+    document("data/exclusion/known_facilities_exclusion_index_2026-08-04.json"),
+  ]);
+  const plan = buildReviewedDepartmentImportPlan({
+    sourceDocument,
+    reviewDocument,
+    exclusionDocument,
+    inputHash: "e".repeat(64),
+  });
+  assert.equal(plan.summary.candidates, 10);
+  assert.equal(plan.summary.facilityMatches, 18);
+  assert.equal(plan.summary.verifiedNew, 3);
+  assert.equal(plan.summary.needsReview, 7);
+  assert.equal(plan.facilityMatches.filter((item) => item.historical).length, 9);
+  assert.equal(plan.candidates.some((item) => item.publicEligible), false);
+});

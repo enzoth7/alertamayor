@@ -226,7 +226,7 @@ function CandidateInventorySummary({
           <label>
             <b>Coordenadas</b>
             <select value={coordinates} onChange={(event) => setCoordinates(event.target.value)}>
-              <option value="">Todos: con coordenadas o sin coordenadas</option>
+              <option value="">Todos</option>
               <option value="mapped">Con coordenadas</option>
               <option value="unmapped">Sin coordenadas</option>
             </select>

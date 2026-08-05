@@ -28,6 +28,31 @@ function text(value, maximum = 2_000) {
   return typeof value === "string" ? value.trim().slice(0, maximum) : "";
 }
 
+function sourceIndependenceKey(value) {
+  const source = record(value);
+  const explicit = text(source.independent_family, 160).toLocaleLowerCase("es-UY");
+  if (explicit) return explicit;
+  try {
+    return new URL(text(source.url, 1_000)).hostname.replace(/^www\./, "").toLocaleLowerCase("en-US");
+  } catch {
+    return "";
+  }
+}
+
+function isMspOrMidesSource(value) {
+  const source = record(value);
+  const fingerprint = `${text(source.source_type, 120)} ${text(source.url, 1_000)}`.toLocaleLowerCase("es-UY");
+  return /\bmsp\b|\bmides\b|ministerio[-_ ](?:de[-_ ])?salud[-_ ]publica|ministerio[-_ ](?:de[-_ ])?desarrollo[-_ ]social/.test(fingerprint);
+}
+
+function effectiveEvidenceTier(source) {
+  const sources = Array.isArray(source.sources) ? source.sources : [];
+  if (source.evidence_tier === "A" && sources.some(isMspOrMidesSource)) return "A";
+  const independent = new Set(sources.map(sourceIndependenceKey).filter(Boolean));
+  if (["A", "B"].includes(source.evidence_tier) && independent.size >= 2) return "B";
+  return "C";
+}
+
 function safeInput(value) {
   const path = resolve(PROJECT_ROOT, String(value));
   const relativePath = relative(PROJECT_ROOT, path);
@@ -51,11 +76,8 @@ function csvCell(value) {
   return /[",\r\n]/.test(raw) ? `"${raw.replaceAll('"', '""')}"` : raw;
 }
 
-function recommendation(candidate, source) {
+function recommendation(candidate, source, evidenceTier = effectiveEvidenceTier(source)) {
   const disposition = text(candidate.reviewDisposition, 80);
-  const evidenceTier = ["A", "B", "C"].includes(source.evidence_tier)
-    ? source.evidence_tier
-    : "C";
   if (disposition === "probable_new" && ["A", "B"].includes(evidenceTier)) {
     return {
       recommendedAction: "verified_new",
@@ -70,6 +92,20 @@ function recommendation(candidate, source) {
       rationale: candidate.explicitExclusionReference
         ? "Existe una referencia explícita en el índice; resolver el ID canónico antes de vincular."
         : "El matching encontró una coincidencia fuerte; confirmar el ID canónico antes de vincular.",
+    };
+  }
+  if (disposition === "historical_known_match") {
+    return {
+      recommendedAction: "link_existing_after_id_resolution",
+      requiresSecondResearch: false,
+      rationale: "La referencia es exclusivamente histórica y coincide con una sede conocida; vincular la observación sin crear un candidato actual.",
+    };
+  }
+  if (disposition === "historical_unresolved") {
+    return {
+      recommendedAction: "needs_more_evidence",
+      requiresSecondResearch: true,
+      rationale: "La referencia es exclusivamente histórica y no permite afirmar actividad actual ni resolver una sede conocida.",
     };
   }
   if (disposition === "exclusion_index_gap") {
@@ -111,7 +147,8 @@ function buildReview(sourceDocument, matchingDocument, {
   const decisions = matchRows.map((candidateValue) => {
     const candidate = record(candidateValue);
     const source = sourceByKey.get(text(candidate.id, 360)) || {};
-    const proposed = recommendation(candidate, source);
+    const evidenceTier = effectiveEvidenceTier(source);
+    const proposed = recommendation(candidate, source, evidenceTier);
     const humanDecision = acceptRecommendations ? proposed.recommendedAction : null;
     const eligibleForStep14 = acceptRecommendations && [
       "verified_new",
@@ -123,7 +160,7 @@ function buildReview(sourceDocument, matchingDocument, {
       department: text(candidate.department, 100) || department,
       locality: text(candidate.locality, 160) || null,
       address: text(candidate.address, 500) || null,
-      evidenceTier: ["A", "B", "C"].includes(source.evidence_tier) ? source.evidence_tier : "C",
+      evidenceTier,
       currentDisposition: text(candidate.reviewDisposition, 80),
       recommendedAction: proposed.recommendedAction,
       recommendationRationale: proposed.rationale,

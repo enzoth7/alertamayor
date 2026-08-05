@@ -1,26 +1,22 @@
 import { createHash } from "node:crypto";
 
 const CHANNEL_BY_SOURCE_TYPE = {
-  historical_official_reference: "official_sources",
-  official_nonprofit_list: "official_sources",
-  official_bps_publication: "official_sources",
   openstreetmap: "public_maps",
   public_map_directory: "public_maps",
-  facebook_public_page: "public_social_sources",
-  facebook_public_group_post: "public_social_sources",
-  instagram_public_profile: "public_social_sources",
-  instagram_public_post: "public_social_sources",
-  instagram_public_reel: "public_social_sources",
-  instagram_indexed_public_content: "public_social_sources",
-  threads_public_post: "public_social_sources",
+  facebook_public_page: "social_public",
+  facebook_public_group_post: "social_public",
+  instagram_public_profile: "social_public",
+  instagram_public_post: "social_public",
+  instagram_public_reel: "social_public",
+  instagram_indexed_public_content: "social_public",
+  threads_public_post: "social_public",
 };
 
 const CHANNEL_LABELS = {
-  official_sources: "Fuentes oficiales",
+  official: "Fuentes oficiales MSP/MIDES",
   public_maps: "Mapas públicos",
-  public_social_sources: "Fuentes públicas de redes sociales",
-  other_public_sources: "Otras fuentes públicas",
-  manual_editorial: "Reviews",
+  social_public: "Fuentes públicas de redes sociales",
+  other_public: "Otras fuentes públicas",
 };
 
 function countBy(values) {
@@ -42,10 +38,10 @@ function sourceChannel(source) {
   const type = sourceType(source);
   if (CHANNEL_BY_SOURCE_TYPE[type]) return CHANNEL_BY_SOURCE_TYPE[type];
   const fingerprint = `${type} ${source.url || ""}`.toLocaleLowerCase("es-UY");
-  if (/msp|mides|pacp|gub\.uy|official/.test(fingerprint)) return "official_sources";
-  if (/public_map|map_directory|maptons|openstreetmap|\bosm\b|google.*maps|maps\.google|waze|apple.?maps|overture/.test(fingerprint)) return "public_maps";
-  if (/instagram|facebook|social/.test(fingerprint)) return "public_social_sources";
-  return "other_public_sources";
+  if (/\bmsp\b|\bmides\b|ministerio[-_ ](?:de[-_ ])?salud[-_ ]publica|ministerio[-_ ](?:de[-_ ])?desarrollo[-_ ]social/.test(fingerprint)) return "official";
+  if (/public_map|map_directory|maptons|openstreetmap|\bosm\b|google.*maps|maps\.google|serpapi|waze|apple.?maps|overture/.test(fingerprint)) return "public_maps";
+  if (/instagram|facebook|social/.test(fingerprint)) return "social_public";
+  return "other_public";
 }
 
 function hasCompleteProvenance(source) {
@@ -57,10 +53,15 @@ export function buildDepartmentClosure({ source, matching, review, imported, inp
   const records = source.records || [];
   const scope = source.scope || {};
   const methodology = source.methodology || {};
+  const coverageReviewRows = Array.isArray(source.coverage_review) ? source.coverage_review : [];
+  const coverageReviewSummary = source.coverage_review && !Array.isArray(source.coverage_review)
+    ? source.coverage_review
+    : {};
   const preImportUnresolvedLeads = source.unresolved_leads_not_imported?.length
     ? source.unresolved_leads_not_imported
     : source.unresolved_leads || [];
   const importedKeys = new Set((imported.plan?.candidates || []).map((candidate) => candidate.candidateKey));
+  const facilityMatchKeys = new Set((imported.plan?.facilityMatches || []).map((match) => match.candidateKey));
   const decisionByKey = new Map(decisions.map((decision) => [decision.candidateKey, decision]));
   const allSources = records.flatMap((record) =>
     (record.sources || []).map((item, index) => ({
@@ -72,7 +73,9 @@ export function buildDepartmentClosure({ source, matching, review, imported, inp
   );
 
   const unresolved = decisions
-    .filter((decision) => !["verified_new", "rejected"].includes(decision.humanDecision))
+    .filter((decision) =>
+      !["verified_new", "rejected"].includes(decision.humanDecision) &&
+      !facilityMatchKeys.has(decision.candidateKey))
     .map((decision) => ({
       candidate_key: decision.candidateKey,
       name: decision.name,
@@ -95,19 +98,25 @@ export function buildDepartmentClosure({ source, matching, review, imported, inp
   const providerCounts = countBy(allSources.map((item) => sourceType(item.source)));
   const missingProvenance = allSources.filter((item) => !hasCompleteProvenance(item.source));
   const localitiesWithRecords = [...new Set(records.map((record) => record.locality).filter(Boolean))].sort();
-  const localitiesSearched = methodology.localities_searched || scope.localities_searched || [
+  const localitiesSearched = methodology.localities_searched || scope.localities_searched ||
+    coverageReviewSummary.localities_and_zones_searched || [
     ...new Set((methodology.subregions || []).flatMap((subregion) => subregion.localities || [])),
   ];
   const systematicallyReviewed = localitiesSearched.length > 0;
   const coverageGaps = Array.isArray(source.coverage_gaps)
     ? source.coverage_gaps
-    : (source.coverage_review || [])
+    : coverageReviewRows
       .filter((item) => Array.isArray(item.record_keys) && item.record_keys.length === 0)
       .map((item) => ({ area: item.area, result: item.result }));
-  const territorialReview = (source.coverage_review || []).map((item) => ({
-    area: item.name || item.area,
-    result: item.summary || item.result,
-  }));
+  const territorialReview = coverageReviewRows.length > 0
+    ? coverageReviewRows.map((item) => ({
+      area: item.name || item.area,
+      result: item.summary || item.result,
+    }))
+    : (methodology.zones || []).map((item) => ({
+      area: item.zone,
+      result: item.result,
+    }));
   const verifiedNew = decisions.filter((decision) => decision.humanDecision === "verified_new");
   const rejected = decisions.filter((decision) => decision.humanDecision === "rejected");
 
@@ -132,6 +141,8 @@ export function buildDepartmentClosure({ source, matching, review, imported, inp
       coverageGaps,
       insufficientCoverage: coverageGaps.length > 0
         ? coverageGaps.map((gap) => gap.area)
+        : coverageReviewSummary.coverage_statement
+          ? [coverageReviewSummary.coverage_statement]
         : systematicallyReviewed
           ? ["No se dispone de un log granular de cada consulta; el cierre continúa siendo provisional."]
           : ["El insumo no documenta localidades buscadas; no permite declarar revisión sistemática departamental."],
@@ -142,6 +153,7 @@ export function buildDepartmentClosure({ source, matching, review, imported, inp
       formallyReviewedRecords: records.length,
       preImportUnresolvedLeads: preImportUnresolvedLeads.length,
       knownMatches: Math.max(
+        facilityMatchKeys.size,
         (classifications.known_exact_match || 0) +
           (classifications.probable_known_match || 0) +
           (classifications.probable_existing_official_match || 0),
@@ -189,12 +201,15 @@ export function buildDepartmentClosure({ source, matching, review, imported, inp
       publicEligibleCandidates: imported.databaseApply?.publicEligibleCandidates,
       publicTableUnchanged: imported.databaseApply?.publicResidencialesBefore === imported.databaseApply?.publicResidencialesAfter,
     },
-    resolved: decisions.filter((decision) => ["verified_new", "rejected"].includes(decision.humanDecision)).map((decision) => ({
+    resolved: decisions.filter((decision) =>
+      ["verified_new", "rejected"].includes(decision.humanDecision) ||
+      facilityMatchKeys.has(decision.candidateKey)).map((decision) => ({
       candidateKey: decision.candidateKey,
       name: decision.name,
       decision: decision.humanDecision,
       evidenceTier: decision.evidenceTier,
       importedPrivate: importedKeys.has(decision.candidateKey),
+      linkedExistingFacility: facilityMatchKeys.has(decision.candidateKey),
       publicEligible: false,
     })),
     unresolved,
@@ -254,7 +269,7 @@ export function coverageMarkdown(report) {
       ? `## Revisión territorial\n\n${report.coverage.territorialReview.map((area) => `- **${area.area}:** ${area.result}`).join("\n")}\n\n`
       : "") +
     `## Procedencia\n\n` +
-    `Se conservaron ${p.observationCount} referencias: ${p.byChannel.official_sources} oficiales, ${p.byChannel.public_maps} de mapas públicos, ${p.byChannel.public_social_sources} de redes sociales públicas, ${p.byChannel.other_public_sources} de otras fuentes públicas y ${p.byChannel.manual_editorial} reviews editoriales.\n\n` +
+    `Se conservaron ${p.observationCount} referencias: ${p.byChannel.official} oficiales MSP/MIDES, ${p.byChannel.public_maps} de mapas públicos, ${p.byChannel.social_public} de redes sociales públicas y ${p.byChannel.other_public} de otras fuentes públicas.\n\n` +
     `Origen de descubrimiento: ${JSON.stringify(p.discoveryOriginByChannel)}. Corroboraciones: ${JSON.stringify(p.corroborationByChannel)}. Registros con procedencia incompleta: ${p.missingProvenanceCount}.\n\n` +
     `## Cobertura insuficiente\n\n` +
     (report.coverage.coverageGaps.length > 0

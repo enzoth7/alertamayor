@@ -162,7 +162,6 @@ function buildCandidateQuery(
         end,
         candidate.updated_at desc,
         candidate.id
-      limit 200
     `,
   };
 }

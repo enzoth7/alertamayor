@@ -139,13 +139,13 @@ function sourceReferences(row) {
     const sourceType = text(origin.sourceType || origin.source_type || origin.type || origin.source, 80);
     const externalUrl = text(origin.externalUrl || origin.external_url || origin.sourceUrl || origin.source_url || origin.url, 1_000);
     const fingerprint = `${sourceType} ${externalUrl}`.toLocaleLowerCase("es-UY");
-    const sourceChannel = /msp|mides|pacp|gub\.uy|official/.test(fingerprint)
-      ? "official_sources"
-      : /public_map|map_directory|maptons|openstreetmap|\bosm\b|google.*maps|maps\.google|waze|apple.?maps|overture/.test(fingerprint)
+    const sourceChannel = /\bmsp\b|\bmides\b|ministerio[-_ ](?:de[-_ ])?salud[-_ ]publica|ministerio[-_ ](?:de[-_ ])?desarrollo[-_ ]social/.test(fingerprint)
+      ? "official"
+      : /public_map|map_directory|maptons|openstreetmap|\bosm\b|google.*maps|maps\.google|serpapi|waze|apple.?maps|overture/.test(fingerprint)
         ? "public_maps"
         : /instagram|facebook|social/.test(fingerprint)
-          ? "public_social_sources"
-          : "other_public_sources";
+          ? "social_public"
+          : "other_public";
     return {
       sourceChannel,
       sourceType: sourceType || null,
@@ -176,9 +176,14 @@ function matchedCandidate(value, existingFacilities, limit) {
   const candidateId = localCandidateId(row);
   const inputClassification = text(row.classification, 160);
   const exclusionReference = text(row.exclusion_index_match, 500);
+  const exclusionDetail = record(row.exclusion_index_match_detail);
+  const detailExclusionIds = [
+    ...(Array.isArray(exclusionDetail.exact_name_ids) ? exclusionDetail.exact_name_ids : []),
+    ...(Array.isArray(exclusionDetail.exact_address_ids) ? exclusionDetail.exact_address_ids : []),
+  ].map((value) => text(value, 300)).filter(Boolean);
   const explicitExclusionId = exclusionReference.match(
     /EXC-(?:CANDIDATE|OFFICIAL)-[A-Z0-9-]+/i,
-  )?.[0] || null;
+  )?.[0] || detailExclusionIds[0] || null;
   const alreadyKnownEntries = existingFacilities.filter((item) =>
     item.id === candidateId || item.candidateKeys.includes(candidateId));
   const comparisonPool = existingFacilities.filter((item) =>
@@ -205,7 +210,9 @@ function matchedCandidate(value, existingFacilities, limit) {
   } else if (inputClassification === "historical_or_moved_candidate") {
     reviewDisposition = "possible_move_or_rebrand";
   } else if (["historical_only", "social_candidate_possible_historical"].includes(inputClassification)) {
-    reviewDisposition = "needs_more_evidence";
+    reviewDisposition = explicitEntry || automaticStatus === "probable_match"
+      ? "historical_known_match"
+      : "historical_unresolved";
   } else if (inputClassification === "known_exact_match") {
     reviewDisposition = explicitEntry ? "probable_known_match" : "exclusion_index_gap";
   } else if (inputClassification === "probable_existing_official_match" && automaticStatus !== "probable_match") {
@@ -220,7 +227,7 @@ function matchedCandidate(value, existingFacilities, limit) {
     inputClassification: inputClassification || null,
     inputReviewStatus: text(row.review_status || row.reviewStatus, 120) || null,
     inputMapAction: text(row.map_action || row.mapAction, 200) || null,
-    historicalInput: /^(historical_or_moved|social_candidate_possible_historical)/.test(
+    historicalInput: /^(historical_only|historical_or_moved|social_candidate_possible_historical)/.test(
       text(row.classification, 160),
     ),
     lat: normalized.lat,
