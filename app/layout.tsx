@@ -8,12 +8,12 @@ import "./components/team/TeamMeasuresWorkflow.css";
 import "./components/team/TeamLicenseWorkflow.css";
 
 export const metadata: Metadata = {
-  title: "Alerta Mayor",
+  title: "Arandú",
   icons: {
-    icon: "/alertamayor.png",
-    apple: "/alertamayor.png",
+    icon: "/iconoarandu.png",
+    apple: "/iconoarandu.png",
   },
-  description: "Orientación, registro y seguimiento institucional.",
+  description: "Arandú · Orientación, actividades y residenciales para personas mayores.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
