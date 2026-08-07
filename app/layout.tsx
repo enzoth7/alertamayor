@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     icon: "/arandu.png",
     apple: "/arandu.png",
   },
-  description: "Arandú · Orientación, actividades y residenciales para personas mayores.",
+  description: "Arandú · Información para decidir.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
