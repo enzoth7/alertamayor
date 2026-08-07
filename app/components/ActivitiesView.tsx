@@ -204,7 +204,7 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
             type="text"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            placeholder="Ej.: Av. Italia 1234, Montevideo"
+            placeholder="Ej.: Música, Gimnasia, Centro Cultural, etc."
           />
         </div>
       </div>
