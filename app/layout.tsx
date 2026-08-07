@@ -8,12 +8,12 @@ import "./components/team/TeamMeasuresWorkflow.css";
 import "./components/team/TeamLicenseWorkflow.css";
 
 export const metadata: Metadata = {
-  title: "Arandú",
+  title: "Más Cerca",
   icons: {
-    icon: "/arandu.png",
-    apple: "/arandu.png",
+    icon: "/mascerca.png",
+    apple: "/mascerca.png",
   },
-  description: "Arandú · Información para decidir.",
+  description: "Más Cerca · Información para decidir.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

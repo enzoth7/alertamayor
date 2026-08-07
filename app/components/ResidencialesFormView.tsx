@@ -686,7 +686,7 @@ export function ResidencialesFormView() {
 
               {/* Cabezal exclusivo para impresión */}
               <div className="printOnlyHeader" style={{ display: "none", marginBottom: 20, borderBottom: "2px solid #0f766e", paddingBottom: 12 }}>
-                <h2 style={{ margin: 0, color: "#0f766e", fontSize: "1.4rem" }}>Arandú · Guía de Elección de Residenciales</h2>
+                <h2 style={{ margin: 0, color: "#0f766e", fontSize: "1.4rem" }}>Más Cerca · Guía de Elección de Residenciales</h2>
                 <p style={{ margin: "4px 0 0", color: "#475569", fontSize: "0.85rem" }}>
                   Informe de cotejo y observaciones completado el {new Date().toLocaleDateString("es-UY")}
                 </p>

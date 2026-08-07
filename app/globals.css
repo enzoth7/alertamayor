@@ -351,6 +351,24 @@ button {
   margin-right: -6px;
 }
 
+.masCercaLogoContainer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  padding: 4px 12px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  height: 42px;
+}
+
+.masCercaBrandImg {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
 .nav {
   justify-self: center;
   display: flex;
