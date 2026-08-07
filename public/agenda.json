@@ -3198,55 +3198,6 @@
       "lng": -56.207
     },
     {
-      "id": "ib-whatsapp-melo",
-      "icon": "💬",
-      "category": "Aprender",
-      "title": "WhatsApp",
-      "place": "Asociación de Jubilados y Pensionistas de Cerro Largo",
-      "organizer": "Asociación de Jubilados y Pensionistas de Cerro Largo",
-      "department": "Cerro Largo",
-      "locality": "Melo",
-      "address": "",
-      "schedule": "Miércoles 12 · 15:00 a 16:00",
-      "dates": [
-        "2026-08-12"
-      ],
-      "start": "2026-08-12T15:00:00-03:00",
-      "endDate": "2026-08-12",
-      "period": "Tarde",
-      "mode": "Presencial",
-      "cost": "Costo no publicado",
-      "costType": "unknown",
-      "registration": "confirm",
-      "registrationText": "La ficha no muestra un enlace de inscripción; confirmar con Ibirapitá",
-      "olderAdult": true,
-      "audience": "Personas mayores",
-      "accessibility": "No informada",
-      "status": "confirm",
-      "sourceLabel": "Aplicación Ibirapitá · captura consultada el 06/08/2026",
-      "sourceUrl": "https://www.bps.gub.uy/19355/programa-ibirapita.html",
-      "checked": "06/08/2026",
-      "summary": "Taller sobre funciones de WhatsApp para comunicarse de forma sencilla.",
-      "knows": [
-        "Fecha, horario y organización visibles en la aplicación Ibirapitá",
-        "Actividad dirigida a personas mayores"
-      ],
-      "unknown": [
-        "Cupos disponibles",
-        "Costo, si lo hubiera",
-        "Mecanismo de inscripción y dirección exacta"
-      ],
-      "tags": [
-        "WhatsApp",
-        "celular",
-        "comunicación",
-        "Melo",
-        "personas mayores"
-      ],
-      "lat": -32.37,
-      "lng": -54.17
-    },
-    {
       "id": "ib-correo-tacuarembo",
       "icon": "✉️",
       "category": "Aprender",

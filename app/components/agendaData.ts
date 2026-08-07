@@ -1322,28 +1322,6 @@ const RAW_AGENDA_ACTIVITIES: ActivityItem[] = [
     "organizer": "Salón Multiuso Personas Mayores CCZ 14"
   },
   {
-    "id": "ib-whatsapp-melo",
-    "icon": "💬",
-    "category": "APRENDER",
-    "title": "WhatsApp",
-    "place": "Asociación de Jubilados y Pensionistas de Cerro Largo (Melo)",
-    "zone": "Cerro Largo",
-    "moment": "Entre semana",
-    "freeOnly": false,
-    "accessible": false,
-    "smallGroups": true,
-    "interests": [
-      "Aprender",
-      "Conocer gente"
-    ],
-    "time": "Miércoles 12 · 15:00 a 16:00",
-    "color": "#6941c6",
-    "lat": -32.37,
-    "lng": -54.17,
-    "description": "Taller sobre funciones de WhatsApp para comunicarse de forma sencilla.",
-    "organizer": "Asociación de Jubilados y Pensionistas de Cerro Largo"
-  },
-  {
     "id": "ib-correo-tacuarembo",
     "icon": "✉️",
     "category": "APRENDER",
