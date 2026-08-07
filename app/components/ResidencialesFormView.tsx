@@ -42,9 +42,14 @@ const STEPS = [
 ];
 
 const PREFERENCE_OPTIONS = [
-  { id: "privacy", icon: "🔑", label: "Tener intimidad y espacios propios", help: "Respeto del dormitorio, pudor y pertenencias." },
-  { id: "routines", icon: "⏰", label: "Mantener rutinas, horarios y costumbres", help: "Levantarse, acostarse, higiene y tiempos personales." },
-  { id: "mobility", icon: "♿", label: "Moverme de forma segura y cómoda", help: "Accesibilidad, barras, pasillos y espacios al aire libre." },
+  { id: "location", icon: "📍", label: "Seguir cerca de personas y lugares importantes", help: "Barrio, vínculos, servicios, transporte y actividades habituales." },
+  { id: "relationships", icon: "🤝", label: "Recibir visitas y mantener vínculos", help: "Contacto familiar, afectivo y comunitario." },
+  { id: "privacy", icon: "🔑", label: "Tener intimidad y espacios propios", help: "Higiene, dormitorio, comunicaciones y objetos personales." },
+  { id: "routines", icon: "⏰", label: "Mantener rutinas, horarios y costumbres", help: "Continuidad con la historia de vida y las preferencias." },
+  { id: "personalSpace", icon: "🖼️", label: "Llevar objetos y hacer propio el dormitorio", help: "Fotografías, muebles pequeños, ropa y recuerdos." },
+  { id: "mobility", icon: "♿", label: "Moverme de forma segura y cómoda", help: "Circulación, baños, accesibilidad y apoyos personalizados." },
+  { id: "activities", icon: "🎨", label: "Participar en actividades que me interesen", help: "Opciones con sentido, no actividades impuestas." },
+  { id: "rest", icon: "🛋️", label: "Poder descansar o estar a solas", help: "El descanso y la tranquilidad también pueden dar bienestar." },
   { id: "autonomy", icon: "🙋‍♂️", label: "Tomar decisiones sobre mi vida cotidiana", help: "Elegir, opinar, cambiar de idea y acordar apoyos." },
   { id: "costs", icon: "📄", label: "Conocer costos y condiciones por escrito", help: "Servicios incluidos, pagos y cambios de precio." },
   { id: "documents", icon: "📁", label: "Mantener acceso a documentos y dinero", help: "Información personal, jubilación, pasividad y pertenencias." },
