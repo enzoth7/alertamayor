@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useResidenciales } from "../hooks/useResidenciales";
-import { ArrowLeft, ArrowRight, Check, HeartHandshake, Info, Printer, RotateCcw, Sparkles, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, HeartHandshake, Info, Printer, RotateCcw, X } from "lucide-react";
 
 type ActorType = "self" | "supporter" | "joint" | null;
 
@@ -418,7 +418,7 @@ export function ResidencialesFormView() {
 
               <div className="choiceCategoryList" style={{ display: "grid", gap: 14 }}>
                 {CHOICE_CATEGORIES.map((cat, ci) => (
-                  <details key={cat.id} className="choiceCategoryBlock" defaultOpen={ci === 0} style={{ border: "1px solid #cbd5e1", borderRadius: 14, background: "#fff", overflow: "hidden" }}>
+                  <details key={cat.id} className="choiceCategoryBlock" open={ci === 0} style={{ border: "1px solid #cbd5e1", borderRadius: 14, background: "#fff", overflow: "hidden" }}>
                     <summary style={{ padding: "14px 18px", fontWeight: 800, background: "#f8fafc", color: "#0f172a", cursor: "pointer", fontSize: "0.95rem" }}>
                       {cat.title}
                     </summary>
