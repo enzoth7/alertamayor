@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useResidenciales } from "../hooks/useResidenciales";
-import { ArrowLeft, ArrowRight, Check, HeartHandshake, Info, Printer, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ExternalLink, HeartHandshake, Info, Printer, RotateCcw, X } from "lucide-react";
 
 type ActorType = "self" | "supporter" | "joint" | null;
 
@@ -142,10 +142,12 @@ export function ResidencialesFormView() {
     return facilities.filter((fac) => {
       if (selectedDepartment === "Todos los departamentos") return true;
       const deptLower = selectedDepartment.toLowerCase();
+      const deptAttr = (fac.department || "").toLowerCase();
       const locLower = (fac.locality || "").toLowerCase();
       const addrLower = (fac.address || "").toLowerCase();
       const nameLower = (fac.name || "").toLowerCase();
       return (
+        deptAttr.includes(deptLower) ||
         locLower.includes(deptLower) ||
         addrLower.includes(deptLower) ||
         nameLower.includes(deptLower)
@@ -377,8 +379,15 @@ export function ResidencialesFormView() {
               </div>
 
               <div className="facilityPickerGrid">
-                {displayedFacilities.slice(0, 12).map((fac) => {
+                {displayedFacilities.map((fac) => {
                   const isChecked = selectedFacilities.includes(fac.id);
+                  const badges: { label: string; tone: string }[] = [];
+                  if (fac.mspFinal) badges.push({ label: "Habilitados", tone: "green" });
+                  if (fac.midesSocial) badges.push({ label: "Certificados", tone: "amber" });
+                  if (!fac.mspFinal && !fac.midesSocial) {
+                    badges.push({ label: "Situación no confirmada", tone: "gray" });
+                  }
+
                   return (
                     <button
                       key={fac.id}
@@ -389,8 +398,14 @@ export function ResidencialesFormView() {
                       <span className="pickCheck">{isChecked ? <Check size={14} /> : null}</span>
                       <div>
                         <strong>{fac.name}</strong>
-                        <p>{fac.address} · {fac.locality}</p>
-                        <span className="pickBadge">{fac.statusShort}</span>
+                        <p>{fac.address ? `${fac.address} · ` : ""}{fac.locality || fac.department}</p>
+                        <div className="facilityBadges" style={{ display: "inline-flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+                          {badges.map((b) => (
+                            <span key={b.label} className={`sourceBadge sourceBadge-${b.tone}`}>
+                              {b.label}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </button>
                   );
@@ -428,14 +443,6 @@ export function ResidencialesFormView() {
                         return (
                           <div key={q.id} className="questionItem" style={{ borderBottom: qi < cat.questions.length - 1 ? "1px solid #e2e8f0" : "none", paddingBottom: 14 }}>
                             <div className="qHeader">
-                              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                                <span style={{ background: "#e0f2fe", color: "#0369a1", fontWeight: 900, borderRadius: 6, padding: "2px 8px", fontSize: "0.76rem" }}>
-                                  #{qi + 1}
-                                </span>
-                                <span style={{ fontSize: "0.75rem", color: "#087c70", fontWeight: 800 }}>
-                                  {q.source}
-                                </span>
-                              </div>
                               <h4 style={{ margin: "4px 0 6px", fontSize: "0.92rem", color: "#0f172a", fontWeight: 750, lineHeight: 1.4 }}>{q.text}</h4>
                               <p style={{ margin: 0, fontSize: "0.82rem", color: "#475569", lineHeight: 1.4 }}>{q.detail}</p>
                             </div>
@@ -479,6 +486,50 @@ export function ResidencialesFormView() {
                     </div>
                   </details>
                 ))}
+              </div>
+
+              {/* Bloque de Fuentes de Información y Trazabilidad */}
+              <div className="choiceSourcesFooterBox" style={{ marginTop: 24, padding: "20px 24px", borderRadius: 14, background: "#f8fafc", border: "1px solid #cbd5e1" }}>
+                <h4 style={{ margin: "0 0 8px", fontSize: "0.95rem", color: "#0f172a", fontWeight: 800, display: "flex", alignItems: "center", gap: 8 }}>
+                  <ExternalLink size={17} /> Fuentes de información y trazabilidad normativa
+                </h4>
+                <p style={{ margin: "0 0 14px", fontSize: "0.85rem", color: "#475569", lineHeight: 1.45 }}>
+                  Las preguntas y criterios de observación de esta guía fueron elaborados a partir de las publicaciones oficiales y documentos técnicos de referencia en Uruguay:
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <a
+                    href="https://acrobat.adobe.com/id/urn:aaid:sc:US:ea7170b0-9c91-48c2-8588-93ed63039ae0"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: "0.86rem", color: "#0369a1", fontWeight: 750, textDecoration: "underline", display: "inline-flex", alignItems: "center", gap: 6 }}
+                  >
+                    📄 Buenas Prácticas de Cuidado desde el Rol del Familiar/Allegado de la Persona Mayor Residente en ELEPEM (Junio 2026) ↗
+                  </a>
+                  <a
+                    href="https://acrobat.adobe.com/id/urn:aaid:sc:US:ea7170b0-9c91-48c2-8588-93ed63039ae0"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: "0.86rem", color: "#0369a1", fontWeight: 750, textDecoration: "underline", display: "inline-flex", alignItems: "center", gap: 6 }}
+                  >
+                    🤝 Movimiento de Familiares y Residentes de ELEPEM · Guía ELEPEM ↗
+                  </a>
+                  <a
+                    href="https://www.gub.uy/sistema-cuidados/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: "0.86rem", color: "#0369a1", fontWeight: 750, textDecoration: "underline", display: "inline-flex", alignItems: "center", gap: 6 }}
+                  >
+                    🏛️ Sistema Nacional de Cuidados (2019) · Guía oficial de recomendaciones para la elección de residenciales ↗
+                  </a>
+                  <a
+                    href="https://www.gub.uy/ministerio-salud-publica/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: "0.86rem", color: "#0369a1", fontWeight: 750, textDecoration: "underline", display: "inline-flex", alignItems: "center", gap: 6 }}
+                  >
+                    🏥 Ministerio de Salud Pública (MSP) / MIDES · Marco regulatorio y registro oficial ELEPEM ↗
+                  </a>
+                </div>
               </div>
             </div>
           )}

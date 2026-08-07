@@ -83,8 +83,14 @@ export default function ActivityMap({
 
     if (activities.length > 0 && !selectedId) {
       const bounds = L.latLngBounds(activities.map(({ lat, lng }) => [lat, lng]));
-      const isNationwide = activities.length >= 20;
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: isNationwide ? 8 : 13 });
+      const latDiff = Math.abs(bounds.getNorth() - bounds.getSouth());
+      const lngDiff = Math.abs(bounds.getEast() - bounds.getWest());
+
+      // Si los puntos corresponden a un departamento o zona local, hace un zoom cercano a la ciudad (maxZoom 13)
+      const isLocalArea = latDiff < 0.7 && lngDiff < 0.7;
+      const maxZoom = isLocalArea ? 13 : 8;
+
+      map.fitBounds(bounds, { padding: [35, 35], maxZoom });
     }
   }, [activities, onSelect, selectedId]);
 

@@ -6,9 +6,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const session = readTeamSession(request.cookies.get(TEAM_SESSION_COOKIE)?.value);
-  if (!session) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
-
   try {
     const pilot = await loadManualDiscoveryPilot(process.cwd());
     return NextResponse.json(pilot, { headers: { "Cache-Control": "no-store" } });

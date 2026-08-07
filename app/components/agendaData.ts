@@ -1,6 +1,16 @@
 import type { ActivityItem } from "./ActivitiesView";
+import agendaJson from "../../public/agenda.json";
 
-export const AGENDA_ACTIVITIES: ActivityItem[] = [
+const sourceUrlMap = new Map<string, string>();
+if (agendaJson && Array.isArray(agendaJson.activities)) {
+  agendaJson.activities.forEach((act: { id?: string; sourceUrl?: string }) => {
+    if (act.id && act.sourceUrl) {
+      sourceUrlMap.set(act.id, act.sourceUrl);
+    }
+  });
+}
+
+const RAW_AGENDA_ACTIVITIES: ActivityItem[] = [
   {
     "id": "uni3-musica-folklorica",
     "icon": "🎵",
@@ -170,8 +180,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Lunes 10 · 13:00 / Miércoles 12 · 15:00",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.877,
+    "lng": -56.115,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Cooperativa AFAF 3"
   },
@@ -214,8 +224,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Lunes 10 y miércoles 12 · 13:30",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.887,
+    "lng": -56.136,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Centro Cultural Casa del Vecino Misterio"
   },
@@ -258,8 +268,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Lunes 10 y viernes 14 · 13:45",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.842,
+    "lng": -56.091,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Covine 5"
   },
@@ -280,8 +290,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Lunes 10 y miércoles 12 · 13:45",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.868,
+    "lng": -56.124,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Cooperativa de Viviendas Mesa 1"
   },
@@ -302,8 +312,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Lunes 10 · 14:00",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.869,
+    "lng": -56.234,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Centro Cultural Alba Roballo"
   },
@@ -324,8 +334,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Lunes 10 y miércoles 12 · 14:00",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.798,
+    "lng": -56.132,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Cabaña Anaya"
   },
@@ -346,8 +356,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Lunes 10 y miércoles 12 · 14:00",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.886,
+    "lng": -56.275,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Centro Cultural Julia Arévalo"
   },
@@ -368,8 +378,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Lunes 10 y miércoles 12 · 14:00",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.858,
+    "lng": -56.202,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Espacio Barradas · Museo Blanes"
   },
@@ -454,8 +464,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Lunes 10 y miércoles 12 · 15:30",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.849,
+    "lng": -56.229,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Cooperativa 3 de Abril"
   },
@@ -476,8 +486,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Lunes 10 y miércoles 12 · 15:30",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.909,
+    "lng": -56.179,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Casal Catalá"
   },
@@ -498,8 +508,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Lunes 10 y miércoles 12 · 15:30",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.862,
+    "lng": -56.132,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Club Funsa"
   },
@@ -542,8 +552,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Lunes 10 y miércoles 12 · 16:00",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.805,
+    "lng": -56.218,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Espacio Polideportivo Colón"
   },
@@ -563,8 +573,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Lunes 10 · 17:00",
     "color": "#d97706",
-    "lat": -32.5228,
-    "lng": -55.7658,
+    "lat": -34.899,
+    "lng": -56.178,
     "description": "Taller de UNI3: Compartiendo viajes.",
     "organizer": "Zoom"
   },
@@ -627,8 +637,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Martes 11 y viernes 14 · 08:30",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.801,
+    "lng": -56.236,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Club Artigas"
   },
@@ -671,8 +681,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Martes 11 · 10:30",
     "color": "#e83e6f",
-    "lat": -32.5228,
-    "lng": -55.7658,
+    "lat": -34.899,
+    "lng": -56.178,
     "description": "Taller de UNI3: Reflexiones literarias: el tiempo y lo no dicho.",
     "organizer": "Zoom"
   },
@@ -693,8 +703,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Martes 11 y jueves 13 · 12:45",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.806,
+    "lng": -56.059,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Espacio Cultural y Recreativo Villa Centauro"
   },
@@ -715,8 +725,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Martes 11 y jueves 13 · 13:30",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.864,
+    "lng": -56.198,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Complejo BPS"
   },
@@ -737,8 +747,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Martes 11 y jueves 13 · 13:30",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.856,
+    "lng": -56.196,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Comisión Vecinal Yatay"
   },
@@ -759,8 +769,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Martes 11 y jueves 13 · 13:30",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.823,
+    "lng": -56.158,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Cooperativa Coviunpro"
   },
@@ -781,8 +791,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Martes 11 y jueves 13 · 13:45",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.821,
+    "lng": -56.154,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Cedel Casavalle"
   },
@@ -803,8 +813,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Martes 11 · 14:00",
     "color": "#6941c6",
-    "lat": -32.5228,
-    "lng": -55.7658,
+    "lat": -34.899,
+    "lng": -56.178,
     "description": "Taller de UNI3: Antropología.",
     "organizer": "Zoom"
   },
@@ -870,8 +880,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Martes 11 y jueves 13 · 15:00",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.846,
+    "lng": -56.195,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Centro Juvenil Salesiano"
   },
@@ -892,8 +902,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Martes 11 · 15:00",
     "color": "#e83e6f",
-    "lat": -32.5228,
-    "lng": -55.7658,
+    "lat": -34.899,
+    "lng": -56.178,
     "description": "Taller de UNI3: Historia del tango.",
     "organizer": "WhatsApp"
   },
@@ -914,32 +924,10 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Martes 11 y jueves 13 · 15:30",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.861,
+    "lng": -56.194,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Club Colonia"
-  },
-  {
-    "id": "gym-migrantes",
-    "icon": "🏃",
-    "category": "MOVIMIENTO",
-    "title": "Gimnasia para personas mayores",
-    "place": "Iglesia Los Migrantes (La Blanqueada)",
-    "zone": "Montevideo",
-    "moment": "Entre semana",
-    "freeOnly": true,
-    "accessible": false,
-    "smallGroups": true,
-    "interests": [
-      "Moverme",
-      "Conocer gente"
-    ],
-    "time": "Martes 11 y jueves 13 · 15:30",
-    "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
-    "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
-    "organizer": "Iglesia Los Migrantes"
   },
   {
     "id": "gym-velodromo",
@@ -958,8 +946,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Martes 11 y jueves 13 · 15:30",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.893,
+    "lng": -56.153,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Velódromo Municipal"
   },
@@ -980,8 +968,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Martes 11 y jueves 13 · 15:30",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.872,
+    "lng": -56.156,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Espacio Modelo"
   },
@@ -1002,32 +990,10 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Martes 11 y jueves 13 · 15:45",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.906,
+    "lng": -56.192,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Club Municipal"
-  },
-  {
-    "id": "uni3-literatura-fantastica",
-    "icon": "📚",
-    "category": "CULTURA",
-    "title": "Literatura fantástica: análisis y comprensión",
-    "place": "Zoom (Virtual)",
-    "zone": "Montevideo",
-    "moment": "Entre semana",
-    "freeOnly": false,
-    "accessible": false,
-    "smallGroups": true,
-    "interests": [
-      "Cultura",
-      "Conocer gente"
-    ],
-    "time": "Martes 11 · 16:30",
-    "color": "#e83e6f",
-    "lat": -32.5228,
-    "lng": -55.7658,
-    "description": "Taller de UNI3: Literatura fantástica: análisis y comprensión.",
-    "organizer": "Zoom"
   },
   {
     "id": "mvd-rio-adentro",
@@ -1067,8 +1033,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Miércoles 12 · 09:30 / Viernes 14 · 10:30",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.908,
+    "lng": -56.21,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Plaza de Deportes N.º 1"
   },
@@ -1225,28 +1191,6 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     "organizer": "UNI3 · Sede Arenal Grande"
   },
   {
-    "id": "uni3-literatura",
-    "icon": "📚",
-    "category": "CULTURA",
-    "title": "Literatura",
-    "place": "Zoom (Virtual)",
-    "zone": "Montevideo",
-    "moment": "Entre semana",
-    "freeOnly": false,
-    "accessible": false,
-    "smallGroups": true,
-    "interests": [
-      "Cultura",
-      "Conocer gente"
-    ],
-    "time": "Miércoles 12 · 10:45",
-    "color": "#e83e6f",
-    "lat": -32.5228,
-    "lng": -55.7658,
-    "description": "Taller de UNI3: Literatura.",
-    "organizer": "Zoom"
-  },
-  {
     "id": "im-act-guyunusa",
     "icon": "🧩",
     "category": "COMUNIDAD",
@@ -1306,8 +1250,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Miércoles 12 · 14:00 / Viernes 14 · 13:30",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.895,
+    "lng": -56.147,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Parque de la Amistad"
   },
@@ -1438,8 +1382,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Miércoles 12 · 16:15",
     "color": "#e83e6f",
-    "lat": -32.5228,
-    "lng": -55.7658,
+    "lat": -34.899,
+    "lng": -56.178,
     "description": "Taller de UNI3: Mosaiquismo.",
     "organizer": "Zoom"
   },
@@ -1546,8 +1490,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Jueves 13 · 10:30",
     "color": "#e83e6f",
-    "lat": -32.5228,
-    "lng": -55.7658,
+    "lat": -34.899,
+    "lng": -56.178,
     "description": "Taller de UNI3: Historia de la física en la cinematografía.",
     "organizer": "Zoom"
   },
@@ -1675,8 +1619,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Jueves 13 · 15:30",
     "color": "#087443",
-    "lat": -34.89,
-    "lng": -56.17,
+    "lat": -34.887,
+    "lng": -56.188,
     "description": "Clase gratuita de gimnasia para personas mayores, abierta a la comunidad.",
     "organizer": "Parque Bellán"
   },
@@ -1701,50 +1645,6 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     "lng": -56.1785,
     "description": "Práctica de tai chi para personas mayores.",
     "organizer": "Espacio Generacciones"
-  },
-  {
-    "id": "cce-narrativas",
-    "icon": "🎲",
-    "category": "COMUNIDAD",
-    "title": "Narrativas colectivas: el rol como arte interactivo",
-    "place": "Centro Cultural de España (Ciudad Vieja)",
-    "zone": "Montevideo",
-    "moment": "Entre semana",
-    "freeOnly": true,
-    "accessible": false,
-    "smallGroups": true,
-    "interests": [
-      "Cultura",
-      "Conocer gente"
-    ],
-    "time": "Jueves 13 · 18:30 a 21:30",
-    "color": "#e83e6f",
-    "lat": -34.906,
-    "lng": -56.203,
-    "description": "Encuentro para explorar el juego de rol como práctica artística e interactiva.",
-    "organizer": "Centro Cultural de España"
-  },
-  {
-    "id": "cce-intimidades",
-    "icon": "📚",
-    "category": "CULTURA",
-    "title": "Intimidades extrañas",
-    "place": "Centro Cultural de España (Virtual)",
-    "zone": "Montevideo",
-    "moment": "Entre semana",
-    "freeOnly": true,
-    "accessible": false,
-    "smallGroups": true,
-    "interests": [
-      "Aprender",
-      "Cultura"
-    ],
-    "time": "Jueves 13 · 19:00 a 21:00",
-    "color": "#e83e6f",
-    "lat": -32.5228,
-    "lng": -55.7658,
-    "description": "Taller literario virtual de cuatro encuentros.",
-    "organizer": "Centro Cultural de España"
   },
   {
     "id": "sj-recital-guitarra",
@@ -1784,8 +1684,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Viernes 14 · 09:30",
     "color": "#6941c6",
-    "lat": -32.5228,
-    "lng": -55.7658,
+    "lat": -34.899,
+    "lng": -56.178,
     "description": "Taller de UNI3: Filosofía para la vida.",
     "organizer": "Zoom"
   },
@@ -1806,8 +1706,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Viernes 14 · 10:00",
     "color": "#6941c6",
-    "lat": -32.5228,
-    "lng": -55.7658,
+    "lat": -34.899,
+    "lng": -56.178,
     "description": "Taller de UNI3: Lengua y cultura alemana.",
     "organizer": "Zoom"
   },
@@ -1875,28 +1775,6 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     "lng": -56.116,
     "description": "Estimulación cognitiva y participación grupal.",
     "organizer": "Espacio Integral para Personas Mayores"
-  },
-  {
-    "id": "rivera-taller-titeres",
-    "icon": "🎭",
-    "category": "APRENDER",
-    "title": "Taller de títeres",
-    "place": "Teatro Municipal de Rivera (Rivera)",
-    "zone": "Rivera",
-    "moment": "Entre semana",
-    "freeOnly": false,
-    "accessible": false,
-    "smallGroups": true,
-    "interests": [
-      "Aprender",
-      "Cultura"
-    ],
-    "time": "Viernes 14 · horario a confirmar",
-    "color": "#e83e6f",
-    "lat": -30.905,
-    "lng": -55.55,
-    "description": "Taller para actores, estudiantes y público general.",
-    "organizer": "Teatro Municipal de Rivera"
   },
   {
     "id": "im-act-tresombues",
@@ -1978,8 +1856,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     ],
     "time": "Viernes 14 · 15:30",
     "color": "#e83e6f",
-    "lat": -32.5228,
-    "lng": -55.7658,
+    "lat": -34.899,
+    "lng": -56.178,
     "description": "Taller de UNI3: Historia del arte.",
     "organizer": "Zoom"
   },
@@ -2046,27 +1924,6 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     "lng": -55.871,
     "description": "Proyección cinematográfica en una sociedad de fomento rural.",
     "organizer": "Sociedad de Fomento Rural Los Arenales"
-  },
-  {
-    "id": "can-cuerpos-transito",
-    "icon": "🎬",
-    "category": "CULTURA",
-    "title": "Estreno de «Cuerpos en tránsito»",
-    "place": "Centro Cultural de Parque del Plata (Parque del Plata)",
-    "zone": "Canelones",
-    "moment": "Entre semana",
-    "freeOnly": false,
-    "accessible": false,
-    "smallGroups": true,
-    "interests": [
-      "Cultura"
-    ],
-    "time": "Viernes 14 · 20:00",
-    "color": "#e83e6f",
-    "lat": -34.767,
-    "lng": -55.709,
-    "description": "Estreno cinematográfico en Parque del Plata.",
-    "organizer": "Centro Cultural de Parque del Plata"
   },
   {
     "id": "flores-piquin",
@@ -2448,3 +2305,8 @@ export const AGENDA_ACTIVITIES: ActivityItem[] = [
     "organizer": "Teatro Macció"
   }
 ];
+
+export const AGENDA_ACTIVITIES: ActivityItem[] = RAW_AGENDA_ACTIVITIES.map((act) => ({
+  ...act,
+  sourceUrl: sourceUrlMap.get(act.id) || "",
+}));

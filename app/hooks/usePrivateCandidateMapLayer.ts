@@ -180,21 +180,6 @@ export function usePrivateCandidateMapLayer() {
       const requestId = ++latestRequest;
       setLoading(true);
       try {
-        const sessionResponse = await fetch("/api/team/session", {
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        const session = await sessionResponse.json().catch(() => ({})) as SessionResponse;
-        if (!sessionResponse.ok || session.authenticated !== true) {
-          if (requestId === latestRequest) {
-            setAvailable(false);
-            setFacilities([]);
-            setUnlocatedCandidates([]);
-            setSummary(EMPTY_SUMMARY);
-            setError("");
-          }
-          return;
-        }
 
         const [candidateResponse, unlocatedResponse] = await Promise.all([
           fetch("/api/team/facility-candidates", {

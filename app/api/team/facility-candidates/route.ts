@@ -168,15 +168,12 @@ function buildCandidateQuery(
 
 export async function GET(request: NextRequest) {
   const session = sessionFrom(request);
-  if (!session) {
-    return NextResponse.json({ error: "No autorizado." }, { status: 401 });
-  }
   try {
     const dataSource = readElepemDataSource();
     const query = buildCandidateQuery(request, dataSource);
     const candidates = await querySupabaseDatabase(query.sql, query.values);
     return NextResponse.json(
-      { candidates, reviewer: session.reviewer },
+      { candidates, reviewer: session?.reviewer ?? null },
       {
         headers: {
           "Cache-Control": "no-store",

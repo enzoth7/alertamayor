@@ -31,6 +31,7 @@ const personViewPaths: Partial<Record<View, string>> = {
   seguimiento: "/personas/seguimiento",
   residenciales: "/personas/residenciales",
   residenciales_form: "/personas/residenciales/form",
+  fuentes: "/personas/fuentes",
 };
 
 const orgViewPaths: Partial<Record<View, string>> = {
@@ -143,12 +144,12 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
     return () => { active = false; };
   }, [portal, router]);
 
-  const personBlockedView = view === "review" || view === "equipos" || view === "fuentes";
+  const personBlockedView = view === "review" || view === "equipos";
   const organizationBlockedView = view === "denuncia" || view === "seguimiento";
   const isOrganization = accessMode === "organization";
   const navItems: [View, string][] = isOrganization
     ? [["residenciales", "Residenciales"], ["equipos", "Equipos"], ["fuentes", "Fuentes"]]
-    : [["inicio", "Inicio"], ["actividades", "Actividades"], ["residenciales", "Residenciales"]];
+    : [["inicio", "Inicio"], ["actividades", "Actividades"], ["residenciales", "Residenciales"], ["fuentes", "Fuentes"]];
 
   useEffect(() => {
     if (accessMode === "person" && personBlockedView) router.replace("/personas");
@@ -210,7 +211,7 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
       return;
     }
     // Portal personas
-    if (next === "review" || next === "equipos" || next === "fuentes") {
+    if (next === "review" || next === "equipos") {
       router.push("/personas");
       return;
     }
@@ -264,6 +265,9 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
             <button className={view === "seguimiento" ? "active" : ""} onClick={() => go("seguimiento")}>
               Seguir un trámite
             </button>
+            <button className={view === "fuentes" ? "active" : ""} onClick={() => go("fuentes")}>
+              Fuentes
+            </button>
           </>
         )}
       </nav>
@@ -286,7 +290,7 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
       }}/>) }
       {view === "residenciales_form" && <ResidencialesFormView />}
       {isOrganization && view === "equipos" && <Team initialFacility={preselectedFacility}/>}
-      {isOrganization && view === "fuentes" && <Sources/>}
+      {view === "fuentes" && <Sources/>}
       {isOrganization && view === "review" && <ReviewMockup/>}
     </div>
   </main>;

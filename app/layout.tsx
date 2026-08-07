@@ -10,8 +10,8 @@ import "./components/team/TeamLicenseWorkflow.css";
 export const metadata: Metadata = {
   title: "Arandú",
   icons: {
-    icon: "/iconoarandu.png",
-    apple: "/iconoarandu.png",
+    icon: "/arandu.png",
+    apple: "/arandu.png",
   },
   description: "Arandú · Orientación, actividades y residenciales para personas mayores.",
 };

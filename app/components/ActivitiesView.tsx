@@ -1,13 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Calendar,
   CheckCircle2,
   ChevronRight,
   Clock,
+  ExternalLink,
   Filter,
   Heart,
   HeartHandshake,
@@ -44,6 +45,7 @@ export interface ActivityItem {
   lng: number;
   description: string;
   organizer: string;
+  sourceUrl?: string;
 }
 
 export const ACTIVITIES_DATA: ActivityItem[] = AGENDA_ACTIVITIES;
@@ -52,22 +54,26 @@ const ZONES = [
   "Todos los departamentos",
   "Artigas",
   "Canelones",
+  "Cerro Largo",
   "Colonia",
   "Durazno",
+  "Flores",
   "Florida",
   "Lavalleja",
   "Maldonado",
   "Montevideo",
   "Paysandú",
+  "Río Negro",
   "Rivera",
   "Rocha",
   "Salto",
   "San José",
   "Soriano",
   "Tacuarembó",
+  "Treinta y Tres",
 ];
 const MOMENTS = ["Cualquier momento", "Entre semana", "Fin de semana"];
-const INTEREST_OPTIONS = ["Moverme", "Aprender", "Cultura", "Conocer gente", "Orientación"];
+const INTEREST_OPTIONS = ["Moverme", "Aprender", "Cultura", "Conocer gente"];
 
 const QUICK_QUERIES = [
   { label: "Aprender a usar el celular", value: "Aprender", query: "Aprender a usar el celular" },
@@ -90,17 +96,33 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
   const [activeModal, setActiveModal] = useState<ActivityItem | null | "support">(null);
   const [sentNotice, setSentNotice] = useState(false);
   const [savedFavorites, setSavedFavorites] = useState<string[]>([]);
+  const [onlyFavorites, setOnlyFavorites] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("arandu_activity_favorites");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) setSavedFavorites(parsed);
+      }
+    } catch {}
+  }, []);
 
   const toggleFavorite = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    setSavedFavorites((prev) =>
-      prev.includes(id) ? prev.filter((favId) => favId !== id) : [...prev, id]
-    );
+    setSavedFavorites((prev) => {
+      const next = prev.includes(id) ? prev.filter((favId) => favId !== id) : [...prev, id];
+      try {
+        localStorage.setItem("arandu_activity_favorites", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
   };
 
   // Filtrado reactivo de actividades
   const filteredActivities = useMemo(() => {
     return ACTIVITIES_DATA.filter((act) => {
+      if (onlyFavorites && !savedFavorites.includes(act.id)) return false;
       if (zone !== "Todos los departamentos" && act.zone !== zone) return false;
       if (moment !== "Cualquier momento" && act.moment !== moment) return false;
       if (selectedInterests.length > 0 && !selectedInterests.some((i) => act.interests.includes(i))) return false;
@@ -122,7 +144,7 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
 
       return true;
     });
-  }, [zone, moment, selectedInterests, freeOnly, accessible, smallGroups, searchText]);
+  }, [zone, moment, selectedInterests, freeOnly, accessible, smallGroups, searchText, onlyFavorites, savedFavorites]);
 
   const selectedActivity = useMemo(() => {
     if (!filteredActivities.length) return null;
@@ -145,6 +167,7 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
     setAccessible(false);
     setSmallGroups(false);
     setSearchText("");
+    setOnlyFavorites(false);
     setSelectedId(null);
   };
 
@@ -169,12 +192,6 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
             onChange={(e) => setSearchText(e.target.value)}
             placeholder="Ej.: Av. Italia 1234, Montevideo"
           />
-          <button type="button" className="micBtn" title="Hablar">
-            🎙️
-          </button>
-          <button type="button" className="orientBtn">
-            🔍 Orientarme
-          </button>
         </div>
       </div>
 
@@ -209,87 +226,118 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
       <div className={`activitiesMainLayout view-${viewMode}`}>
         {/* Panel lateral de Filtros Avanzados */}
         {(viewMode === "list" || viewMode === "mixed") && (
-          <aside className="filtersSidebar">
-            <div className="sidebarHeaderRow">
-              <h3><Filter size={17} /> Filtros</h3>
+          <div className="sidebarColumn" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <aside className="filtersSidebar">
+              <div className="sidebarHeaderRow">
+                <h3><Filter size={17} /> Filtros</h3>
+                <button
+                  type="button"
+                  className="resetFiltersSidebarBtn"
+                  onClick={clearFilters}
+                  title="Reiniciar todos los filtros"
+                >
+                  <RotateCcw size={13} /> Reiniciar
+                </button>
+              </div>
+
+              <div className="filterBlock">
+                <label htmlFor="zoneSelect">Departamento</label>
+                <select
+                  id="zoneSelect"
+                  value={zone}
+                  onChange={(e) => {
+                    setZone(e.target.value);
+                    setSelectedId(null);
+                  }}
+                >
+                  {ZONES.map((z) => (
+                    <option key={z} value={z}>
+                      {z}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filterBlock">
+                <label htmlFor="momentSelect">Momento</label>
+                <select id="momentSelect" value={moment} onChange={(e) => setMoment(e.target.value)}>
+                  {MOMENTS.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filterBlock checkboxesBlock">
+                <span className="filterTitle">Me interesa</span>
+                {INTEREST_OPTIONS.map((opt) => {
+                  const isChecked = selectedInterests.includes(opt);
+                  return (
+                    <label key={opt} className="checkboxLabel">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedInterests((prev) => [...prev, opt]);
+                          } else {
+                            setSelectedInterests((prev) => prev.filter((i) => i !== opt));
+                          }
+                        }}
+                      />
+                      <span>{opt}</span>
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div className="filterBlock checkboxesBlock">
+                <span className="filterTitle">Preferencias</span>
+                <label className="checkboxLabel">
+                  <input type="checkbox" checked={freeOnly} onChange={(e) => setFreeOnly(e.target.checked)} />
+                  <span>Solo gratuitas</span>
+                </label>
+                <label className="checkboxLabel">
+                  <input type="checkbox" checked={smallGroups} onChange={(e) => setSmallGroups(e.target.checked)} />
+                  <span>Grupos pequeños</span>
+                </label>
+              </div>
+            </aside>
+
+            {/* Botón de Favoritos del mismo ancho que el panel izquierdo */}
+            <div style={{ width: "100%" }}>
               <button
                 type="button"
-                className="resetFiltersSidebarBtn"
-                onClick={clearFilters}
-                title="Reiniciar todos los filtros"
-              >
-                <RotateCcw size={13} /> Reiniciar
-              </button>
-            </div>
-
-            <div className="filterBlock">
-              <label htmlFor="zoneSelect">Departamento</label>
-              <select
-                id="zoneSelect"
-                value={zone}
-                onChange={(e) => {
-                  setZone(e.target.value);
-                  setSelectedId(null);
+                className={`favSidebarBtn ${onlyFavorites ? "active" : ""}`}
+                onClick={() => setOnlyFavorites((prev) => !prev)}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  padding: "12px 18px",
+                  borderRadius: 14,
+                  fontSize: "0.9rem",
+                  fontWeight: 800,
+                  background: onlyFavorites ? "#fee2e2" : "#ffffff",
+                  color: onlyFavorites ? "#dc2626" : "#0f172a",
+                  border: onlyFavorites ? "1.5px solid #fca5a5" : "1.5px solid #cbd5e1",
+                  cursor: "pointer",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                  transition: "all 0.16s ease",
                 }}
               >
-                {ZONES.map((z) => (
-                  <option key={z} value={z}>
-                    {z}
-                  </option>
-                ))}
-              </select>
+                <Heart
+                  size={17}
+                  fill={onlyFavorites || savedFavorites.length > 0 ? "#ef4444" : "none"}
+                  color={onlyFavorites || savedFavorites.length > 0 ? "#ef4444" : "#64748b"}
+                />
+                <span>Favoritos ({savedFavorites.length})</span>
+              </button>
             </div>
-
-            <div className="filterBlock">
-              <label htmlFor="momentSelect">Momento</label>
-              <select id="momentSelect" value={moment} onChange={(e) => setMoment(e.target.value)}>
-                {MOMENTS.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="filterBlock checkboxesBlock">
-              <span className="filterTitle">Me interesa</span>
-              {INTEREST_OPTIONS.map((opt) => {
-                const isChecked = selectedInterests.includes(opt);
-                return (
-                  <label key={opt} className="checkboxLabel">
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedInterests((prev) => [...prev, opt]);
-                        } else {
-                          setSelectedInterests((prev) => prev.filter((i) => i !== opt));
-                        }
-                      }}
-                    />
-                    <span>{opt}</span>
-                  </label>
-                );
-              })}
-            </div>
-
-            <div className="filterBlock checkboxesBlock">
-              <span className="filterTitle">Preferencias</span>
-              <label className="checkboxLabel">
-                <input type="checkbox" checked={freeOnly} onChange={(e) => setFreeOnly(e.target.checked)} />
-                <span>Solo gratuitas</span>
-              </label>
-              <label className="checkboxLabel">
-                <input type="checkbox" checked={accessible} onChange={(e) => setAccessible(e.target.checked)} />
-                <span>Accesibilidad confirmada</span>
-              </label>
-              <label className="checkboxLabel">
-                <input type="checkbox" checked={smallGroups} onChange={(e) => setSmallGroups(e.target.checked)} />
-                <span>Grupos pequeños</span>
-              </label>
-            </div>
-          </aside>
+          </div>
         )}
 
         {/* Lista de Tarjetas de Actividades */}
@@ -362,17 +410,48 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
                         {act.smallGroups && <span className="tagChip tagAmber">Grupos reducidos</span>}
                       </div>
 
-                      <button
-                        type="button"
-                        className="actDetailBtn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedId(act.id);
-                          setActiveModal(act);
-                        }}
-                      >
-                        Ver detalle <ChevronRight size={16} />
-                      </button>
+                      <div className="cardActionsRow" style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                        <button
+                          type="button"
+                          className="actDetailBtn"
+                          style={{ flex: 1 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedId(act.id);
+                            setActiveModal(act);
+                          }}
+                        >
+                          Ver detalle <ChevronRight size={16} />
+                        </button>
+                        {act.sourceUrl && (
+                          <a
+                            href={act.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="actSourceBtn"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: 6,
+                              padding: "10px 16px",
+                              borderRadius: 12,
+                              fontWeight: 800,
+                              fontSize: "0.88rem",
+                              background: "#2563eb",
+                              color: "#ffffff",
+                              border: "1.5px solid #1d4ed8",
+                              textDecoration: "none",
+                              whiteSpace: "nowrap",
+                              transition: "all 0.16s ease",
+                              boxShadow: "0 2px 8px rgba(37, 99, 235, 0.2)",
+                            }}
+                          >
+                            Ir al sitio <ExternalLink size={15} />
+                          </a>
+                        )}
+                      </div>
                     </article>
                   );
                 })}
@@ -512,10 +591,35 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
                     </button>
                   </div>
                 ) : (
-                  <div className="modalActions">
-                    <button type="button" className="modalSubmitBtn" onClick={() => setSentNotice(true)}>
+                  <div className="modalActions" style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                    <button type="button" className="modalSubmitBtn" style={{ flex: 1 }} onClick={() => setSentNotice(true)}>
                       Inscribirme / Consultar vacante
                     </button>
+                    {activeModal.sourceUrl && (
+                      <a
+                        href={activeModal.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="modalSourceBtn"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 6,
+                          padding: "12px 18px",
+                          borderRadius: 12,
+                          fontWeight: 800,
+                          fontSize: "0.9rem",
+                          background: "#2563eb",
+                          color: "#ffffff",
+                          border: "1.5px solid #1d4ed8",
+                          textDecoration: "none",
+                          boxShadow: "0 2px 8px rgba(37, 99, 235, 0.2)",
+                        }}
+                      >
+                        Ir al sitio <ExternalLink size={16} />
+                      </a>
+                    )}
                   </div>
                 )}
               </div>
