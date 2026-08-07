@@ -4012,9 +4012,9 @@ textarea {
   min-height: 180px;
   aspect-ratio: 1 / 1;
   flex-direction: column;
-  justify-content: center;
-  gap: 13px;
-  padding: 20px 14px;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 16px 14px;
   border-width: 1.5px;
   border-radius: 22px;
   position: relative;
@@ -4043,9 +4043,12 @@ textarea {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 13px;
-  padding: 0;
+  justify-content: flex-start;
+  padding-top: 18px;
+  gap: 10px;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 0;
   border: 0;
   background: transparent;
   color: inherit;
@@ -6368,6 +6371,31 @@ textarea {
   border: 1px solid #e2e8f0;
   box-shadow: 0 12px 34px rgba(15, 35, 66, .08);
   overflow: hidden;
+}
+
+/* Reglas de impresión limpia para resumen de formulario */
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  header, footer, nav, .no-print, .formViewTopBar, .choiceStepperNav, .choiceModalHeader, .choiceModalFooter, .heroCardActivities, .activitiesToolbar {
+    display: none !important;
+  }
+  .formViewCard {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+  .printableReportArea {
+    padding: 0 !important;
+  }
+  .printOnlyHeader {
+    display: block !important;
+  }
+  .summaryResultsBox {
+    gap: 14px !important;
+  }
 }
 
 

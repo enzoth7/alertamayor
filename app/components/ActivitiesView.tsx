@@ -73,6 +73,7 @@ const ZONES = [
   "Treinta y Tres",
 ];
 const MOMENTS = ["Cualquier momento", "Entre semana", "Fin de semana"];
+const MODALITIES = ["Todas las modalidades", "Presencial", "Online (Virtual)"];
 const INTEREST_OPTIONS = ["Moverme", "Aprender", "Cultura", "Conocer gente"];
 
 const QUICK_QUERIES = [
@@ -87,6 +88,7 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
   const [searchText, setSearchText] = useState("");
   const [zone, setZone] = useState("Todos los departamentos");
   const [moment, setMoment] = useState("Cualquier momento");
+  const [modality, setModality] = useState("Todas las modalidades");
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [freeOnly, setFreeOnly] = useState(false);
   const [accessible, setAccessible] = useState(false);
@@ -119,12 +121,22 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
     });
   };
 
+  // Helper para saber si una actividad es online/virtual
+  const isOnlineActivity = (act: ActivityItem) => {
+    const text = `${act.title} ${act.place} ${act.category} ${act.description}`.toLowerCase();
+    return /zoom|virtual|online|webinar|videollamada|desde casa/i.test(text);
+  };
+
   // Filtrado reactivo de actividades
   const filteredActivities = useMemo(() => {
     return ACTIVITIES_DATA.filter((act) => {
       if (onlyFavorites && !savedFavorites.includes(act.id)) return false;
       if (zone !== "Todos los departamentos" && act.zone !== zone) return false;
       if (moment !== "Cualquier momento" && act.moment !== moment) return false;
+
+      if (modality === "Presencial" && isOnlineActivity(act)) return false;
+      if (modality === "Online (Virtual)" && !isOnlineActivity(act)) return false;
+
       if (selectedInterests.length > 0 && !selectedInterests.some((i) => act.interests.includes(i))) return false;
       if (freeOnly && !act.freeOnly) return false;
       if (accessible && !act.accessible) return false;
@@ -144,7 +156,7 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
 
       return true;
     });
-  }, [zone, moment, selectedInterests, freeOnly, accessible, smallGroups, searchText, onlyFavorites, savedFavorites]);
+  }, [zone, moment, modality, selectedInterests, freeOnly, accessible, smallGroups, searchText, onlyFavorites, savedFavorites]);
 
   const selectedActivity = useMemo(() => {
     if (!filteredActivities.length) return null;
@@ -153,6 +165,7 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
 
   const activeFiltersCount = (zone !== "Todos los departamentos" ? 1 : 0) +
     (moment !== "Cualquier momento" ? 1 : 0) +
+    (modality !== "Todas las modalidades" ? 1 : 0) +
     (selectedInterests.length > 0 ? 1 : 0) +
     (freeOnly ? 1 : 0) +
     (accessible ? 1 : 0) +
@@ -162,6 +175,7 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
   const clearFilters = () => {
     setZone("Todos los departamentos");
     setMoment("Cualquier momento");
+    setModality("Todas las modalidades");
     setSelectedInterests([]);
     setFreeOnly(false);
     setAccessible(false);
@@ -264,6 +278,17 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
                   {MOMENTS.map((m) => (
                     <option key={m} value={m}>
                       {m}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filterBlock">
+                <label htmlFor="modalitySelect">Modalidad</label>
+                <select id="modalitySelect" value={modality} onChange={(e) => setModality(e.target.value)}>
+                  {MODALITIES.map((mod) => (
+                    <option key={mod} value={mod}>
+                      {mod}
                     </option>
                   ))}
                 </select>

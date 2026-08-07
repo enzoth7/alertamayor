@@ -1,9 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useResidenciales } from "../hooks/useResidenciales";
-import { ArrowLeft, ArrowRight, Check, ExternalLink, HeartHandshake, Info, Printer, RotateCcw, X } from "lucide-react";
+import { usePrivateCandidateMapLayer } from "../hooks/usePrivateCandidateMapLayer";
+import { ArrowLeft, ArrowRight, Check, ExternalLink, HeartHandshake, Info, Printer, RotateCcw, Search, X } from "lucide-react";
+
+import { canonicalDepartment, consolidateFacilities } from "./facility-presentation";
 
 type ActorType = "self" | "supporter" | "joint" | null;
 
@@ -39,14 +42,9 @@ const STEPS = [
 ];
 
 const PREFERENCE_OPTIONS = [
-  { id: "location", icon: "📍", label: "Seguir cerca de personas y lugares importantes", help: "Barrio, vínculos, servicios, transporte y actividades habituales." },
-  { id: "relationships", icon: "🤝", label: "Recibir visitas y mantener vínculos", help: "Contacto familiar, afectivo y comunitario." },
-  { id: "privacy", icon: "🔑", label: "Tener intimidad y espacios propios", help: "Higiene, dormitorio, comunicaciones y objetos personales." },
-  { id: "routine", icon: "⏰", label: "Mantener rutinas, horarios y costumbres", help: "Continuidad con la historia de vida y las preferencias." },
-  { id: "personalSpace", icon: "🖼️", label: "Llevar objetos y hacer propio el dormitorio", help: "Fotografías, muebles pequeños, ropa y recuerdos." },
-  { id: "mobility", icon: "♿", label: "Moverme de forma segura y cómoda", help: "Circulación, baños, accesibilidad y apoyos personalizados." },
-  { id: "activities", icon: "🎨", label: "Participar en actividades que me interesen", help: "Opciones con sentido, no actividades impuestas." },
-  { id: "rest", icon: "🛋️", label: "Poder descansar o estar a solas", help: "El descanso y la tranquilidad también pueden dar bienestar." },
+  { id: "privacy", icon: "🔑", label: "Tener intimidad y espacios propios", help: "Respeto del dormitorio, pudor y pertenencias." },
+  { id: "routines", icon: "⏰", label: "Mantener rutinas, horarios y costumbres", help: "Levantarse, acostarse, higiene y tiempos personales." },
+  { id: "mobility", icon: "♿", label: "Moverme de forma segura y cómoda", help: "Accesibilidad, barras, pasillos y espacios al aire libre." },
   { id: "autonomy", icon: "🙋‍♂️", label: "Tomar decisiones sobre mi vida cotidiana", help: "Elegir, opinar, cambiar de idea y acordar apoyos." },
   { id: "costs", icon: "📄", label: "Conocer costos y condiciones por escrito", help: "Servicios incluidos, pagos y cambios de precio." },
   { id: "documents", icon: "📁", label: "Mantener acceso a documentos y dinero", help: "Información personal, jubilación, pasividad y pertenencias." },
@@ -60,7 +58,7 @@ const CHOICE_CATEGORIES = [
     questions: [
       { id: "autonomy.name", essential: true, source: "Ambas fuentes", text: "¿Las personas son llamadas por su nombre o por el nombre que prefieren?", detail: "La guía pública incluye el trato por el nombre como buena señal; Movimiento ELEPEM vincula el nombre o apodo preferido con identidad y reconocimiento." },
       { id: "autonomy.decisions", essential: true, source: "Movimiento ELEPEM · 2026", text: "¿Se les pregunta qué quieren y pueden ratificar o cambiar decisiones cotidianas?", detail: "La autodeterminación incluye preguntar aun cuando creemos conocer la respuesta y permitir que la persona ratifique o modifique su elección." },
-      { id: "autonomy.conversation", essential: false, source: "Movimiento ELEPEM · 2026", text: "¿El personal les habla directamente y las incluye en la conversación?", detail: "La comunicación centrada en la persona supone no ignorarla, permitir que se exprese y ayudarla a sentirse escuchada y valorada." },
+      { id: "autonomy.conversation", essential: false, source: "Movimiento ELEPEM · 2026", text: "¿El personal les habla directamente y las incluye en la conversación?", detail: "La comunicación centrada en la persona supone no ignorarla, permitir que se espere y ayudarla a sentirse escuchada y valorada." },
       { id: "autonomy.participation", essential: false, source: "Movimiento ELEPEM · 2026", text: "¿Existen espacios para hacer sugerencias y participar en decisiones del establecimiento?", detail: "Movimiento ELEPEM propone espacios formales y cotidianos de participación, además de mecanismos para realizar planteos." },
       { id: "autonomy.supports", essential: true, source: "Criterio del proyecto", text: "¿Los apoyos se adaptan a cada persona sin hacer por ella lo que puede y quiere hacer?", detail: "Este criterio traduce la distinción entre apoyar, acompañar y sustituir decisiones, y la recomendación de evitar la sobreprotección." }
     ]
@@ -129,31 +127,92 @@ const CHOICE_CATEGORIES = [
 ];
 
 export function ResidencialesFormView() {
-  const { facilities } = useResidenciales();
+  const { facilities: publicFacilities } = useResidenciales();
+  const { facilities: privateCandidateFacilities } = usePrivateCandidateMapLayer();
+
   const [currentStep, setCurrentStep] = useState(1);
   const [actor, setActor] = useState<ActorType>(null);
   const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState("Todos los departamentos");
-  const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
   const [visitAnswers, setVisitAnswers] = useState<Record<string, "yes" | "no" | "unknown" | "ask">>({});
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
 
+  // Cargar estado guardado en la sesión
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("alerta_mayor_form_draft");
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data.currentStep) setCurrentStep(data.currentStep);
+        if (data.actor) setActor(data.actor);
+        if (Array.isArray(data.selectedPreferences)) setSelectedPreferences(data.selectedPreferences);
+        if (data.selectedDepartment) setSelectedDepartment(data.selectedDepartment);
+        if (data.selectedFacilityId) setSelectedFacilityId(data.selectedFacilityId);
+        else if (Array.isArray(data.selectedFacilities) && data.selectedFacilities.length > 0) {
+          setSelectedFacilityId(data.selectedFacilities[0]);
+        }
+        if (data.visitAnswers && typeof data.visitAnswers === "object") setVisitAnswers(data.visitAnswers);
+      }
+    } catch {}
+  }, []);
+
+  // Persistir cambios en sessionStorage (caché de sesión)
+  useEffect(() => {
+    try {
+      const draft = {
+        currentStep,
+        actor,
+        selectedPreferences,
+        selectedDepartment,
+        selectedFacilityId,
+        visitAnswers,
+      };
+      sessionStorage.setItem("alerta_mayor_form_draft", JSON.stringify(draft));
+    } catch {}
+  }, [currentStep, actor, selectedPreferences, selectedDepartment, selectedFacilityId, visitAnswers]);
+
+  const consolidatedFacilities = useMemo(
+    () => consolidateFacilities([...publicFacilities, ...privateCandidateFacilities]),
+    [privateCandidateFacilities, publicFacilities],
+  );
+
   const displayedFacilities = useMemo(() => {
-    return facilities.filter((fac) => {
-      if (selectedDepartment === "Todos los departamentos") return true;
-      const deptLower = selectedDepartment.toLowerCase();
-      const deptAttr = (fac.department || "").toLowerCase();
-      const locLower = (fac.locality || "").toLowerCase();
-      const addrLower = (fac.address || "").toLowerCase();
-      const nameLower = (fac.name || "").toLowerCase();
-      return (
-        deptAttr.includes(deptLower) ||
-        locLower.includes(deptLower) ||
-        addrLower.includes(deptLower) ||
-        nameLower.includes(deptLower)
-      );
+    const query = searchQuery
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLocaleLowerCase("es-UY")
+      .trim();
+
+    return consolidatedFacilities.filter((fac) => {
+      // 1. Filtro estricto por departamento
+      if (selectedDepartment !== "Todos los departamentos") {
+        if (canonicalDepartment(fac.department) !== canonicalDepartment(selectedDepartment)) {
+          return false;
+        }
+      }
+
+      // 2. Coincidencia exacta de palabras en nombre, calle/dirección o localidad
+      if (query) {
+        const nameNorm = (fac.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const addressNorm = (fac.address || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const localityNorm = (fac.locality || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const deptNorm = (fac.department || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+        const matchName = nameNorm.includes(query);
+        const matchAddress = addressNorm.includes(query);
+        const matchLocality = localityNorm.includes(query);
+        const matchDept = deptNorm.includes(query);
+
+        if (!matchName && !matchAddress && !matchLocality && !matchDept) {
+          return false;
+        }
+      }
+
+      return true;
     });
-  }, [facilities, selectedDepartment]);
+  }, [consolidatedFacilities, selectedDepartment, searchQuery]);
 
   const togglePref = (id: string) => {
     setSelectedPreferences((prev) =>
@@ -161,10 +220,8 @@ export function ResidencialesFormView() {
     );
   };
 
-  const toggleFacility = (id: string) => {
-    setSelectedFacilities((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+  const selectFacility = (id: string) => {
+    setSelectedFacilityId((prev) => (prev === id ? null : id));
   };
 
   const setAnswer = (questionId: string, answer: "yes" | "no" | "unknown" | "ask") => {
@@ -172,11 +229,15 @@ export function ResidencialesFormView() {
   };
 
   const resetAll = () => {
+    try {
+      sessionStorage.removeItem("alerta_mayor_form_draft");
+    } catch {}
     setCurrentStep(1);
     setActor(null);
     setSelectedPreferences([]);
     setSelectedDepartment("Todos los departamentos");
-    setSelectedFacilities([]);
+    setSearchQuery("");
+    setSelectedFacilityId(null);
     setVisitAnswers({});
   };
 
@@ -347,70 +408,157 @@ export function ResidencialesFormView() {
                 <p>Elegí de la lista consolidada los establecimientos que querés visitar o consultar.</p>
               </div>
 
-              <div className="formDeptFilterRow" style={{ marginBottom: 20, maxWidth: 360 }}>
-                <label
-                  htmlFor="formDeptSelect"
-                  style={{ display: "block", marginBottom: 6, fontWeight: 800, color: "#134e4a", fontSize: "0.88rem" }}
-                >
-                  Filtrar por departamento:
-                </label>
-                <select
-                  id="formDeptSelect"
-                  value={selectedDepartment}
-                  onChange={(e) => setSelectedDepartment(e.target.value)}
-                  style={{
-                    width: "100%",
-                    height: 42,
-                    padding: "0 12px",
-                    borderRadius: 10,
-                    border: "1.5px solid #99f6e4",
-                    background: "#fff",
-                    color: "#0f766e",
-                    fontWeight: 750,
-                    fontSize: "0.88rem",
-                  }}
-                >
-                  {FORM_DEPARTMENTS.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
+              {/* Barra de Búsqueda y Filtro de Departamento */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 20, alignItems: "flex-start" }}>
+                {/* Barrita de búsqueda por tu dirección, dirección del residencial o nombre */}
+                <div style={{ flex: "1 1 320px", display: "flex", flexDirection: "column" }}>
+                  <label
+                    htmlFor="formSearchInput"
+                    style={{ display: "block", marginBottom: 6, fontWeight: 800, color: "#134e4a", fontSize: "0.88rem", height: 20, lineHeight: "20px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                  >
+                    Buscar por dirección o nombre:
+                  </label>
+                  <div style={{ position: "relative", width: "100%" }}>
+                    <Search
+                      size={17}
+                      style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#0d9488", pointerEvents: "none" }}
+                    />
+                    <input
+                      id="formSearchInput"
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Ej.: Av. Italia, Las Piedras, Don Martín..."
+                      style={{
+                        width: "100%",
+                        height: 42,
+                        paddingLeft: 38,
+                        paddingRight: searchQuery ? 36 : 12,
+                        borderRadius: 10,
+                        border: "1.5px solid #99f6e4",
+                        background: "#fff",
+                        color: "#0f766e",
+                        fontWeight: 600,
+                        fontSize: "0.88rem",
+                        boxSizing: "border-box",
+                        outline: "none",
+                      }}
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery("")}
+                        style={{
+                          position: "absolute",
+                          right: 10,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "#64748b",
+                          display: "flex",
+                          alignItems: "center",
+                          padding: 2,
+                        }}
+                        title="Limpiar búsqueda"
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+                  {searchQuery && (
+                    <small style={{ color: "#0d9488", fontWeight: 700, fontSize: "0.8rem", display: "block", marginTop: 5 }}>
+                      {displayedFacilities.length} {displayedFacilities.length === 1 ? "coincidencia exacta encontrada" : "coincidencias exactas encontradas"}.
+                    </small>
+                  )}
+                </div>
+
+                {/* Filtro por departamento */}
+                <div style={{ flex: "0 0 220px", minWidth: 180, display: "flex", flexDirection: "column" }}>
+                  <label
+                    htmlFor="formDeptSelect"
+                    style={{ display: "block", marginBottom: 6, fontWeight: 800, color: "#134e4a", fontSize: "0.88rem", height: 20, lineHeight: "20px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                  >
+                    Filtrar por departamento:
+                  </label>
+                  <select
+                    id="formDeptSelect"
+                    value={selectedDepartment}
+                    onChange={(e) => setSelectedDepartment(e.target.value)}
+                    style={{
+                      width: "100%",
+                      height: 42,
+                      padding: "0 12px",
+                      borderRadius: 10,
+                      border: "1.5px solid #99f6e4",
+                      background: "#fff",
+                      color: "#0f766e",
+                      fontWeight: 750,
+                      fontSize: "0.88rem",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    {FORM_DEPARTMENTS.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <div className="facilityPickerGrid">
-                {displayedFacilities.map((fac) => {
-                  const isChecked = selectedFacilities.includes(fac.id);
-                  const badges: { label: string; tone: string }[] = [];
-                  if (fac.mspFinal) badges.push({ label: "Habilitados", tone: "green" });
-                  if (fac.midesSocial) badges.push({ label: "Certificados", tone: "amber" });
-                  if (!fac.mspFinal && !fac.midesSocial) {
-                    badges.push({ label: "Situación no confirmada", tone: "gray" });
-                  }
+              {displayedFacilities.length === 0 ? (
+                <div style={{ padding: "32px 20px", textAlign: "center", background: "#f8fafc", borderRadius: 12, border: "1px dashed #cbd5e1", color: "#64748b" }}>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem" }}>
+                    No se encontraron residenciales con los criterios ingresados.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setSelectedDepartment("Todos los departamentos");
+                    }}
+                    style={{ marginTop: 12, padding: "8px 16px", borderRadius: 8, background: "#0d9488", color: "#fff", border: "none", fontWeight: 750, cursor: "pointer", fontSize: "0.85rem" }}
+                  >
+                    Limpiar filtros y ver todos
+                  </button>
+                </div>
+              ) : (
+                <div className="facilityPickerGrid">
+                  {displayedFacilities.map((fac) => {
+                    const isChecked = selectedFacilityId === fac.id;
+                    const badges: { label: string; tone: string }[] = [];
+                    if (fac.mspFinal) badges.push({ label: "Habilitados", tone: "green" });
+                    if (fac.midesSocial) badges.push({ label: "Certificados", tone: "amber" });
+                    if (!fac.mspFinal && !fac.midesSocial) {
+                      badges.push({ label: "Situación no confirmada", tone: "gray" });
+                    }
 
-                  return (
-                    <button
-                      key={fac.id}
-                      type="button"
-                      className={`facilityPickCard ${isChecked ? "selected" : ""}`}
-                      onClick={() => toggleFacility(fac.id)}
-                    >
-                      <span className="pickCheck">{isChecked ? <Check size={14} /> : null}</span>
-                      <div>
-                        <strong>{fac.name}</strong>
-                        <p>{fac.address ? `${fac.address} · ` : ""}{fac.locality || fac.department}</p>
-                        <div className="facilityBadges" style={{ display: "inline-flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
-                          {badges.map((b) => (
-                            <span key={b.label} className={`sourceBadge sourceBadge-${b.tone}`}>
-                              {b.label}
-                            </span>
-                          ))}
+                    return (
+                      <button
+                        key={fac.id}
+                        type="button"
+                        className={`facilityPickCard ${isChecked ? "selected" : ""}`}
+                        onClick={() => selectFacility(fac.id)}
+                      >
+                        <span className="pickCheck">{isChecked ? <Check size={14} /> : null}</span>
+                        <div>
+                          <strong>{fac.name}</strong>
+                          <p>{fac.address ? `${fac.address} · ` : ""}{fac.locality || fac.department}</p>
+                          <div className="facilityBadges" style={{ display: "inline-flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+                            {badges.map((b) => (
+                              <span key={b.label} className={`sourceBadge sourceBadge-${b.tone}`}>
+                                {b.label}
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
@@ -444,7 +592,6 @@ export function ResidencialesFormView() {
                           <div key={q.id} className="questionItem" style={{ borderBottom: qi < cat.questions.length - 1 ? "1px solid #e2e8f0" : "none", paddingBottom: 14 }}>
                             <div className="qHeader">
                               <h4 style={{ margin: "4px 0 6px", fontSize: "0.92rem", color: "#0f172a", fontWeight: 750, lineHeight: 1.4 }}>{q.text}</h4>
-                              <p style={{ margin: 0, fontSize: "0.82rem", color: "#475569", lineHeight: 1.4 }}>{q.detail}</p>
                             </div>
                             <div className="qActions" style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
                               <button
@@ -498,7 +645,7 @@ export function ResidencialesFormView() {
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <a
-                    href="https://acrobat.adobe.com/id/urn:aaid:sc:US:ea7170b0-9c91-48c2-8588-93ed63039ae0"
+                    href="https://itolluaivfoxnaohbsdk.supabase.co/storage/v1/object/public/pdf/BUENAS%20PRACTICAS%20DE%20CUIDADO%20DESDE%20EL%20ROL%20FAMILIAR-ALLEGADO.pdf"
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ fontSize: "0.86rem", color: "#0369a1", fontWeight: 750, textDecoration: "underline", display: "inline-flex", alignItems: "center", gap: 6 }}
@@ -506,28 +653,12 @@ export function ResidencialesFormView() {
                     📄 Buenas Prácticas de Cuidado desde el Rol del Familiar/Allegado de la Persona Mayor Residente en ELEPEM (Junio 2026) ↗
                   </a>
                   <a
-                    href="https://acrobat.adobe.com/id/urn:aaid:sc:US:ea7170b0-9c91-48c2-8588-93ed63039ae0"
+                    href="https://itolluaivfoxnaohbsdk.supabase.co/storage/v1/object/public/pdf/Recomendaciones.pdf"
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ fontSize: "0.86rem", color: "#0369a1", fontWeight: 750, textDecoration: "underline", display: "inline-flex", alignItems: "center", gap: 6 }}
                   >
                     🤝 Movimiento de Familiares y Residentes de ELEPEM · Guía ELEPEM ↗
-                  </a>
-                  <a
-                    href="https://www.gub.uy/sistema-cuidados/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ fontSize: "0.86rem", color: "#0369a1", fontWeight: 750, textDecoration: "underline", display: "inline-flex", alignItems: "center", gap: 6 }}
-                  >
-                    🏛️ Sistema Nacional de Cuidados (2019) · Guía oficial de recomendaciones para la elección de residenciales ↗
-                  </a>
-                  <a
-                    href="https://www.gub.uy/ministerio-salud-publica/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ fontSize: "0.86rem", color: "#0369a1", fontWeight: 750, textDecoration: "underline", display: "inline-flex", alignItems: "center", gap: 6 }}
-                  >
-                    🏥 Ministerio de Salud Pública (MSP) / MIDES · Marco regulatorio y registro oficial ELEPEM ↗
                   </a>
                 </div>
               </div>
@@ -536,8 +667,8 @@ export function ResidencialesFormView() {
 
           {/* PASO 5: DECISIÓN E INGRESO */}
           {currentStep === 5 && (
-            <div className="stepContainer">
-              <div className="stepHeader">
+            <div className="stepContainer printableReportArea">
+              <div className="stepHeader no-print">
                 <div className="formProgressBarContainer">
                   <div className="formProgressBarTrack">
                     <div className="formProgressBarFill" style={{ width: `${(currentStep / 5) * 100}%` }} />
@@ -548,10 +679,18 @@ export function ResidencialesFormView() {
                 <p>Revisá lo completado y prepará la conversación final respetando la voluntad de la persona.</p>
               </div>
 
-              <div className="summaryResultsBox">
-                <div className="summarySection">
-                  <h4>Participación</h4>
-                  <p>
+              {/* Cabezal exclusivo para impresión */}
+              <div className="printOnlyHeader" style={{ display: "none", marginBottom: 20, borderBottom: "2px solid #0f766e", paddingBottom: 12 }}>
+                <h2 style={{ margin: 0, color: "#0f766e", fontSize: "1.4rem" }}>Arandú · Guía de Elección de Residenciales</h2>
+                <p style={{ margin: "4px 0 0", color: "#475569", fontSize: "0.85rem" }}>
+                  Informe de cotejo y observaciones completado el {new Date().toLocaleDateString("es-UY")}
+                </p>
+              </div>
+
+              <div className="summaryResultsBox" style={{ display: "grid", gap: 20 }}>
+                <div className="summarySection" style={{ padding: 16, border: "1px solid #e2e8f0", borderRadius: 12, background: "#f8fafc" }}>
+                  <h4 style={{ margin: "0 0 6px", color: "#0f766e", fontSize: "0.95rem", fontWeight: 800 }}>1. Participación</h4>
+                  <p style={{ margin: 0, fontSize: "0.9rem", color: "#334155", fontWeight: 600 }}>
                     {actor === "self" && "Completado por la persona que vivirá allí."}
                     {actor === "supporter" && "Completado por un acompañante con consulta a la persona."}
                     {actor === "joint" && "Completado en conjunto."}
@@ -559,36 +698,144 @@ export function ResidencialesFormView() {
                   </p>
                 </div>
 
-                <div className="summarySection">
-                  <h4>Preferencias destacadas ({selectedPreferences.length})</h4>
-                  <div className="summaryTagsRow">
-                    {selectedPreferences.map((id) => {
-                      const pref = PREFERENCE_OPTIONS.find((p) => p.id === id);
-                      return pref ? <span key={id}>{pref.icon} {pref.label}</span> : null;
-                    })}
+                <div className="summarySection" style={{ padding: 16, border: "1px solid #e2e8f0", borderRadius: 12, background: "#f8fafc" }}>
+                  <h4 style={{ margin: "0 0 8px", color: "#0f766e", fontSize: "0.95rem", fontWeight: 800 }}>
+                    2. Preferencias destacadas ({selectedPreferences.length})
+                  </h4>
+                  <div className="summaryTagsRow" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {selectedPreferences.length === 0 ? (
+                      <span style={{ fontSize: "0.85rem", color: "#64748b" }}>Sin preferencias marcadas.</span>
+                    ) : (
+                      selectedPreferences.map((id) => {
+                        const pref = PREFERENCE_OPTIONS.find((p) => p.id === id);
+                        return pref ? (
+                          <span key={id} style={{ padding: "6px 12px", borderRadius: 20, background: "#ccfbf1", color: "#0f766e", fontSize: "0.84rem", fontWeight: 750 }}>
+                            {pref.icon} {pref.label}
+                          </span>
+                        ) : null;
+                      })
+                    )}
                   </div>
                 </div>
 
-                <div className="summarySection">
-                  <h4>Residenciales seleccionados ({selectedFacilities.length})</h4>
-                  <p>{selectedFacilities.length ? `${selectedFacilities.length} opciones en lista de cotejo` : "Sin residenciales seleccionados aún."}</p>
+                {/* 3. Residencial Seleccionado */}
+                {(() => {
+                  const chosenFacility = selectedFacilityId
+                    ? consolidatedFacilities.find((f) => f.id === selectedFacilityId)
+                    : null;
+
+                  return (
+                    <div className="summarySection" style={{ padding: 16, border: "1px solid #e2e8f0", borderRadius: 12, background: "#f8fafc" }}>
+                      <h4 style={{ margin: "0 0 8px", color: "#0f766e", fontSize: "0.95rem", fontWeight: 800 }}>
+                        3. Residencial seleccionado para evaluar
+                      </h4>
+                      {!chosenFacility ? (
+                        <p style={{ margin: 0, fontSize: "0.85rem", color: "#64748b" }}>Sin residencial seleccionado aún.</p>
+                      ) : (
+                        <div style={{ padding: "12px 16px", borderRadius: 10, background: "#fff", border: "1.5px solid #99f6e4" }}>
+                          <strong style={{ color: "#0f172a", fontSize: "0.95rem", display: "block" }}>{chosenFacility.name}</strong>
+                          <span style={{ color: "#475569", fontSize: "0.85rem", display: "block", marginTop: 2 }}>
+                            {chosenFacility.address ? `${chosenFacility.address} · ` : ""}{chosenFacility.locality || chosenFacility.department}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Desglose completo de Preguntas y Respuestas registradas en la Visita */}
+                <div className="summarySection" style={{ padding: 16, border: "1px solid #e2e8f0", borderRadius: 12, background: "#f8fafc" }}>
+                  <h4 style={{ margin: "0 0 12px", color: "#0f766e", fontSize: "0.95rem", fontWeight: 800 }}>
+                    4. Registro de observaciones y preguntas de visita
+                  </h4>
+                  <div style={{ display: "grid", gap: 16 }}>
+                    {CHOICE_CATEGORIES.map((cat) => (
+                      <div key={cat.id} style={{ background: "#fff", border: "1px solid #cbd5e1", borderRadius: 10, padding: 14 }}>
+                        <h5 style={{ margin: "0 0 10px", color: "#0f172a", fontSize: "0.88rem", fontWeight: 800 }}>{cat.title}</h5>
+                        <div style={{ display: "grid", gap: 10 }}>
+                          {cat.questions.map((q) => {
+                            const ans = visitAnswers[q.id];
+                            let badgeText = "Sin responder";
+                            let bg = "#f1f5f9";
+                            let fg = "#64748b";
+                            let border = "#cbd5e1";
+
+                            if (ans === "yes") {
+                              badgeText = "✓ Sí, lo confirmé";
+                              bg = "#dcfce7";
+                              fg = "#15803d";
+                              border = "#86efac";
+                            } else if (ans === "no") {
+                              badgeText = "✕ No / me preocupó";
+                              bg = "#fee2e2";
+                              fg = "#b91c1c";
+                              border = "#fca5a5";
+                            } else if (ans === "unknown") {
+                              badgeText = "? No pude comprobarlo";
+                              bg = "#fef3c7";
+                              fg = "#b45309";
+                              border = "#fcd34d";
+                            } else if (ans === "ask") {
+                              badgeText = "💬 Quiero preguntarlo";
+                              bg = "#e0f2fe";
+                              fg = "#0369a1";
+                              border = "#7dd3fc";
+                            }
+
+                            return (
+                              <div key={q.id} style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 8, paddingBottom: 6, borderBottom: "1px dashed #e2e8f0" }}>
+                                <span style={{ fontSize: "0.84rem", color: "#334155", fontWeight: 650, flex: "1 1 240px" }}>{q.text}</span>
+                                <span style={{ padding: "4px 10px", borderRadius: 6, fontSize: "0.78rem", fontWeight: 800, background: bg, color: fg, border: `1px solid ${border}`, whiteSpace: "nowrap" }}>
+                                  {badgeText}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="summaryActionsRow">
-                  <button type="button" className="printSummaryBtn" onClick={() => window.print()}>
-                    <Printer size={16} /> Imprimir / Descargar resumen
-                  </button>
-                  <button type="button" className="supportSummaryBtn" onClick={() => setIsSupportModalOpen(true)}>
-                    <HeartHandshake size={16} /> Consultar con un facilitador humano
-                  </button>
-                </div>
+                {/* Declaración Final al Pie del Formulario / Informe */}
+                {(() => {
+                  const chosenFacility = selectedFacilityId
+                    ? consolidatedFacilities.find((f) => f.id === selectedFacilityId)
+                    : null;
+
+                  return (
+                    <div
+                      className="summarySection chosenFacilityFooterDeclaration"
+                      style={{
+                        padding: "16px 20px",
+                        borderRadius: 12,
+                        background: "#f0fdf4",
+                        border: "1.5px solid #86efac",
+                        color: "#166534",
+                      }}
+                    >
+                      <strong style={{ display: "block", fontSize: "0.92rem", marginBottom: 4, fontWeight: 800 }}>
+                        📌 Declaración del informe
+                      </strong>
+                      <p style={{ margin: 0, fontSize: "0.88rem", fontWeight: 700, lineHeight: 1.45 }}>
+                        {chosenFacility
+                          ? `Este formulario fue respondido para el residencial "${chosenFacility.name}"${
+                              chosenFacility.address
+                                ? ` (${chosenFacility.address}, ${chosenFacility.locality || chosenFacility.department})`
+                                : ` (${chosenFacility.locality || chosenFacility.department})`
+                            }.`
+                          : "Este formulario fue respondido sin seleccionar un residencial específico."}
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}
         </div>
 
         {/* Footer de Navegación del Formulario */}
-        <footer className="choiceModalFooter">
+        <footer className="choiceModalFooter no-print">
           <button
             type="button"
             className="stepBackBtn"
@@ -598,41 +845,33 @@ export function ResidencialesFormView() {
             <ArrowLeft size={16} /> Anterior
           </button>
 
-          <button
-            type="button"
-            className="stepNextBtn"
-            disabled={currentStep === 5}
-            onClick={() => setCurrentStep((prev) => Math.min(5, prev + 1))}
-          >
-            Continuar <ArrowRight size={16} />
-          </button>
+          {currentStep < 5 ? (
+            <button
+              type="button"
+              className="stepNextBtn"
+              onClick={() => setCurrentStep((prev) => Math.min(5, prev + 1))}
+            >
+              Continuar <ArrowRight size={16} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="stepNextBtn"
+              onClick={() => window.print()}
+              style={{
+                background: "#0d9488",
+                borderColor: "#0f766e",
+                color: "#fff",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <Printer size={16} /> Imprimir / Descargar resumen
+            </button>
+          )}
         </footer>
       </div>
-
-      {/* Modal de Apoyo Humano */}
-      {isSupportModalOpen && (
-        <div className="activitiesModalBackdrop" onClick={() => setIsSupportModalOpen(false)}>
-          <div className="activitiesModalBox" onClick={(e) => e.stopPropagation()}>
-            <button className="modalCloseBtn" onClick={() => setIsSupportModalOpen(false)}>
-              <X size={20} />
-            </button>
-            <div className="modalSupportBody">
-              <div className="modalEyebrow">Apoyo Institucional</div>
-              <h2>Continuar con acompañamiento humano</h2>
-              <p>
-                Un facilitador de Alerta Mayor / Ibirapitá te ayudará a evaluar opciones, preparar visitas a residenciales y acompañar el proceso sin costo alguno.
-              </p>
-              <div className="modalSuccessMsg">
-                <strong>Canal de apoyo disponible</strong>
-                <p>Podés comunicarte directamente al 0800-ELEPEM o solicitar que te llamemos.</p>
-                <button type="button" className="modalConfirmBtn" onClick={() => setIsSupportModalOpen(false)}>
-                  Entendido
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

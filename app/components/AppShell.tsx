@@ -880,18 +880,6 @@ function Sources() {
           <a className="sourceLink" href="https://www.gub.uy/ministerio-desarrollo-social/etiqueta/otros/establecimientos-larga-estadia-para-personas-mayores-certificado-social" target="_blank" rel="noopener noreferrer"><ExternalLink size={14}/> Abrir directorio</a>
         </div>
         <div className="sourceCard">
-          <span className="sourceBadge sourceBadge-amber">ETAPA 1 · MSP</span>
-          <strong>Certificado de registro</strong>
-          <p>El catálogo abierto contiene certificados emitidos entre 2017 y 2024. El prototipo georreferencia los emitidos en 2024 y evita duplicar la misma dirección cuando ya aparece en habilitados.</p>
-          <a className="sourceLink" href="https://catalogodatos.gub.uy/dataset/ministerio-de-salud-publica-establecimientos_para_personas_mayores_elepem" target="_blank" rel="noopener noreferrer"><ExternalLink size={14}/> Abrir catálogo</a>
-        </div>
-        <div className="sourceCard">
-          <span className="sourceBadge sourceBadge-blue">DATOS ABIERTOS</span>
-          <strong>Habilitados julio 2024</strong>
-          <p>207 filas reutilizables con nombres y domicilios. Son la base georreferenciada de la etapa 3 en esta versión.</p>
-          <a className="sourceLink" href="https://catalogodatos.gub.uy/dataset/ministerio-de-salud-publica-establecimientos_para_personas_mayores_elepem" target="_blank" rel="noopener noreferrer"><ExternalLink size={14}/> Abrir catálogo</a>
-        </div>
-        <div className="sourceCard">
           <span className="sourceBadge sourceBadge-violet">IM + CIEn</span>
           <strong>Informe de atención 2025</strong>
           <p>Fundamenta que la puerta de comunicación también contemple situaciones domiciliarias, consultas de terceros y problemas que finalmente pueden no clasificarse como violencia.</p>
@@ -932,74 +920,14 @@ function Sources() {
     <SourceAccordion title={"Fuentes incorporadas en \u00ABMedidas y antecedentes\u00BB"} icon="📂" delay={300}>
       <div className="grid three sourceCards">
         <div className="sourceCard">
-          <span className="sourceBadge sourceBadge-green">OFICIAL · GESTIÓN 2024</span>
-          <strong>Clausuras y realojos acumulados</strong>
-          <p>20 ELEPEM clausurados, 148 residentes realojados y 73 mediante PACP; también 785 intervenciones de regulación.</p>
-          <a className="sourceLink" href="https://medios.presidencia.gub.uy/legal/2025/proyectos/02/presidencia_1399_tomo2.pdf" target="_blank" rel="noopener noreferrer"><ExternalLink size={14}/> Abrir Memoria Anual 2024</a>
-        </div>
-        <div className="sourceCard">
           <span className="sourceBadge sourceBadge-blue">OFICIAL · AUDITORÍA</span>
           <strong>Universo y denuncias</strong>
           <p>La auditoría informa un universo de 1.481 ELEPEM y 133 denuncias recepcionadas, con datos a marzo de 2024.</p>
           <a className="sourceLink" href="https://www.gub.uy/ministerio-economia-finanzas/sites/ministerio-economia-finanzas/files/documentos/publicaciones/2025_MinisteriodeDesarrolloSocial-InstitutoNacionaldelasPersonasMayores.pdf" target="_blank" rel="noopener noreferrer"><ExternalLink size={14}/> Abrir informe</a>
         </div>
-        <div className="sourceCard">
-          <span className="sourceBadge sourceBadge-amber">OFICIAL · MSP 2022</span>
-          <strong>Cuatro clausuras nominales</strong>
-          <p>Respuesta de acceso a la información: cuatro establecimientos, 32 residentes realojados y 24 mediante PACP.</p>
-          <a className="sourceLink" href="https://www.gub.uy/ministerio-salud-publica/sites/ministerio-salud-publica/files/2022-08/Res%20585%202022_removed%20%281%29.pdf" target="_blank" rel="noopener noreferrer"><ExternalLink size={14}/> Abrir respuesta</a>
-        </div>
-        <div className="sourceCard">
-          <span className="sourceBadge sourceBadge-red">OFICIAL · FISCALÍA</span>
-          <strong>Rincón de Tranqueras</strong>
-          <p>Ocho condenas por el caso de un residencial clandestino en Tacuarembó donde vivían más de treinta personas.</p>
-          <a className="sourceLink" href="https://www.gub.uy/fiscalia-general-nacion/comunicacion/noticias/ocho-condenados-caso-residencial-clandestino-tacuarembo" target="_blank" rel="noopener noreferrer"><ExternalLink size={14}/> Abrir publicación</a>
-        </div>
-        <div className="sourceCard">
-          <span className="sourceBadge sourceBadge-red">OFICIAL · JUSTICIA</span>
-          <strong>Incendios de Treinta y Tres y Salinas</strong>
-          <p>Treinta y Tres: dos condenas por el incendio con diez fallecidos. Salinas: formalización por el incendio con cuatro fallecidos.</p>
-          <div className="sourceLinks">
-            <a className="sourceLink" href="https://www.gub.uy/ministerio-interior/comunicacion/noticias/condenadas-dos-personas-incendio-geriatrico-dejo-diez-fallecidos" target="_blank" rel="noopener noreferrer"><ExternalLink size={14}/> Treinta y Tres</a>
-            <a className="sourceLink" href="https://www.gub.uy/fiscalia-general-nacion/comunicacion/noticias/formalizacion-incendio-residencial-salinas" target="_blank" rel="noopener noreferrer"><ExternalLink size={14}/> Salinas</a>
-          </div>
-        </div>
-        <div className="sourceCard">
-          <span className="sourceBadge sourceBadge-violet">PRENSA · 2026</span>
-          <strong>La Unión y Britópolis</strong>
-          <p>Se muestran como procesos recientes con fuente periodística y advertencia expresa: no sustituyen una resolución administrativa o sentencia definitiva.</p>
-          <div className="sourceLinks">
-            <a className="sourceLink" href="https://ladiaria.com.uy/justicia/articulo/2026/7/fiscalia-advirtio-que-trabajadores-buscaron-evitar-ingreso-de-la-policia-al-residencial-clandestino/" target="_blank" rel="noopener noreferrer"><ExternalLink size={14}/> La Unión</a>
-            <a className="sourceLink" href="https://helvecia.com.uy/2026/05/22/britopolis-tras-fallecimiento-de-residente-el-msp-clausuro-en-forma-definitiva-el-residencial-que-funcionaba-con-61-irregularidades-y-sin-habilitacion-de-bomberos/" target="_blank" rel="noopener noreferrer"><ExternalLink size={14}/> Britópolis</a>
-          </div>
-        </div>
       </div>
     </SourceAccordion>
 
-    <SourceAccordion title="Regla de evidencia que usa el prototipo" icon="🔍" delay={400}>
-      <div className="evidenceList">
-        <div className="evidenceItem evidenceItem-amber">
-          <strong className="evidenceLabel">Alerta</strong>
-          <p>Dice que alguien comunicó una preocupación. No confirma el hecho.</p>
-        </div>
-        <div className="evidenceItem evidenceItem-red">
-          <strong className="evidenceLabel">Incidente</strong>
-          <p>Registra que ocurrió un evento, como incendio, muerte inesperada o evacuación. Puede requerir investigar negligencia o delito.</p>
-        </div>
-        <div className="evidenceItem evidenceItem-violet">
-          <strong className="evidenceLabel">Hallazgo</strong>
-          <p>Una visita, documento o autoridad constató un incumplimiento.</p>
-        </div>
-        <div className="evidenceItem evidenceItem-blue">
-          <strong className="evidenceLabel">Medida</strong>
-          <p>Existe una resolución, actuación administrativa o decisión judicial con fecha y responsable.</p>
-        </div>
-        <div className="evidenceItem evidenceItem-green">
-          <strong className="evidenceLabel">Antecedente histórico</strong>
-          <p>Se conserva para trazabilidad, pero no se presenta automáticamente como estado vigente.</p>
-        </div>
-      </div>
-    </SourceAccordion>
 
     <SourceAccordion title="Vacío de información" icon="⚠️" delay={500}>
       <div className="voidBlock">
