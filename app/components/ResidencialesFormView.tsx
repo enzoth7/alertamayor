@@ -135,7 +135,7 @@ export function ResidencialesFormView() {
   const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState("Todos los departamentos");
   const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
-  const [visitAnswers, setVisitAnswers] = useState<Record<string, "yes" | "no" | "ask">>({});
+  const [visitAnswers, setVisitAnswers] = useState<Record<string, "yes" | "no" | "unknown" | "ask">>({});
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
 
   const displayedFacilities = useMemo(() => {
@@ -165,7 +165,7 @@ export function ResidencialesFormView() {
     );
   };
 
-  const setAnswer = (questionId: string, answer: "yes" | "no" | "ask") => {
+  const setAnswer = (questionId: string, answer: "yes" | "no" | "unknown" | "ask") => {
     setVisitAnswers((prev) => ({ ...prev, [questionId]: answer }));
   };
 
