@@ -217,7 +217,7 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
     router.push(personViewPaths[next] ?? "/personas");
   };
 
-  if (accessMode === "loading") return <main className="accessGate accessGateLoading" aria-label="Cargando acceso"><img src="/alertamayor.png" alt="Alerta mayor"/></main>;
+  if (accessMode === "loading") return <main className="accessGate accessGateLoading" aria-label="Cargando acceso"><img src="/logoarandu.png" alt="Arandú"/></main>;
 
   if (accessMode === "chooser") return <AccessGateway
     organizationLogin={organizationLogin}
@@ -239,7 +239,7 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
 
   return <main className={`site ${accessMode === "person" ? "personSite" : "organizationSite"}`}>
     <header className="top"><div className="topin">
-      <button className="brand" onClick={resetAccess} aria-label="Volver a elegir entre persona y organización"><img src="/alertamayor.png" alt="Alerta mayor" className="brandLogo" /><span>Alerta mayor</span></button>
+      <button className="brand" onClick={resetAccess} aria-label="Volver a elegir entre persona y organización"><img src="/iconoarandu.png" alt="Arandú" className="brandLogo" /><span>Arandú</span></button>
       <nav className={menu ? "nav open" : "nav"}>
         {isOrganization ? (
           navItems.map(([key, label]) => (
@@ -295,8 +295,7 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
 function AccessGateway({ organizationLogin, setOrganizationLogin, username, setUsername, password, setPassword, loginError, setLoginError, isLoggingIn, onPerson, onOrganizationLogin }: { organizationLogin: boolean; setOrganizationLogin: (value: boolean) => void; username: string; setUsername: (value: string) => void; password: string; setPassword: (value: string) => void; loginError: string; setLoginError: (value: string) => void; isLoggingIn: boolean; onPerson: () => void; onOrganizationLogin: (event: FormEvent<HTMLFormElement>) => void }) {
   return <main className="accessGate">
     <div className={`accessGatePanel ${organizationLogin ? "isLogin" : ""}`}>
-      <img src="/alertamayor.png" alt="Alerta mayor" className="accessGateLogo"/>
-      <h1>Alerta mayor</h1>
+      <img src="/arandu.png" alt="Arandú" className="accessGateLogo"/>
       {!organizationLogin ? <>
         <p className="accessGateLead">Elegí cómo querés ingresar</p>
         <div className="accessChoiceGrid">
