@@ -5233,3 +5233,684 @@ textarea {
   margin-bottom: 16px;
 }
 
+/* Tarjeta Turquesa en Filtros de Residenciales: La persona mayor decide */
+.personDecidesCard {
+  margin-top: 16px;
+  padding: 18px;
+  border-radius: 16px;
+  background: #e6fcf5;
+  border: 1.5px solid #99f6e4;
+  color: #0f766e;
+}
+
+.personDecidesCard strong {
+  display: block;
+  font-size: 1.05rem;
+  color: #087c70;
+  margin-bottom: 6px;
+}
+
+.personDecidesCard p {
+  margin: 0 0 14px;
+  font-size: .84rem;
+  line-height: 1.45;
+  color: #115e59;
+}
+
+.btnTurquoisePrimary {
+  width: 100%;
+  padding: 11px;
+  border: 0;
+  border-radius: 10px;
+  background: #087c70;
+  color: #fff;
+  font-weight: 850;
+  font-size: .88rem;
+  margin-bottom: 8px;
+  transition: all .16s ease;
+  box-shadow: 0 4px 12px rgba(8, 124, 112, .2);
+}
+
+.btnTurquoisePrimary:hover {
+  background: #066359;
+  transform: translateY(-1px);
+}
+
+.btnTurquoiseSecondary {
+  width: 100%;
+  padding: 10px;
+  border: 1.5px solid #087c70;
+  border-radius: 10px;
+  background: #fff;
+  color: #087c70;
+  font-weight: 850;
+  font-size: .84rem;
+  transition: all .16s ease;
+}
+
+.btnTurquoiseSecondary:hover {
+  background: #e6fcf5;
+}
+
+/* Modal Guía Elegir un Lugar para Vivir */
+.choiceModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, .65);
+  backdrop-filter: blur(4px);
+}
+
+.choiceModalCard {
+  position: relative;
+  width: min(880px, 100%);
+  max-height: 92vh;
+  overflow-y: auto;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .28);
+  animation: personHomeReveal .3s ease-out both;
+}
+
+.choiceModalHeader {
+  position: relative;
+  padding: 28px 28px 20px;
+  background: linear-gradient(135deg, #f0fdfa 0%, #fff 80%, #ccfbf1 100%);
+  border-bottom: 1px solid #ccfbf1;
+}
+
+.choiceModalCloseBtn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: #64748b;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .1);
+}
+
+.choiceModalCloseBtn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.choiceModalKicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #087c70;
+  font-size: .78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 6px;
+}
+
+.choiceModalTitleBox h2 {
+  margin: 0 0 6px;
+  color: #134e4a;
+  font-size: clamp(1.4rem, 2.5vw, 1.85rem);
+}
+
+.choiceModalTitleBox p {
+  color: #115e59;
+  font-size: .9rem;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.choiceModalTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.choiceModalTags span {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #99f6e4;
+  color: #0f766e;
+  font-size: .74rem;
+  font-weight: 800;
+}
+
+.choiceModalSubbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: .78rem;
+  color: #64748b;
+  padding-top: 10px;
+  border-top: 1px solid #ccfbf1;
+}
+
+.choiceResetBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: #087c70;
+  font-weight: 800;
+  font-size: .78rem;
+}
+
+.choiceStepperNav {
+  display: flex;
+  gap: 6px;
+  padding: 12px 28px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  overflow-x: auto;
+}
+
+.choiceStepBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #fff;
+  color: #64748b;
+  font-size: .82rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.choiceStepBtn.active {
+  border-color: #087c70;
+  background: #087c70;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(8, 124, 112, .22);
+}
+
+.choiceStepBtn.done {
+  border-color: #99f6e4;
+  background: #e6fcf5;
+  color: #0f766e;
+}
+
+.choiceStepBtn .stepNum {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: .72rem;
+}
+
+.choiceStepBody {
+  padding: 28px;
+}
+
+.stepHeader {
+  margin-bottom: 22px;
+}
+
+.stepBadge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #ccfbf1;
+  color: #0f766e;
+  font-size: .74rem;
+  font-weight: 850;
+  margin-bottom: 8px;
+}
+
+.stepHeader h3 {
+  margin: 0 0 6px;
+  color: #134e4a;
+  font-size: 1.35rem;
+}
+
+.stepHeader p {
+  color: #64748b;
+  font-size: .9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Paso 1: Actor Cards */
+.actorCardsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 768px) {
+  .actorCardsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.actorCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 20px;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+  text-align: left;
+  transition: all .16s ease;
+}
+
+.actorCard:hover {
+  border-color: #99f6e4;
+  background: #f0fdfa;
+}
+
+.actorCard.selected {
+  border-color: #087c70;
+  background: #e6fcf5;
+  box-shadow: 0 6px 18px rgba(8, 124, 112, .15);
+}
+
+.actorNumber {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #0f766e;
+  font-weight: 900;
+  font-size: .9rem;
+  margin-bottom: 12px;
+}
+
+.actorCard.selected .actorNumber {
+  background: #087c70;
+  color: #fff;
+}
+
+.actorCard strong {
+  color: #134e4a;
+  font-size: 1rem;
+  margin-bottom: 6px;
+}
+
+.actorCard small {
+  color: #64748b;
+  font-size: .82rem;
+  line-height: 1.45;
+}
+
+.choiceNoticeBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  font-size: .86rem;
+}
+
+.choiceNoticeBox.warning {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.choiceNoticeBox.warning svg {
+  color: #d97706;
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.choiceNoticeBox strong {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.choiceNoticeBox p {
+  margin: 0;
+}
+
+/* Paso 2: Preferences */
+.preferencesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .preferencesGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.prefCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  text-align: left;
+  transition: all .16s ease;
+}
+
+.prefCard:hover {
+  border-color: #99f6e4;
+  background: #f0fdfa;
+}
+
+.prefCard.selected {
+  border-color: #087c70;
+  background: #e6fcf5;
+}
+
+.prefIcon {
+  font-size: 1.4rem;
+  flex: 0 0 auto;
+}
+
+.prefCopy {
+  flex: 1;
+  min-width: 0;
+}
+
+.prefCopy strong {
+  display: block;
+  color: #134e4a;
+  font-size: .92rem;
+  margin-bottom: 3px;
+}
+
+.prefCopy small {
+  display: block;
+  color: #64748b;
+  font-size: .78rem;
+  line-height: 1.4;
+}
+
+.prefCheck {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 6px;
+  color: #087c70;
+  background: #fff;
+  flex: 0 0 auto;
+}
+
+.prefCard.selected .prefCheck {
+  border-color: #087c70;
+  background: #087c70;
+  color: #fff;
+}
+
+.selectedCounter {
+  margin-top: 16px;
+  color: #64748b;
+  font-size: .84rem;
+}
+
+/* Paso 3: Facility Picker Grid */
+.facilityPickerGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .facilityPickerGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.facilityPickCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  text-align: left;
+}
+
+.facilityPickCard.selected {
+  border-color: #087c70;
+  background: #e6fcf5;
+}
+
+.pickCheck {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 5px;
+  color: #087c70;
+  flex: 0 0 auto;
+}
+
+.facilityPickCard.selected .pickCheck {
+  border-color: #087c70;
+  background: #087c70;
+  color: #fff;
+}
+
+.facilityPickCard strong {
+  display: block;
+  color: #134e4a;
+  font-size: .88rem;
+}
+
+.facilityPickCard p {
+  margin: 2px 0 4px;
+  color: #64748b;
+  font-size: .78rem;
+}
+
+.pickBadge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: .7rem;
+  font-weight: 800;
+}
+
+/* Paso 4: Visit Questions */
+.visitQuestionsList {
+  display: grid;
+  gap: 14px;
+}
+
+.questionItem {
+  padding: 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.qCategory {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ccfbf1;
+  color: #0f766e;
+  font-size: .72rem;
+  font-weight: 850;
+  margin-bottom: 6px;
+}
+
+.questionItem h4 {
+  margin: 0 0 4px;
+  color: #134e4a;
+  font-size: 1rem;
+}
+
+.questionItem p {
+  margin: 0 0 12px;
+  color: #64748b;
+  font-size: .82rem;
+}
+
+.qActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ansBtn {
+  padding: 7px 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #475569;
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.ansBtn.ansYes.active {
+  border-color: #16a34a;
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.ansBtn.ansNo.active {
+  border-color: #dc2626;
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.ansBtn.ansAsk.active {
+  border-color: #d97706;
+  background: #fef3c7;
+  color: #b45309;
+}
+
+/* Paso 5: Summary Results */
+.summaryResultsBox {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border-radius: 16px;
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
+}
+
+.summarySection h4 {
+  margin: 0 0 6px;
+  color: #0f766e;
+  font-size: .95rem;
+}
+
+.summarySection p {
+  margin: 0;
+  color: #115e59;
+  font-size: .88rem;
+}
+
+.summaryTagsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.summaryTagsRow span {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #99f6e4;
+  color: #0f766e;
+  font-size: .8rem;
+  font-weight: 800;
+}
+
+.summaryActionsRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.printSummaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: #087c70;
+  color: #fff;
+  font-weight: 850;
+  font-size: .86rem;
+}
+
+.supportSummaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: 1.5px solid #087c70;
+  border-radius: 10px;
+  background: #fff;
+  color: #087c70;
+  font-weight: 850;
+  font-size: .86rem;
+}
+
+/* Modal Footer */
+.choiceModalFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 28px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.stepBackBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  color: #475569;
+  font-weight: 800;
+  font-size: .86rem;
+}
+
+.stepNextBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border: 0;
+  border-radius: 10px;
+  background: #087c70;
+  color: #fff;
+  font-weight: 850;
+  font-size: .86rem;
+}
+
+.stepNextBtn:hover {
+  background: #066359;
+}
+
+

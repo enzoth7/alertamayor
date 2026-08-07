@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import {
   ArrowLeft,
@@ -10,17 +11,17 @@ import {
   Filter,
   HeartHandshake,
   HelpCircle,
-  Info,
-  MapPin,
-  MessageSquare,
   RotateCcw,
-  Search,
   Sparkles,
   UserCheck,
   Users,
   X,
 } from "lucide-react";
-import ActivityMap from "./ActivityMap";
+
+const ActivityMap = dynamic(() => import("./ActivityMap"), {
+  ssr: false,
+  loading: () => <div className="streetMapLoading">Cargando mapa de actividades…</div>,
+});
 
 export interface ActivityItem {
   id: string;

@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, RotateCcw, Search, X } from "lucide-react";
 import { useResidenciales } from "../hooks/useResidenciales";
 import { usePrivateCandidateMapLayer } from "../hooks/usePrivateCandidateMapLayer";
 import type { PrivateCandidateSummary } from "../hooks/usePrivateCandidateMapLayer";
+import { ChoiceGuideModal } from "./ChoiceGuideModal";
 import {
   canonicalDepartment,
   consolidateFacilities,
@@ -68,6 +69,8 @@ export default function UruguayRegistry({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [activeKpiHelp, setActiveKpiHelp] = useState<string | null>(null);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [isSupportOpen, setIsSupportOpen] = useState(false);
   const mapColumnRef = useRef<HTMLDivElement | null>(null);
   const consolidatedFacilities = useMemo(
     () => consolidateFacilities([...publicFacilities, ...privateCandidateFacilities]),
@@ -201,6 +204,18 @@ export default function UruguayRegistry({
           setStatus(nextStatus);
         }}><option value="">Todos</option><option value="habilitado">Habilitados</option><option value="mides">Certificados</option><option value="verificar">Situación no confirmada</option></select></label>}
         </div>
+
+        {/* Tarjeta turquesa: La persona mayor decide */}
+        <div className="personDecidesCard">
+          <strong>La persona mayor decide</strong>
+          <p>Usá el mapa para identificar opciones y preparar preguntas; no para reemplazar la voluntad de quien va a vivir allí.</p>
+          <button type="button" className="btnTurquoisePrimary" onClick={() => setIsGuideOpen(true)}>
+            Preparar mi elección
+          </button>
+          <button type="button" className="btnTurquoiseSecondary" onClick={() => setIsSupportOpen(true)}>
+            Continuar con apoyo humano
+          </button>
+        </div>
       </aside>
       <div className="registryMapColumn" ref={mapColumnRef}>
         <StreetMap facilities={visible} selectedId={selected?.id ?? null} onSelect={setSelectedId}/>
@@ -227,6 +242,42 @@ export default function UruguayRegistry({
         </div>
       </aside>
     </div>
+
+    {/* Guía Interactiva Elegir un Lugar para Vivir */}
+    <ChoiceGuideModal
+      isOpen={isGuideOpen}
+      onClose={() => setIsGuideOpen(false)}
+      facilities={consolidatedFacilities}
+      onOpenSupport={() => {
+        setIsGuideOpen(false);
+        setIsSupportOpen(true);
+      }}
+    />
+
+    {/* Modal de Apoyo Humano */}
+    {isSupportOpen && (
+      <div className="activitiesModalBackdrop" onClick={() => setIsSupportOpen(false)}>
+        <div className="activitiesModalBox" onClick={(e) => e.stopPropagation()}>
+          <button className="modalCloseBtn" onClick={() => setIsSupportOpen(false)}>
+            <X size={20} />
+          </button>
+          <div className="modalSupportBody">
+            <div className="modalEyebrow">Apoyo Institucional</div>
+            <h2>Continuar con acompañamiento humano</h2>
+            <p>
+              Un facilitador de Alerta Mayor / Ibirapitá te ayudará a evaluar opciones, preparar visitas a residenciales y acompañar el proceso sin costo alguno.
+            </p>
+            <div className="modalSuccessMsg">
+              <strong>Canal de apoyo disponible</strong>
+              <p>Podés comunicarte directamente al 0800-ELEPEM o solicitar que te llamemos.</p>
+              <button type="button" className="modalConfirmBtn" onClick={() => setIsSupportOpen(false)}>
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
   </>;
 }
 
