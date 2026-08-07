@@ -39,22 +39,93 @@ const STEPS = [
 ];
 
 const PREFERENCE_OPTIONS = [
-  { id: "pref-1", icon: "🏠", label: "Cercanía con mi barrio o familia", help: "Ubicación accesible para recibir visitas frecuentes de seres queridos." },
-  { id: "pref-2", icon: "🌳", label: "Espacios al aire libre y jardín", help: "Patio, jardín o terraza para disfrutar del sol y la naturaleza." },
-  { id: "pref-3", icon: "🛏️", label: "Habitación individual o intimidad", help: "Espacio propio respetando la privacidad y autonomía personal." },
-  { id: "pref-4", icon: "🎨", label: "Actividades recreativas y talleres", help: "Propuestas diarias de cultura, música, juegos y gimnasia." },
-  { id: "pref-5", icon: "⏰", label: "Libertad de horarios de visita", help: "Sin restricciones rígidas para ver a familiares y amigos." },
-  { id: "pref-6", icon: "🥗", label: "Alimentación personalizada", help: "Menú adaptado a requerimientos nutricionales y gustos." },
-  { id: "pref-7", icon: "🩺", label: "Atención de enfermería 24hs", help: "Supervisión de salud continua y administración segura de medicamentos." },
-  { id: "pref-8", icon: "♿", label: "Accesibilidad sin escalones", help: "Rampas, pasamanos y baños adaptados para silla de ruedas o andador." },
+  { id: "location", icon: "📍", label: "Seguir cerca de personas y lugares importantes", help: "Barrio, vínculos, servicios, transporte y actividades habituales." },
+  { id: "relationships", icon: "🤝", label: "Recibir visitas y mantener vínculos", help: "Contacto familiar, afectivo y comunitario." },
+  { id: "privacy", icon: "🔑", label: "Tener intimidad y espacios propios", help: "Higiene, dormitorio, comunicaciones y objetos personales." },
+  { id: "routine", icon: "⏰", label: "Mantener rutinas, horarios y costumbres", help: "Continuidad con la historia de vida y las preferencias." },
+  { id: "personalSpace", icon: "🖼️", label: "Llevar objetos y hacer propio el dormitorio", help: "Fotografías, muebles pequeños, ropa y recuerdos." },
+  { id: "mobility", icon: "♿", label: "Moverme de forma segura y cómoda", help: "Circulación, baños, accesibilidad y apoyos personalizados." },
+  { id: "activities", icon: "🎨", label: "Participar en actividades que me interesen", help: "Opciones con sentido, no actividades impuestas." },
+  { id: "rest", icon: "🛋️", label: "Poder descansar o estar a solas", help: "El descanso y la tranquilidad también pueden dar bienestar." },
+  { id: "autonomy", icon: "🙋‍♂️", label: "Tomar decisiones sobre mi vida cotidiana", help: "Elegir, opinar, cambiar de idea y acordar apoyos." },
+  { id: "costs", icon: "📄", label: "Conocer costos y condiciones por escrito", help: "Servicios incluidos, pagos y cambios de precio." },
+  { id: "documents", icon: "📁", label: "Mantener acceso a documentos y dinero", help: "Información personal, jubilación, pasividad y pertenencias." },
+  { id: "food", icon: "🥗", label: "Alimentación acorde a gustos y necesidades", help: "Menú visible, preferencias y requerimientos personales." },
 ];
 
-const VISIT_QUESTIONS = [
-  { id: "q-1", category: "Trato y convivencia", title: "¿El personal se dirige a la persona con respeto y calidez?", help: "Observá si usan su nombre de preferencia y escuchan sus inquietudes." },
-  { id: "q-2", category: "Autonomía", title: "¿Se respetan los horarios de sueño y despertar?", help: "Verificá si la rutina respeta los hábitos personales o es inflexible." },
-  { id: "q-3", category: "Espacios", title: "¿Los ambientes tienen luz natural y buena ventilación?", help: "Comprobá limpieza, olores y luz en habitaciones y salas comunes." },
-  { id: "q-4", category: "Alimentación", title: "¿El menú semanal es variado y servido a temperatura adecuada?", help: "Podés consultar si se puede elegir entre opciones." },
-  { id: "q-5", category: "Vínculos", title: "¿Los familiares pueden ingresar sin aviso previo?", help: "Políticas abiertas de comunicación y contacto con la comunidad." },
+const CHOICE_CATEGORIES = [
+  {
+    id: "autonomy",
+    title: "Trato, autonomía y participación",
+    questions: [
+      { id: "autonomy.name", essential: true, source: "Ambas fuentes", text: "¿Las personas son llamadas por su nombre o por el nombre que prefieren?", detail: "La guía pública incluye el trato por el nombre como buena señal; Movimiento ELEPEM vincula el nombre o apodo preferido con identidad y reconocimiento." },
+      { id: "autonomy.decisions", essential: true, source: "Movimiento ELEPEM · 2026", text: "¿Se les pregunta qué quieren y pueden ratificar o cambiar decisiones cotidianas?", detail: "La autodeterminación incluye preguntar aun cuando creemos conocer la respuesta y permitir que la persona ratifique o modifique su elección." },
+      { id: "autonomy.conversation", essential: false, source: "Movimiento ELEPEM · 2026", text: "¿El personal les habla directamente y las incluye en la conversación?", detail: "La comunicación centrada en la persona supone no ignorarla, permitir que se exprese y ayudarla a sentirse escuchada y valorada." },
+      { id: "autonomy.participation", essential: false, source: "Movimiento ELEPEM · 2026", text: "¿Existen espacios para hacer sugerencias y participar en decisiones del establecimiento?", detail: "Movimiento ELEPEM propone espacios formales y cotidianos de participación, además de mecanismos para realizar planteos." },
+      { id: "autonomy.supports", essential: true, source: "Criterio del proyecto", text: "¿Los apoyos se adaptan a cada persona sin hacer por ella lo que puede y quiere hacer?", detail: "Este criterio traduce la distinción entre apoyar, acompañar y sustituir decisiones, y la recomendación de evitar la sobreprotección." }
+    ]
+  },
+  {
+    id: "life",
+    title: "Vida cotidiana, vínculos y actividades",
+    questions: [
+      { id: "life.location", essential: false, source: "Criterio del proyecto", text: "¿La ubicación permite mantener vínculos y acceder a lugares importantes para la persona?", detail: "Pregunta incorporada para conectar la elección con el proyecto de vida, los vínculos y la inclusión comunitaria." },
+      { id: "life.visits", essential: true, source: "Ambas fuentes", text: "¿Los horarios de visita son amplios y se facilita el contacto con familiares y allegados?", detail: "La guía pública considera los horarios amplios una buena señal y las grandes restricciones una señal de atención." },
+      { id: "life.communication", essential: false, source: "Ambas fuentes", text: "¿Hay medios y un espacio privado para comunicarse por teléfono o recibir visitas?", detail: "Las fuentes contemplan medios de comunicación elegidos por la persona y un espacio reservado para llamadas y visitas." },
+      { id: "life.activities", essential: true, source: "Ambas fuentes", text: "¿Las actividades son variadas y se adaptan a los gustos, posibilidades e intereses de cada persona?", detail: "Las actividades deben relacionarse con los intereses, capacidades y preferencias." },
+      { id: "life.rest", essential: true, source: "Movimiento ELEPEM · 2026", text: "¿También se respeta la decisión de descansar, estar a solas o no participar en una actividad?", detail: "Movimiento ELEPEM aclara que descansar, mirar o estar a solas también pueden proporcionar bienestar." },
+      { id: "life.menu", essential: false, source: "Sistema de Cuidados · 2019", text: "¿El menú está visible y contempla necesidades y gustos de cada persona?", detail: "La guía pública recomienda que el menú semanal esté a la vista y se confeccione según necesidades y gustos." },
+      { id: "life.exit", essential: false, source: "Sistema de Cuidados · 2019", text: "¿La persona puede entrar, salir y mantener comunicación con el exterior con los apoyos que necesite?", detail: "La guía pública incluye la posibilidad de entrar y salir y disponer de medios de comunicación." }
+    ]
+  },
+  {
+    id: "privacy",
+    title: "Privacidad e intimidad",
+    questions: [
+      { id: "privacy.hygiene", essential: true, source: "Ambas fuentes", text: "¿Se protege la intimidad durante la higiene y el uso del baño?", detail: "Ambas fuentes destacan puertas cerradas, presencia solo de quienes realizan la atención y respeto del cuerpo y el pudor." },
+      { id: "privacy.permission", essential: false, source: "Movimiento ELEPEM · 2026", text: "¿Se avisa y se pide permiso antes de entrar a las habitaciones?", detail: "Movimiento ELEPEM lo incluye expresamente como práctica de respeto de la intimidad espacial." },
+      { id: "privacy.storage", essential: false, source: "Ambas fuentes", text: "¿Cada persona tiene un lugar propio para guardar objetos personales?", detail: "Las fuentes contemplan dormitorios personalizados y lugares propios para guardar pertenencias." },
+      { id: "privacy.visits", essential: false, source: "Ambas fuentes", text: "¿Hay privacidad para recibir visitas y mantener conversaciones?", detail: "La intimidad con las visitas y la comunicación reservada aparecen en ambas fuentes." },
+      { id: "privacy.cameras", essential: true, source: "Sistema de Cuidados · 2019", text: "¿Los dormitorios y baños están libres de cámaras de videovigilancia?", detail: "La guía pública identifica cámaras en espacios privados, como dormitorios o baños, como una mala señal." },
+      { id: "privacy.consent", essential: true, source: "Movimiento ELEPEM · 2026", text: "¿Se informa y se solicita consentimiento antes de usar imágenes o compartir información personal?", detail: "El documento de 2026 reconoce a la persona como titular de la información y recomienda no divulgar imágenes sin consentimiento." }
+    ]
+  },
+  {
+    id: "space",
+    title: "Espacio y accesibilidad",
+    questions: [
+      { id: "space.light", essential: false, source: "Sistema de Cuidados · 2019", text: "¿Hay ventilación, luz natural y una temperatura adecuada?", detail: "La guía pública incluye ventilación, luz natural, calefacción y refrigeración adecuadas." },
+      { id: "space.circulation", essential: true, source: "Sistema de Cuidados · 2019", text: "¿Se puede circular de forma segura y hay espacio suficiente entre las camas?", detail: "La disposición debe permitir una circulación segura y cómoda; camas unidas sin espacio de paso son una señal de atención." },
+      { id: "space.bathrooms", essential: true, source: "Sistema de Cuidados · 2019", text: "¿Los baños son suficientes y accesibles para las personas que viven allí?", detail: "La suficiencia y accesibilidad de los baños forma parte de las buenas señales de la guía pública." },
+      { id: "space.locks", essential: true, source: "Sistema de Cuidados · 2019", text: "¿Las habitaciones pueden abrirse desde adentro y no tienen trancas o candados externos?", detail: "La guía pública identifica trancas externas o enganches para candados desde afuera como una mala señal." },
+      { id: "space.decorate", essential: false, source: "Ambas fuentes", text: "¿La persona puede llevar elementos personales y hacer propio su dormitorio?", detail: "La guía pública menciona decorar el dormitorio; Movimiento ELEPEM propone que la persona participe en los preparativos." },
+      { id: "space.signage", essential: false, source: "Sistema de Cuidados · 2019", text: "¿El establecimiento está identificado y la persona responsable permite conocer las instalaciones?", detail: "La guía pública incluye cartelería visible y la posibilidad de recorrer las instalaciones como señales favorables." }
+    ]
+  },
+  {
+    id: "care",
+    title: "Equipo y cuidados",
+    questions: [
+      { id: "care.director", essential: true, source: "Sistema de Cuidados · 2019", text: "¿Hay una dirección técnica médica y se informa claramente cómo y cuándo contactarla?", detail: "La ausencia de dirección técnica médica es una señal de atención en la guía pública." },
+      { id: "care.training", essential: false, source: "Sistema de Cuidados · 2019", text: "¿El personal está formado para cuidar y cuenta con capacitación en primeros auxilios?", detail: "La formación para el cuidado y los primeros auxilios figuran como buena señal." },
+      { id: "care.medication", essential: true, source: "Sistema de Cuidados · 2019", text: "¿La medicación está almacenada de forma adecuada?", detail: "El almacenamiento incorrecto de medicación figura como una mala señal en la guía pública." },
+      { id: "care.restraints", essential: false, source: "Sistema de Cuidados · 2019", text: "¿El establecimiento explica si usa medidas físicas de contención, en qué situaciones y con qué controles?", detail: "La guía pública identifica la presencia frecuente de contenciones físicas como señal de atención." },
+      { id: "care.diapers", essential: true, source: "Ambas fuentes", text: "¿Los pañales se usan solo cuando existe una razón que lo justifica?", detail: "La guía pública cuestiona el uso 'por precaución' y Movimiento ELEPEM recomienda evitarlo si no existe incontinencia." },
+      { id: "care.reference", essential: true, source: "Movimiento ELEPEM · 2026", text: "¿Hay una persona cuidadora referente con quien acordar la comunicación y el seguimiento?", detail: "El documento de 2026 recomienda coordinar con una cuidadora referente para facilitar la comunicación." },
+      { id: "care.adaptation", essential: false, source: "Movimiento ELEPEM · 2026", text: "¿Durante la adaptación se escucha a la persona y se ajustan prácticas cuando es necesario?", detail: "Movimiento ELEPEM propone acompañar la adaptación y ajustar apoyos." }
+    ]
+  },
+  {
+    id: "contract",
+    title: "Contrato, costos y documentación",
+    questions: [
+      { id: "contract.clear", essential: true, source: "Ambas fuentes", text: "¿El contrato explica con claridad los servicios, costos, forma de pago, derechos y obligaciones?", detail: "La guía pública pide condiciones del servicio y pago explicitadas; el documento de 2026 recomienda revisar el contrato." },
+      { id: "contract.consent", essential: false, source: "Movimiento ELEPEM · 2026", text: "¿El contrato y el consentimiento se explican antes de solicitar una firma?", detail: "Movimiento ELEPEM recomienda informar bien su contenido y permitir todas las consultas necesarias antes de firmar." },
+      { id: "contract.documents", essential: true, source: "Sistema de Cuidados · 2019", text: "¿La persona mantiene acceso a sus documentos personales y sabe cómo se administrará su dinero?", detail: "La guía pública incluye el acceso a documentos y el manejo de jubilación entre las buenas señales." },
+      { id: "contract.proof", essential: true, source: "Sistema de Cuidados · 2019", text: "¿El establecimiento muestra documentación vigente de habilitación o del trámite que corresponda?", detail: "La guía pública recomienda elegir lugares habilitados o en proceso y solicitar documentación probatoria." },
+      { id: "contract.questions", essential: false, source: "Movimiento ELEPEM · 2026", text: "¿La persona puede hacer preguntas, pedir una copia y tomarse tiempo para revisar la información?", detail: "El documento de 2026 propone permitir todas las consultas e informar de manera comprensible antes de la firma." }
+    ]
+  }
 ];
 
 export function ResidencialesFormView() {
@@ -338,46 +409,76 @@ export function ResidencialesFormView() {
                   </div>
                   <span className="formProgressText">{Math.round((currentStep / 5) * 100)}% completado</span>
                 </div>
-                <h3>Guía de preguntas para la visita</h3>
-                <p>Aspectos clave para observar e interactuar durante una visita a los residenciales.</p>
+                <h3>Prepará y registrá la visita</h3>
+                <p>
+                  No hace falta responder todo. “No pude comprobarlo” y “Quiero preguntarlo” son respuestas válidas.
+                  Podés volver en otro día u horario para completar la información.
+                </p>
               </div>
 
-              <div className="visitQuestionsList">
-                {VISIT_QUESTIONS.map((q) => {
-                  const currentAnswer = visitAnswers[q.id];
-                  return (
-                    <div key={q.id} className="questionItem">
-                      <div className="qHeader">
-                        <span className="qCategory">{q.category}</span>
-                        <h4>{q.title}</h4>
-                        <p>{q.help}</p>
-                      </div>
-                      <div className="qActions">
-                        <button
-                          type="button"
-                          className={`ansBtn ansYes ${currentAnswer === "yes" ? "active" : ""}`}
-                          onClick={() => setAnswer(q.id, "yes")}
-                        >
-                          Sí, comprobado
-                        </button>
-                        <button
-                          type="button"
-                          className={`ansBtn ansNo ${currentAnswer === "no" ? "active" : ""}`}
-                          onClick={() => setAnswer(q.id, "no")}
-                        >
-                          No se cumple
-                        </button>
-                        <button
-                          type="button"
-                          className={`ansBtn ansAsk ${currentAnswer === "ask" ? "active" : ""}`}
-                          onClick={() => setAnswer(q.id, "ask")}
-                        >
-                          A preguntar en visita
-                        </button>
-                      </div>
+              <div className="choiceCategoryList" style={{ display: "grid", gap: 14 }}>
+                {CHOICE_CATEGORIES.map((cat, ci) => (
+                  <details key={cat.id} className="choiceCategoryBlock" defaultOpen={ci === 0} style={{ border: "1px solid #cbd5e1", borderRadius: 14, background: "#fff", overflow: "hidden" }}>
+                    <summary style={{ padding: "14px 18px", fontWeight: 800, background: "#f8fafc", color: "#0f172a", cursor: "pointer", fontSize: "0.95rem" }}>
+                      {cat.title}
+                    </summary>
+                    <div className="choiceCategoryQuestions" style={{ padding: 16, display: "grid", gap: 16 }}>
+                      {cat.questions.map((q, qi) => {
+                        const currentAnswer = visitAnswers[q.id];
+                        return (
+                          <div key={q.id} className="questionItem" style={{ borderBottom: qi < cat.questions.length - 1 ? "1px solid #e2e8f0" : "none", paddingBottom: 14 }}>
+                            <div className="qHeader">
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                                <span style={{ background: "#e0f2fe", color: "#0369a1", fontWeight: 900, borderRadius: 6, padding: "2px 8px", fontSize: "0.76rem" }}>
+                                  #{qi + 1}
+                                </span>
+                                <span style={{ fontSize: "0.75rem", color: "#087c70", fontWeight: 800 }}>
+                                  {q.source}
+                                </span>
+                              </div>
+                              <h4 style={{ margin: "4px 0 6px", fontSize: "0.92rem", color: "#0f172a", fontWeight: 750, lineHeight: 1.4 }}>{q.text}</h4>
+                              <p style={{ margin: 0, fontSize: "0.82rem", color: "#475569", lineHeight: 1.4 }}>{q.detail}</p>
+                            </div>
+                            <div className="qActions" style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+                              <button
+                                type="button"
+                                className={`ansBtn ansYes ${currentAnswer === "yes" ? "active" : ""}`}
+                                onClick={() => setAnswer(q.id, "yes")}
+                                style={{ padding: "8px 14px", borderRadius: 8, fontSize: "0.82rem", fontWeight: 750, border: "1px solid #cbd5e1", cursor: "pointer", background: currentAnswer === "yes" ? "#dcfce7" : "#fff", color: currentAnswer === "yes" ? "#15803d" : "#475569", borderColor: currentAnswer === "yes" ? "#86efac" : "#cbd5e1" }}
+                              >
+                                Sí, lo confirmé
+                              </button>
+                              <button
+                                type="button"
+                                className={`ansBtn ansNo ${currentAnswer === "no" ? "active" : ""}`}
+                                onClick={() => setAnswer(q.id, "no")}
+                                style={{ padding: "8px 14px", borderRadius: 8, fontSize: "0.82rem", fontWeight: 750, border: "1px solid #cbd5e1", cursor: "pointer", background: currentAnswer === "no" ? "#fee2e2" : "#fff", color: currentAnswer === "no" ? "#b91c1c" : "#475569", borderColor: currentAnswer === "no" ? "#fca5a5" : "#cbd5e1" }}
+                              >
+                                No / me preocupó
+                              </button>
+                              <button
+                                type="button"
+                                className={`ansBtn ansUnknown ${currentAnswer === "unknown" ? "active" : ""}`}
+                                onClick={() => setAnswer(q.id, "unknown")}
+                                style={{ padding: "8px 14px", borderRadius: 8, fontSize: "0.82rem", fontWeight: 750, border: "1px solid #cbd5e1", cursor: "pointer", background: currentAnswer === "unknown" ? "#fef3c7" : "#fff", color: currentAnswer === "unknown" ? "#b45309" : "#475569", borderColor: currentAnswer === "unknown" ? "#fcd34d" : "#cbd5e1" }}
+                              >
+                                No pude comprobarlo
+                              </button>
+                              <button
+                                type="button"
+                                className={`ansBtn ansAsk ${currentAnswer === "ask" ? "active" : ""}`}
+                                onClick={() => setAnswer(q.id, "ask")}
+                                style={{ padding: "8px 14px", borderRadius: 8, fontSize: "0.82rem", fontWeight: 750, border: "1px solid #cbd5e1", cursor: "pointer", background: currentAnswer === "ask" ? "#e0f2fe" : "#fff", color: currentAnswer === "ask" ? "#0369a1" : "#475569", borderColor: currentAnswer === "ask" ? "#7dd3fc" : "#cbd5e1" }}
+                              >
+                                Quiero preguntarlo
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </details>
+                ))}
               </div>
             </div>
           )}

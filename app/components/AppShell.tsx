@@ -147,7 +147,7 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
   const organizationBlockedView = view === "denuncia" || view === "seguimiento";
   const isOrganization = accessMode === "organization";
   const navItems: [View, string][] = isOrganization
-    ? [["residenciales", "Residenciales"], ["review", "Review"], ["equipos", "Equipos"], ["fuentes", "Fuentes"]]
+    ? [["residenciales", "Residenciales"], ["equipos", "Equipos"], ["fuentes", "Fuentes"]]
     : [["inicio", "Inicio"], ["actividades", "Actividades"], ["residenciales", "Residenciales"]];
 
   useEffect(() => {
@@ -360,19 +360,19 @@ function HomeView({ go, isOrganization }: { go: (view: View) => void; isOrganiza
         <strong>Buscar una actividad</strong>
         <p>Talleres, recreación y espacios para personas mayores.</p>
       </button>
-      <button className="personHomeOption optionConcern" onClick={() => go("denuncia")}>
-        <ShieldAlert size={37}/>
-        <strong>Comunicar una preocupación</strong>
-        <p>Contá una situación sobre vos o sobre otra persona mayor.</p>
-      </button>
       <button className="personHomeOption optionResidential" onClick={() => go("residenciales")}>
         <MapPin size={37}/>
         <strong>Consultar residenciales</strong>
         <p>Buscá un ELEPEM y revisá su situación administrativa.</p>
       </button>
+      <button className="personHomeOption optionConcern" onClick={() => go("denuncia")}>
+        <ShieldAlert size={37}/>
+        <strong>Comunicar una preocupación</strong>
+        <p>Contá una situación sobre vos o sobre otra persona mayor.</p>
+      </button>
       <button className="personHomeOption optionFollow" onClick={() => go("seguimiento")}>
         <ClipboardCheck size={37}/>
-        <strong>Seguir el trámite</strong>
+        <strong>Seguir un trámite</strong>
         <p>Ingresá tu código y comprobá si la comunicación fue recibida.</p>
       </button>
     </div>

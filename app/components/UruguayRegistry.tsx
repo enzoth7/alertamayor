@@ -176,11 +176,36 @@ export default function UruguayRegistry({
       <p className="registryOverlapNote">
         Algunos residenciales están incluidos tanto en la lista de <strong> Habilitados como en la de Certificados.</strong>
       </p>
-      <div className="registrySearchFirst">
-        <label className="searchField">
-          <b>¿Qué residencial estás buscando?</b>
-          <div className="registrySearchBox"><Search size={26}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Escribí un nombre, una calle o una localidad"/></div>
-        </label>
+      <div className="registrySearchHeaderRow">
+        <div className="registrySearchFirst">
+          <label className="searchField">
+            <b>¿Qué residencial estás buscando?</b>
+            <div className="registrySearchBox">
+              <Search size={26} />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Escribí un nombre, una calle o una localidad"
+              />
+            </div>
+          </label>
+        </div>
+
+        {!onCandidateSummary && (
+          <div className="personDecidesInlineCard">
+            <div className="personDecidesCopy">
+              <strong>La persona decide</strong>
+              <p>Usá el mapa para identificar opciones y preparar preguntas; no para reemplazar la voluntad de quien va a vivir allí.</p>
+            </div>
+            <a
+              href="/personas/residenciales/form"
+              className="btnTurquoisePrimary inlineBtn"
+              style={{ textDecoration: "none", whiteSpace: "nowrap" }}
+            >
+              Preparar mi elección
+            </a>
+          </div>
+        )}
       </div>
     </section>
 
@@ -203,15 +228,6 @@ export default function UruguayRegistry({
           const nextStatus = event.target.value as "" | FacilityStatus;
           setStatus(nextStatus);
         }}><option value="">Todos</option><option value="habilitado">Habilitados</option><option value="mides">Certificados</option><option value="verificar">Situación no confirmada</option></select></label>}
-        </div>
-
-        {/* Tarjeta turquesa: La persona mayor decide */}
-        <div className="personDecidesCard">
-          <strong>La persona mayor decide</strong>
-          <p>Usá el mapa para identificar opciones y preparar preguntas; no para reemplazar la voluntad de quien va a vivir allí.</p>
-          <a href="/personas/residenciales/form" className="btnTurquoisePrimary" style={{ display: "block", textAlign: "center", textDecoration: "none" }}>
-            Preparar mi elección
-          </a>
         </div>
       </aside>
       <div className="registryMapColumn" ref={mapColumnRef}>
