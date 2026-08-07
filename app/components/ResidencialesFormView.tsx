@@ -82,13 +82,6 @@ export function ResidencialesFormView() {
     });
   }, [facilities, selectedDepartment]);
 
-  const handleActorSelect = (selectedActor: ActorType) => {
-    setActor(selectedActor);
-    setTimeout(() => {
-      setCurrentStep(2);
-    }, 220);
-  };
-
   const togglePref = (id: string) => {
     setSelectedPreferences((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
@@ -183,7 +176,7 @@ export function ResidencialesFormView() {
                 <button
                   type="button"
                   className={`actorCard ${actor === "self" ? "selected" : ""}`}
-                  onClick={() => handleActorSelect("self")}
+                  onClick={() => setActor("self")}
                 >
                   <span className="actorNumber">1</span>
                   <strong>La persona que podría vivir allí</strong>
@@ -193,7 +186,7 @@ export function ResidencialesFormView() {
                 <button
                   type="button"
                   className={`actorCard ${actor === "supporter" ? "selected" : ""}`}
-                  onClick={() => handleActorSelect("supporter")}
+                  onClick={() => setActor("supporter")}
                 >
                   <span className="actorNumber">2</span>
                   <strong>Una persona que la acompaña</strong>
@@ -203,7 +196,7 @@ export function ResidencialesFormView() {
                 <button
                   type="button"
                   className={`actorCard ${actor === "joint" ? "selected" : ""}`}
-                  onClick={() => handleActorSelect("joint")}
+                  onClick={() => setActor("joint")}
                 >
                   <span className="actorNumber">3</span>
                   <strong>La completamos en conjunto</strong>

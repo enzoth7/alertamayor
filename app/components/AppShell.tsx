@@ -258,42 +258,12 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
             <button className={view === "residenciales" ? "active" : ""} onClick={() => go("residenciales")}>
               Residenciales
             </button>
-            <div className="headerDropdownContainer" onMouseEnter={openDropdown} onMouseLeave={closeDropdown}>
-              <button
-                type="button"
-                className={`navDropdownBtn ${view === "denuncia" || view === "seguimiento" ? "active" : ""}`}
-                onClick={() => setTramitesOpen(!tramitesOpen)}
-                onMouseEnter={openDropdown}
-              >
-                Trámites <ChevronDown size={14} />
-              </button>
-              {tramitesOpen && (
-                <div className="headerDropdownMenu" onMouseEnter={openDropdown} onMouseLeave={closeDropdown}>
-                  <button
-                    type="button"
-                    className={view === "denuncia" ? "active" : ""}
-                    onClick={() => {
-                      if (tramitesTimerRef.current) clearTimeout(tramitesTimerRef.current);
-                      setTramitesOpen(false);
-                      go("denuncia");
-                    }}
-                  >
-                    <ShieldAlert size={15} /> Comunicar una preocupación
-                  </button>
-                  <button
-                    type="button"
-                    className={view === "seguimiento" ? "active" : ""}
-                    onClick={() => {
-                      if (tramitesTimerRef.current) clearTimeout(tramitesTimerRef.current);
-                      setTramitesOpen(false);
-                      go("seguimiento");
-                    }}
-                  >
-                    <ClipboardCheck size={15} /> Seguir un trámite
-                  </button>
-                </div>
-              )}
-            </div>
+            <button className={view === "denuncia" ? "active" : ""} onClick={() => go("denuncia")}>
+              Comunicar una preocupación
+            </button>
+            <button className={view === "seguimiento" ? "active" : ""} onClick={() => go("seguimiento")}>
+              Seguir un trámite
+            </button>
           </>
         )}
       </nav>

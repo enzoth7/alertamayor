@@ -692,7 +692,7 @@ const ZONES = [
   "Tacuarembó",
 ];
 const MOMENTS = ["Cualquier momento", "Entre semana", "Fin de semana"];
-const INTEREST_OPTIONS = ["Todo", "Moverme", "Aprender", "Cultura", "Conocer gente", "Orientación"];
+const INTEREST_OPTIONS = ["Moverme", "Aprender", "Cultura", "Conocer gente", "Orientación"];
 
 const QUICK_QUERIES = [
   { label: "Aprender a usar el celular", value: "Aprender", query: "Aprender a usar el celular" },
@@ -706,7 +706,7 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
   const [searchText, setSearchText] = useState("");
   const [zone, setZone] = useState("Todos los departamentos");
   const [moment, setMoment] = useState("Cualquier momento");
-  const [interest, setInterest] = useState("Todo");
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [freeOnly, setFreeOnly] = useState(false);
   const [accessible, setAccessible] = useState(false);
   const [smallGroups, setSmallGroups] = useState(false);
@@ -720,7 +720,7 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
     return ACTIVITIES_DATA.filter((act) => {
       if (zone !== "Todos los departamentos" && act.zone !== zone) return false;
       if (moment !== "Cualquier momento" && act.moment !== moment) return false;
-      if (interest !== "Todo" && !act.interests.includes(interest)) return false;
+      if (selectedInterests.length > 0 && !selectedInterests.some((i) => act.interests.includes(i))) return false;
       if (freeOnly && !act.freeOnly) return false;
       if (accessible && !act.accessible) return false;
       if (smallGroups && !act.smallGroups) return false;
@@ -739,7 +739,7 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
 
       return true;
     });
-  }, [zone, moment, interest, freeOnly, accessible, smallGroups, searchText]);
+  }, [zone, moment, selectedInterests, freeOnly, accessible, smallGroups, searchText]);
 
   const selectedActivity = useMemo(() => {
     if (!filteredActivities.length) return null;
@@ -748,7 +748,7 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
 
   const activeFiltersCount = (zone !== "Todos los departamentos" ? 1 : 0) +
     (moment !== "Cualquier momento" ? 1 : 0) +
-    (interest !== "Todo" ? 1 : 0) +
+    (selectedInterests.length > 0 ? 1 : 0) +
     (freeOnly ? 1 : 0) +
     (accessible ? 1 : 0) +
     (smallGroups ? 1 : 0) +
@@ -757,7 +757,7 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
   const clearFilters = () => {
     setZone("Todos los departamentos");
     setMoment("Cualquier momento");
-    setInterest("Todo");
+    setSelectedInterests([]);
     setFreeOnly(false);
     setAccessible(false);
     setSmallGroups(false);
@@ -767,7 +767,7 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
 
   const handleQuickQuery = (item: (typeof QUICK_QUERIES)[0]) => {
     setSearchText(item.query);
-    setInterest(item.value);
+    setSelectedInterests([item.value]);
   };
 
   return (
@@ -776,7 +776,7 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
       <div className="heroCardActivities">
         <h1>Encontrá actividades que tengan sentido para vos.</h1>
         <p className="heroLead">
-          Decí qué te gustaría hacer, cuándo y qué apoyo necesitás. La herramienta organiza opciones cercanas, explica por qué aparecen y te permite continuar con una persona.
+          En el buscador ingresá tu dirección para ver actividades cercanas o aquellas que estás buscando. 
         </p>
 
         <div className="searchBoxHero">
@@ -784,7 +784,7 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
             type="text"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            placeholder="Ej.: Ajedrez, yoga, mateada, huerta, guitarra..."
+            placeholder="Ej.: Av. Italia 1234, Montevideo"
           />
           <button type="button" className="micBtn" title="Hablar">
             🎙️
@@ -868,15 +868,27 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
               </select>
             </div>
 
-            <div className="filterBlock">
-              <label htmlFor="interestSelect">Interés</label>
-              <select id="interestSelect" value={interest} onChange={(e) => setInterest(e.target.value)}>
-                {INTEREST_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt === "Todo" ? "Todos los intereses" : opt}
-                  </option>
-                ))}
-              </select>
+            <div className="filterBlock checkboxesBlock">
+              <span className="filterTitle">Me interesa</span>
+              {INTEREST_OPTIONS.map((opt) => {
+                const isChecked = selectedInterests.includes(opt);
+                return (
+                  <label key={opt} className="checkboxLabel">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedInterests((prev) => [...prev, opt]);
+                        } else {
+                          setSelectedInterests((prev) => prev.filter((i) => i !== opt));
+                        }
+                      }}
+                    />
+                    <span>{opt}</span>
+                  </label>
+                );
+              })}
             </div>
 
             <div className="filterBlock checkboxesBlock">
