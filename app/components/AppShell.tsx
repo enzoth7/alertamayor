@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Building2, Calendar, CheckCircle2, ChevronDown, ClipboardCheck, ExternalLink, FileCheck2, FilePlus2, Landmark, LockKeyhole, LogOut, MapPin, MapPinned, Menu, ShieldAlert, ShieldCheck, Sparkles, UserRound, Users, X } from "lucide-react";
 import UruguayRegistry from "./UruguayRegistry";
@@ -68,6 +68,19 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
   const [menu, setMenu] = useState(false);
   const [preselectedFacility, setPreselectedFacility] = useState<Facility | null>(null);
   const [followCode, setFollowCode] = useState<string>("");
+  const [tramitesOpen, setTramitesOpen] = useState(false);
+  const tramitesTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const openDropdown = () => {
+    if (tramitesTimerRef.current) clearTimeout(tramitesTimerRef.current);
+    setTramitesOpen(true);
+  };
+
+  const closeDropdown = () => {
+    tramitesTimerRef.current = setTimeout(() => {
+      setTramitesOpen(false);
+    }, 350);
+  };
 
   useEffect(() => {
     let active = true;
@@ -227,8 +240,64 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
   return <main className={`site ${accessMode === "person" ? "personSite" : "organizationSite"}`}>
     <header className="top"><div className="topin">
       <button className="brand" onClick={resetAccess} aria-label="Volver a elegir entre persona y organización"><img src="/alertamayor.png" alt="Alerta mayor" className="brandLogo" /><span>Alerta mayor</span></button>
-      <nav className={menu ? "nav open" : "nav"}>{navItems.map(([key, label]) => <button key={key} className={view === key ? "active" : ""} onClick={() => go(key)}>{label}</button>)}</nav>
-      <div className="tools"><button className="menuToggle" onClick={() => setMenu(!menu)} aria-label="Abrir menú"><Menu size={17}/> Menú</button><button className="profileReset" onClick={resetAccess} aria-label={isOrganization ? "Salir de la organización" : "Cambiar perfil"}><LogOut size={16}/><span>{isOrganization ? "Salir" : "Cambiar perfil"}</span></button></div>
+      <nav className={menu ? "nav open" : "nav"}>
+        {isOrganization ? (
+          navItems.map(([key, label]) => (
+            <button key={key} className={view === key ? "active" : ""} onClick={() => go(key)}>
+              {label}
+            </button>
+          ))
+        ) : (
+          <>
+            <button className={view === "inicio" ? "active" : ""} onClick={() => go("inicio")}>
+              Inicio
+            </button>
+            <button className={view === "actividades" ? "active" : ""} onClick={() => go("actividades")}>
+              Actividades
+            </button>
+            <button className={view === "residenciales" ? "active" : ""} onClick={() => go("residenciales")}>
+              Residenciales
+            </button>
+            <div className="headerDropdownContainer" onMouseEnter={openDropdown} onMouseLeave={closeDropdown}>
+              <button
+                type="button"
+                className={`navDropdownBtn ${view === "denuncia" || view === "seguimiento" ? "active" : ""}`}
+                onClick={() => setTramitesOpen(!tramitesOpen)}
+                onMouseEnter={openDropdown}
+              >
+                Trámites <ChevronDown size={14} />
+              </button>
+              {tramitesOpen && (
+                <div className="headerDropdownMenu" onMouseEnter={openDropdown} onMouseLeave={closeDropdown}>
+                  <button
+                    type="button"
+                    className={view === "denuncia" ? "active" : ""}
+                    onClick={() => {
+                      if (tramitesTimerRef.current) clearTimeout(tramitesTimerRef.current);
+                      setTramitesOpen(false);
+                      go("denuncia");
+                    }}
+                  >
+                    <ShieldAlert size={15} /> Comunicar una preocupación
+                  </button>
+                  <button
+                    type="button"
+                    className={view === "seguimiento" ? "active" : ""}
+                    onClick={() => {
+                      if (tramitesTimerRef.current) clearTimeout(tramitesTimerRef.current);
+                      setTramitesOpen(false);
+                      go("seguimiento");
+                    }}
+                  >
+                    <ClipboardCheck size={15} /> Seguir un trámite
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </nav>
+      <div className="tools"><button className="menuToggle" onClick={() => setMenu(!menu)} aria-label="Abrir menú"><Menu size={17}/> Menú</button><button className="profileReset" onClick={resetAccess} aria-label="Salir"><LogOut size={16}/><span>Salir</span></button></div>
     </div></header>
     <div className="shell">
       <div className="banner"><ShieldAlert size={20}/><span><strong>PROTOTIPO ACADÉMICO</strong> · Usá sólo datos de demostración. Las comunicaciones se guardan para que el equipo las vea en su bandeja, pero no se envían a ningún organismo ni representan un servicio oficial.</span></div>
@@ -318,7 +387,7 @@ function HomeView({ go, isOrganization }: { go: (view: View) => void; isOrganiza
     <div className="personHomeGrid">
       <button className="personHomeOption optionActivities" onClick={() => go("actividades")}>
         <Calendar size={37}/>
-        <strong>Actividades</strong>
+        <strong>Buscar una actividad</strong>
         <p>Talleres, recreación y espacios para personas mayores.</p>
       </button>
       <button className="personHomeOption optionConcern" onClick={() => go("denuncia")}>

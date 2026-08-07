@@ -784,7 +784,7 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
             type="text"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            placeholder="Ej.: Vivo en La Blanqueada, me cuesta caminar y quiero algo gratuito de mañana"
+            placeholder="Ej.: Ajedrez, yoga, mateada, huerta, guitarra..."
           />
           <button type="button" className="micBtn" title="Hablar">
             🎙️

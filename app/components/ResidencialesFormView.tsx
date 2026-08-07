@@ -1,11 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useResidenciales } from "../hooks/useResidenciales";
 import { ArrowLeft, ArrowRight, Check, HeartHandshake, Info, Printer, RotateCcw, Sparkles, X } from "lucide-react";
 
 type ActorType = "self" | "supporter" | "joint" | null;
+
+const FORM_DEPARTMENTS = [
+  "Todos los departamentos",
+  "Artigas",
+  "Canelones",
+  "Cerro Largo",
+  "Colonia",
+  "Durazno",
+  "Flores",
+  "Florida",
+  "Lavalleja",
+  "Maldonado",
+  "Montevideo",
+  "Paysandú",
+  "Río Negro",
+  "Rivera",
+  "Rocha",
+  "Salto",
+  "San José",
+  "Soriano",
+  "Tacuarembó",
+  "Treinta y Tres",
+];
 
 const STEPS = [
   { id: 1, label: "Quién participa" },
@@ -39,9 +62,32 @@ export function ResidencialesFormView() {
   const [currentStep, setCurrentStep] = useState(1);
   const [actor, setActor] = useState<ActorType>(null);
   const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState("Todos los departamentos");
   const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
   const [visitAnswers, setVisitAnswers] = useState<Record<string, "yes" | "no" | "ask">>({});
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+
+  const displayedFacilities = useMemo(() => {
+    return facilities.filter((fac) => {
+      if (selectedDepartment === "Todos los departamentos") return true;
+      const deptLower = selectedDepartment.toLowerCase();
+      const locLower = (fac.locality || "").toLowerCase();
+      const addrLower = (fac.address || "").toLowerCase();
+      const nameLower = (fac.name || "").toLowerCase();
+      return (
+        locLower.includes(deptLower) ||
+        addrLower.includes(deptLower) ||
+        nameLower.includes(deptLower)
+      );
+    });
+  }, [facilities, selectedDepartment]);
+
+  const handleActorSelect = (selectedActor: ActorType) => {
+    setActor(selectedActor);
+    setTimeout(() => {
+      setCurrentStep(2);
+    }, 220);
+  };
 
   const togglePref = (id: string) => {
     setSelectedPreferences((prev) =>
@@ -63,6 +109,7 @@ export function ResidencialesFormView() {
     setCurrentStep(1);
     setActor(null);
     setSelectedPreferences([]);
+    setSelectedDepartment("Todos los departamentos");
     setSelectedFacilities([]);
     setVisitAnswers({});
   };
@@ -74,32 +121,19 @@ export function ResidencialesFormView() {
         <Link href="/personas/residenciales" className="formViewBackLink">
           <ArrowLeft size={18} /> Volver a Residenciales
         </Link>
-        <span className="formViewPortalTag">Módulo Residenciales · Guía de Elección</span>
       </div>
 
       <div className="formViewCard">
         {/* Header Principal */}
         <header className="choiceModalHeader">
           <div className="choiceModalTitleBox">
-            <span className="choiceModalKicker">
-              <Sparkles size={16} /> Guía interactiva para una decisión informada
-            </span>
             <h2>Elegir un lugar para vivir</h2>
             <p>
               Ordená preferencias, prepará visitas, registrá lo que pudiste comprobar y revisá la decisión.
               No es un examen ni un ranking: podés dejar preguntas pendientes, volver atrás y cambiar tus respuestas.
             </p>
 
-            <div className="choiceModalTags">
-              <span>La persona participa</span>
-              <span>Sin puntajes</span>
-              <span>Fuentes visibles</span>
-              <span>La decisión puede revisarse</span>
-              <span>Apoyo humano disponible</span>
-            </div>
-
-            <div className="choiceModalSubbar">
-              <small>Cambios guardados solo en este navegador</small>
+            <div className="choiceModalSubbar" style={{ justifyContent: "flex-end" }}>
               <button type="button" className="choiceResetBtn" onClick={resetAll}>
                 <RotateCcw size={14} /> Empezar de nuevo
               </button>
@@ -132,7 +166,12 @@ export function ResidencialesFormView() {
           {currentStep === 1 && (
             <div className="stepContainer">
               <div className="stepHeader">
-                <span className="stepBadge">Paso 1 de 5</span>
+                <div className="formProgressBarContainer">
+                  <div className="formProgressBarTrack">
+                    <div className="formProgressBarFill" style={{ width: `${(currentStep / 5) * 100}%` }} />
+                  </div>
+                  <span className="formProgressText">{Math.round((currentStep / 5) * 100)}% completado</span>
+                </div>
                 <h3>¿Quién está completando esta guía?</h3>
                 <p>
                   La respuesta cambia el modo de acompañar la decisión, pero no cambia un principio:
@@ -144,7 +183,7 @@ export function ResidencialesFormView() {
                 <button
                   type="button"
                   className={`actorCard ${actor === "self" ? "selected" : ""}`}
-                  onClick={() => setActor("self")}
+                  onClick={() => handleActorSelect("self")}
                 >
                   <span className="actorNumber">1</span>
                   <strong>La persona que podría vivir allí</strong>
@@ -154,7 +193,7 @@ export function ResidencialesFormView() {
                 <button
                   type="button"
                   className={`actorCard ${actor === "supporter" ? "selected" : ""}`}
-                  onClick={() => setActor("supporter")}
+                  onClick={() => handleActorSelect("supporter")}
                 >
                   <span className="actorNumber">2</span>
                   <strong>Una persona que la acompaña</strong>
@@ -164,7 +203,7 @@ export function ResidencialesFormView() {
                 <button
                   type="button"
                   className={`actorCard ${actor === "joint" ? "selected" : ""}`}
-                  onClick={() => setActor("joint")}
+                  onClick={() => handleActorSelect("joint")}
                 >
                   <span className="actorNumber">3</span>
                   <strong>La completamos en conjunto</strong>
@@ -188,7 +227,12 @@ export function ResidencialesFormView() {
           {currentStep === 2 && (
             <div className="stepContainer">
               <div className="stepHeader">
-                <span className="stepBadge">Paso 2 de 5</span>
+                <div className="formProgressBarContainer">
+                  <div className="formProgressBarTrack">
+                    <div className="formProgressBarFill" style={{ width: `${(currentStep / 5) * 100}%` }} />
+                  </div>
+                  <span className="formProgressText">{Math.round((currentStep / 5) * 100)}% completado</span>
+                </div>
                 <h3>¿Qué es importante para vos?</h3>
                 <p>
                   Marcá todo lo que quieras. Estas prioridades se usarán para ordenar preguntas y revisar opciones,
@@ -227,13 +271,49 @@ export function ResidencialesFormView() {
           {currentStep === 3 && (
             <div className="stepContainer">
               <div className="stepHeader">
-                <span className="stepBadge">Paso 3 de 5</span>
+                <div className="formProgressBarContainer">
+                  <div className="formProgressBarTrack">
+                    <div className="formProgressBarFill" style={{ width: `${(currentStep / 5) * 100}%` }} />
+                  </div>
+                  <span className="formProgressText">{Math.round((currentStep / 5) * 100)}% completado</span>
+                </div>
                 <h3>Seleccionar residenciales para evaluar</h3>
                 <p>Elegí de la lista consolidada los establecimientos que querés visitar o consultar.</p>
               </div>
 
+              <div className="formDeptFilterRow" style={{ marginBottom: 20, maxWidth: 360 }}>
+                <label
+                  htmlFor="formDeptSelect"
+                  style={{ display: "block", marginBottom: 6, fontWeight: 800, color: "#134e4a", fontSize: "0.88rem" }}
+                >
+                  Filtrar por departamento:
+                </label>
+                <select
+                  id="formDeptSelect"
+                  value={selectedDepartment}
+                  onChange={(e) => setSelectedDepartment(e.target.value)}
+                  style={{
+                    width: "100%",
+                    height: 42,
+                    padding: "0 12px",
+                    borderRadius: 10,
+                    border: "1.5px solid #99f6e4",
+                    background: "#fff",
+                    color: "#0f766e",
+                    fontWeight: 750,
+                    fontSize: "0.88rem",
+                  }}
+                >
+                  {FORM_DEPARTMENTS.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="facilityPickerGrid">
-                {facilities.slice(0, 10).map((fac) => {
+                {displayedFacilities.slice(0, 12).map((fac) => {
                   const isChecked = selectedFacilities.includes(fac.id);
                   return (
                     <button
@@ -259,7 +339,12 @@ export function ResidencialesFormView() {
           {currentStep === 4 && (
             <div className="stepContainer">
               <div className="stepHeader">
-                <span className="stepBadge">Paso 4 de 5</span>
+                <div className="formProgressBarContainer">
+                  <div className="formProgressBarTrack">
+                    <div className="formProgressBarFill" style={{ width: `${(currentStep / 5) * 100}%` }} />
+                  </div>
+                  <span className="formProgressText">{Math.round((currentStep / 5) * 100)}% completado</span>
+                </div>
                 <h3>Guía de preguntas para la visita</h3>
                 <p>Aspectos clave para observar e interactuar durante una visita a los residenciales.</p>
               </div>
@@ -308,7 +393,12 @@ export function ResidencialesFormView() {
           {currentStep === 5 && (
             <div className="stepContainer">
               <div className="stepHeader">
-                <span className="stepBadge">Paso 5 de 5</span>
+                <div className="formProgressBarContainer">
+                  <div className="formProgressBarTrack">
+                    <div className="formProgressBarFill" style={{ width: `${(currentStep / 5) * 100}%` }} />
+                  </div>
+                  <span className="formProgressText">{Math.round((currentStep / 5) * 100)}% completado</span>
+                </div>
                 <h3>Resumen para conversar en familia</h3>
                 <p>Revisá lo completado y prepará la conversación final respetando la voluntad de la persona.</p>
               </div>
@@ -362,8 +452,6 @@ export function ResidencialesFormView() {
           >
             <ArrowLeft size={16} /> Anterior
           </button>
-
-          <span>Paso {currentStep} de 5</span>
 
           <button
             type="button"

@@ -381,6 +381,110 @@ button {
   box-shadow: 0 5px 15px #0002;
 }
 
+/* Estilo Minimalista para Portal de Personas */
+.personSite .nav {
+  gap: 12px;
+  align-items: center;
+}
+
+.personSite .nav button {
+  border: 0;
+  background: transparent;
+  color: #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: .92rem;
+  font-weight: 750;
+  box-shadow: none;
+  transition: all .16s ease;
+}
+
+.personSite .nav button:hover {
+  background: rgba(255, 255, 255, .1);
+  color: #fff;
+  transform: none;
+  border: 0;
+}
+
+.personSite .nav button.active {
+  background: rgba(255, 255, 255, .18);
+  color: #fff;
+  font-weight: 850;
+  box-shadow: none;
+  border: 0;
+}
+
+/* Dropdown Trámites */
+.headerDropdownContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.headerDropdownContainer::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 14px;
+}
+
+.navDropdownBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.headerDropdownMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 240px;
+  padding: 8px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, .22);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 2500;
+  animation: dropdownFadeIn .16s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translate(-50%, -6px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.headerDropdownMenu button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #1e293b;
+  font-size: .84rem;
+  font-weight: 800;
+  text-align: left;
+  transition: all .16s ease;
+}
+
+.headerDropdownMenu button:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  transform: none;
+}
+
+.headerDropdownMenu button.active {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
 .tools {
   justify-self: end;
   display: flex;
@@ -395,6 +499,25 @@ button {
 
 .tools .menuToggle {
   display: none;
+}
+
+.tools button.profileReset {
+  border: 0;
+  background: transparent;
+  color: #f87171;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: .92rem;
+  font-weight: 750;
+  box-shadow: none;
+  transition: all .16s ease;
+}
+
+.tools button.profileReset:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  transform: none;
+  border: 0;
 }
 
 .shell {
@@ -5499,6 +5622,53 @@ textarea {
   background: #fff;
   box-shadow: 0 24px 60px rgba(0, 0, 0, .28);
   animation: personHomeReveal .3s ease-out both;
+}
+
+.shell:has(.formViewContainer) {
+  max-width: 100%;
+  padding-inline: 28px;
+}
+
+.formViewContainer {
+  width: 100%;
+  max-width: 100%;
+}
+
+.formViewCard {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Progress bar */
+.formProgressBarContainer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.formProgressBarTrack {
+  flex: 1;
+  height: 10px;
+  border-radius: 999px;
+  background: #ccfbf1;
+  overflow: hidden;
+}
+
+.formProgressBarFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0d9488, #087c70);
+  transition: width 0.3s ease;
+}
+
+.formProgressText {
+  color: #0f766e;
+  font-size: 0.82rem;
+  font-weight: 850;
+  white-space: nowrap;
 }
 
 .choiceModalHeader {
