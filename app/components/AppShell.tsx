@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Building2, CheckCircle2, ChevronDown, ClipboardCheck, ExternalLink, FileCheck2, FilePlus2, Landmark, LockKeyhole, LogOut, MapPin, MapPinned, Menu, ShieldAlert, ShieldCheck, Sparkles, UserRound, Users, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, Calendar, CheckCircle2, ChevronDown, ClipboardCheck, ExternalLink, FileCheck2, FilePlus2, Landmark, LockKeyhole, LogOut, MapPin, MapPinned, Menu, ShieldAlert, ShieldCheck, Sparkles, UserRound, Users, X } from "lucide-react";
 import UruguayRegistry from "./UruguayRegistry";
 import { TeamCasesWorkflow } from "./team/TeamCasesWorkflow";
 import { TeamLicenseWorkflow } from "./team/TeamLicenseWorkflow";
@@ -10,13 +10,14 @@ import { TeamMeasuresWorkflow } from "./team/TeamMeasuresWorkflow";
 import { TeamVisitsWorkflow } from "./team/TeamVisitsWorkflow";
 import { IntakeReportForm } from "./IntakeReportForm";
 import { ReportStatusLookup } from "./ReportStatusLookup";
+import { ActivitiesView } from "./ActivitiesView";
 import { TeamIntakeInbox } from "./team/TeamIntakeInbox";
 import { OrganizationFacilityRegistry } from "./team/OrganizationFacilityRegistry";
 import { ReviewMockup } from "./team/ReviewMockup";
 import { useResidenciales } from "../hooks/useResidenciales";
 import type { Facility } from "./map-types";
 
-export type View = "inicio" | "denuncia" | "seguimiento" | "residenciales" | "review" | "equipos" | "fuentes";
+export type View = "inicio" | "actividades" | "denuncia" | "seguimiento" | "residenciales" | "review" | "equipos" | "fuentes";
 type AccessMode = "loading" | "chooser" | "person" | "organization";
 export type Portal = "person" | "organization";
 
@@ -24,6 +25,7 @@ const ACCESS_SESSION_KEY = "alerta-mayor-access";
 
 const personViewPaths: Partial<Record<View, string>> = {
   inicio: "/personas",
+  actividades: "/personas/actividades",
   denuncia: "/personas/denuncia",
   seguimiento: "/personas/seguimiento",
   residenciales: "/personas/residenciales",
@@ -131,7 +133,7 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
   const isOrganization = accessMode === "organization";
   const navItems: [View, string][] = isOrganization
     ? [["residenciales", "Residenciales"], ["review", "Review"], ["equipos", "Equipos"], ["fuentes", "Fuentes"]]
-    : [["inicio", "Inicio"], ["residenciales", "Residenciales"]];
+    : [["inicio", "Inicio"], ["actividades", "Actividades"], ["residenciales", "Residenciales"]];
 
   useEffect(() => {
     if (accessMode === "person" && personBlockedView) router.replace("/personas");
@@ -229,6 +231,7 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
     <div className="shell">
       <div className="banner"><ShieldAlert size={20}/><span><strong>PROTOTIPO ACADÉMICO</strong> · Usá sólo datos de demostración. Las comunicaciones se guardan para que el equipo las vea en su bandeja, pero no se envían a ningún organismo ni representan un servicio oficial.</span></div>
       {view === "inicio" && <HomeView go={go} isOrganization={isOrganization}/>}
+      {view === "actividades" && <ActivitiesView onHome={() => go("inicio")}/>}
       {view === "denuncia" && <IntakeReportForm onHome={() => go("inicio")} onFollow={(code) => { if (code) setFollowCode(code); go("seguimiento"); }} initialFacility={preselectedFacility}/>}
       {view === "seguimiento" && <ReportStatusLookup onHome={() => go("inicio")} initialCode={followCode}/>}
       {view === "residenciales" && (isOrganization ? <OrganizationFacilityRegistry/> : <UruguayRegistry onReport={(facility) => {
@@ -310,6 +313,11 @@ function HomeView({ go, isOrganization }: { go: (view: View) => void; isOrganiza
       <p>Elegí una opción para empezar.</p>
     </header>
     <div className="personHomeGrid">
+      <button className="personHomeOption optionActivities" onClick={() => go("actividades")}>
+        <Calendar size={37}/>
+        <strong>Actividades</strong>
+        <p>Talleres, recreación y espacios para personas mayores.</p>
+      </button>
       <button className="personHomeOption optionConcern" onClick={() => go("denuncia")}>
         <ShieldAlert size={37}/>
         <strong>Comunicar una preocupación</strong>

@@ -13,11 +13,11 @@
   },
   "summary": {
     "records": 34,
-    "requiresSecondResearch": 16,
-    "eligibleForStep14": 20,
+    "requiresSecondResearch": 15,
+    "eligibleForStep14": 19,
     "recommendedActions": {
-      "link_existing_after_id_resolution": 10,
-      "needs_more_evidence": 16,
+      "link_existing_after_id_resolution": 11,
+      "needs_more_evidence": 15,
       "rejected": 4,
       "verified_new": 4
     }
@@ -194,10 +194,10 @@
       "locality": "Tacuarembó",
       "address": "Henry Dunant 414",
       "evidenceTier": "C",
-      "currentDisposition": "possible_move_or_rebrand",
-      "recommendedAction": "needs_more_evidence",
-      "recommendationRationale": "Resolver continuidad, mudanza, cambio de operador o reutilización del domicilio.",
-      "requiresSecondResearch": true,
+      "currentDisposition": "probable_known_match",
+      "recommendedAction": "link_existing_after_id_resolution",
+      "recommendationRationale": "Duplicado confirmado de Residencial Las Violetas; vincular al registro canónico sin crear otro punto.",
+      "requiresSecondResearch": false,
       "proposedMatchId": null,
       "sourceChannels": [
         "social_public",
@@ -227,12 +227,12 @@
         "other_public"
       ],
       "sourceCount": 2,
-      "reviewNotes": "Prioridad alta para resolver mudanza, renumeración, alias o segunda sede.",
-      "humanDecision": "needs_more_evidence",
+      "reviewNotes": "Casa Las Violetas y Residencial Las Violetas corresponden al mismo establecimiento.",
+      "humanDecision": "link_existing_after_id_resolution",
       "reviewerIdentifier": "project_owner",
-      "reviewerNote": "Recomendación conservadora aceptada explícitamente por la persona responsable del proyecto.",
+      "reviewerNote": "Duplicado confirmado por la persona responsable del proyecto; conservar una sola entidad canónica.",
       "reviewedAt": "2026-08-05T01:23:18.307Z",
-      "eligibleForStep14": true
+      "eligibleForStep14": false
     },
     {
       "candidateKey": "tacuarembo:segundo-marisel:direccion-no-identificada",
@@ -253,7 +253,7 @@
       "reviewNotes": "Caso de relación, no candidato importable. No asignar coordenadas.",
       "humanDecision": "needs_more_evidence",
       "reviewerIdentifier": "project_owner",
-      "reviewerNote": "Recomendación conservadora aceptada explícitamente por la persona responsable del proyecto.",
+      "reviewerNote": "Duplicado confirmado de Residencial Hogar de Ancianos San Vicente de Paul; no crear otro punto.",
       "reviewedAt": "2026-08-05T01:23:18.307Z",
       "eligibleForStep14": true
     },
@@ -276,7 +276,7 @@
       "reviewNotes": "Probable segunda sede física, pero no geocodificable hasta obtener calle y número.",
       "humanDecision": "needs_more_evidence",
       "reviewerIdentifier": "project_owner",
-      "reviewerNote": "Recomendación conservadora aceptada explícitamente por la persona responsable del proyecto.",
+      "reviewerNote": "Entidad canónica elegida para agrupar también el alias Fantasía Maricel.",
       "reviewedAt": "2026-08-05T01:23:18.307Z",
       "eligibleForStep14": true
     },
@@ -545,15 +545,15 @@
       "recommendedAction": "link_existing_after_id_resolution",
       "recommendationRationale": "Existe una referencia explícita en el índice; resolver el ID canónico antes de vincular.",
       "requiresSecondResearch": false,
-      "proposedMatchId": "EXC-OFFICIAL-ELP-0798",
+      "proposedMatchId": "EXC-OFFICIAL-ELP-0808",
       "sourceChannels": [
         "other_public"
       ],
       "sourceCount": 2,
-      "reviewNotes": "Control conocido. Vincular fuentes a EXC-OFFICIAL-ELP-0798; no crear un nuevo punto.",
+      "reviewNotes": "Fantasía Maricel es duplicado de Residencial Maricel; vincular ambas fuentes a EXC-OFFICIAL-ELP-0808.",
       "humanDecision": "link_existing_after_id_resolution",
       "reviewerIdentifier": "project_owner",
-      "reviewerNote": "Recomendación conservadora aceptada explícitamente por la persona responsable del proyecto.",
+      "reviewerNote": "Duplicado confirmado por la persona responsable del proyecto; conservar Fantasía Maricel como alias.",
       "reviewedAt": "2026-08-05T01:23:18.307Z",
       "eligibleForStep14": false
     },
