@@ -14,10 +14,11 @@ import { ActivitiesView } from "./ActivitiesView";
 import { TeamIntakeInbox } from "./team/TeamIntakeInbox";
 import { OrganizationFacilityRegistry } from "./team/OrganizationFacilityRegistry";
 import { ReviewMockup } from "./team/ReviewMockup";
+import { ResidencialesFormView } from "./ResidencialesFormView";
 import { useResidenciales } from "../hooks/useResidenciales";
 import type { Facility } from "./map-types";
 
-export type View = "inicio" | "actividades" | "denuncia" | "seguimiento" | "residenciales" | "review" | "equipos" | "fuentes";
+export type View = "inicio" | "actividades" | "denuncia" | "seguimiento" | "residenciales" | "residenciales_form" | "review" | "equipos" | "fuentes";
 type AccessMode = "loading" | "chooser" | "person" | "organization";
 export type Portal = "person" | "organization";
 
@@ -29,6 +30,7 @@ const personViewPaths: Partial<Record<View, string>> = {
   denuncia: "/personas/denuncia",
   seguimiento: "/personas/seguimiento",
   residenciales: "/personas/residenciales",
+  residenciales_form: "/personas/residenciales/form",
 };
 
 const orgViewPaths: Partial<Record<View, string>> = {
@@ -243,6 +245,7 @@ export function AppShell({ initialView, portal, forceLogin }: { initialView: Vie
         }
         go(isOrganization ? "equipos" : "denuncia");
       }}/>) }
+      {view === "residenciales_form" && <ResidencialesFormView />}
       {isOrganization && view === "equipos" && <Team initialFacility={preselectedFacility}/>}
       {isOrganization && view === "fuentes" && <Sources/>}
       {isOrganization && view === "review" && <ReviewMockup/>}

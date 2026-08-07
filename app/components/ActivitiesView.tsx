@@ -46,11 +46,334 @@ export interface ActivityItem {
 export const ACTIVITIES_DATA: ActivityItem[] = [
   {
     id: "act-1",
+    icon: "🗺️",
+    category: "RECREACIÓN",
+    title: "Búsqueda del tesoro e ir por un helado",
+    place: "Costanera y Plaza Constitución",
+    zone: "Paysandú",
+    moment: "Fin de semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Conocer gente", "Moverme"],
+    time: "Sáb, 16:00 a 18:00",
+    color: "#d97706",
+    lat: -32.3214,
+    lng: -58.0756,
+    description: "Juego recreativo al aire libre recorriendo la costanera de Paysandú en equipos, finalizando con una degustación de helados artesanales.",
+    organizer: "Comisión de Recreación Paysandú",
+  },
+  {
+    id: "act-28",
+    icon: "♟️",
+    category: "RECREACIÓN",
+    title: "Ajedrez en la costanera",
+    place: "Plaza de los Recuerdos y Costanera Norte",
+    zone: "Paysandú",
+    moment: "Entre semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Conocer gente", "Aprender"],
+    time: "Mié, 16:30 a 18:30",
+    color: "#d97706",
+    lat: -32.3160,
+    lng: -58.0820,
+    description: "Partidas de ajedrez al aire libre frente al río Uruguay con mesas adaptadas y mate compartido.",
+    organizer: "Club de Ajedrez Paysandú",
+  },
+  {
+    id: "act-29",
+    icon: "🚶",
+    category: "BIENESTAR",
+    title: "Caminatas por el Trébol",
+    place: "Parque y Monumento al Trébol",
+    zone: "Paysandú",
+    moment: "Fin de semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Moverme"],
+    time: "Sáb, 09:00 a 10:30",
+    color: "#087443",
+    lat: -32.3080,
+    lng: -58.0650,
+    description: "Recorrido aeróbico suave por los senderos arbolados del Trébol con guía de estiramientos.",
+    organizer: "Grupo Caminantes de Paysandú",
+  },
+  {
+    id: "act-2",
+    icon: "♨️",
+    category: "BIENESTAR",
+    title: "Tardes de mate y termas en Daymán",
+    place: "Parque Termal Daymán",
+    zone: "Salto",
+    moment: "Entre semana",
+    freeOnly: false,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Moverme", "Conocer gente"],
+    time: "Mié, 15:00 a 18:00",
+    color: "#087443",
+    lat: -31.4633,
+    lng: -57.9158,
+    description: "Caminata suave y descanso en piscinas termales adaptadas con guía de ejercicios hidroterapéuticos.",
+    organizer: "Salto Vital & Turismo Social",
+  },
+  {
+    id: "act-3",
+    icon: "🎨",
+    category: "CULTURA",
+    title: "Acuarela y patrimonio en el Bastión del Carmen",
+    place: "Centro Cultural Bastión del Carmen",
+    zone: "Colonia",
+    moment: "Entre semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Cultura", "Aprender"],
+    time: "Jue, 15:00 a 17:00",
+    color: "#e83e6f",
+    lat: -34.4714,
+    lng: -57.8441,
+    description: "Taller plástico al aire libre retratando las calles históricas de Colonia del Sacramento.",
+    organizer: "Asociación Cultural Colonia",
+  },
+  {
+    id: "act-32",
+    icon: "🫙",
+    category: "CULTURA",
+    title: "Recorrido por bodegas y mermeladas artesanales",
+    place: "Colonia Valdense",
+    zone: "Colonia",
+    moment: "Fin de semana",
+    freeOnly: false,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Cultura", "Conocer gente"],
+    time: "Sáb, 15:00 a 17:30",
+    color: "#e83e6f",
+    lat: -34.3390,
+    lng: -57.2340,
+    description: "Visita a fincas tradicionales de la colectividad valdense con degustación de dulces caseros y té.",
+    organizer: "Tradición Valdense Colonia",
+  },
+  {
+    id: "act-33",
+    icon: "🎶",
+    category: "CULTURA",
+    title: "Tarde de tango, coros y merienda en la Plaza Mayor",
+    place: "Plaza Mayor, Barrio Histórico",
+    zone: "Colonia",
+    moment: "Entre semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Cultura", "Conocer gente"],
+    time: "Vie, 16:30 a 18:00",
+    color: "#e83e6f",
+    lat: -34.4720,
+    lng: -57.8510,
+    description: "Encuentro coral de música rioplatense al aire libre en el casco histórico de Colonia.",
+    organizer: "Coro Abuelos de Colonia",
+  },
+  {
+    id: "act-4",
+    icon: "🧘",
+    category: "BIENESTAR",
+    title: "Yoga suave frente al mar en la Mansa",
+    place: "Parada 5 de la Mansa",
+    zone: "Maldonado",
+    moment: "Entre semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Moverme", "Orientación"],
+    time: "Lun, 09:30 a 10:30",
+    color: "#087443",
+    lat: -34.9536,
+    lng: -54.9406,
+    description: "Sesión de yoga y ejercicios de estiramiento suave con respiración guiada frente a la playa Mansa.",
+    organizer: "Deportes e Integración Maldonado",
+  },
+  {
+    id: "act-30",
+    icon: "🌲",
+    category: "NATURALEZA",
+    title: "Caminata y mateada en el Arboreto Lussich",
+    place: "Arboreto Lussich, Punta Ballena",
+    zone: "Maldonado",
+    moment: "Fin de semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Moverme", "Conocer gente"],
+    time: "Dom, 10:00 a 12:00",
+    color: "#087443",
+    lat: -34.8870,
+    lng: -55.0340,
+    description: "Sendero guiado entre la colección de eucaliptos y bosque nativo con descansos sombreados.",
+    organizer: "Amigos de Lussich Maldonado",
+  },
+  {
+    id: "act-31",
+    icon: "🏺",
+    category: "CULTURA",
+    title: "Taller de cerámica y escultura suave",
+    place: "Casa de la Cultura de Maldonado",
+    zone: "Maldonado",
+    moment: "Entre semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Aprender", "Cultura"],
+    time: "Mar, 15:00 a 16:30",
+    color: "#e83e6f",
+    lat: -34.9060,
+    lng: -54.9570,
+    description: "Modelado básico en arcilla, torneado artesanal y pintura para adultos mayores.",
+    organizer: "Cultura Maldonado Senior",
+  },
+  {
+    id: "act-5",
+    icon: "🪗",
+    category: "CULTURA",
+    title: "Música, cuentos y café de frontera",
+    place: "Plaza Internacional",
+    zone: "Rivera",
+    moment: "Fin de semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Conocer gente", "Cultura"],
+    time: "Sáb, 17:00 a 19:00",
+    color: "#155eef",
+    lat: -30.9025,
+    lng: -55.5508,
+    description: "Rueda de historias binacionales, música popular de frontera y mateada compartida.",
+    organizer: "Colectivo Frontera Rivera-Livramento",
+  },
+  {
+    id: "act-6",
+    icon: "🦜",
+    category: "NATURALEZA",
+    title: "Avistamiento de aves y mateada comunitaria",
+    place: "Mirador Laguna de Rocha",
+    zone: "Rocha",
+    moment: "Fin de semana",
+    freeOnly: true,
+    accessible: false,
+    smallGroups: true,
+    interests: ["Moverme", "Cultura"],
+    time: "Dom, 10:00 a 12:30",
+    color: "#087443",
+    lat: -34.6215,
+    lng: -54.2708,
+    description: "Recorrido de baja dificultad por senderos protegidos de Rocha para observación de fauna y avifauna.",
+    organizer: "Ecoturismo Rocha",
+  },
+  {
+    id: "act-7",
+    icon: "🎸",
+    category: "APRENDER",
+    title: "Taller de guitarra y folclore criollo",
+    place: "Casa de la Cultura Carlos Gardel",
+    zone: "Tacuarembó",
+    moment: "Entre semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Aprender", "Cultura"],
+    time: "Mar, 17:30 a 19:00",
+    color: "#6941c6",
+    lat: -31.7131,
+    lng: -55.9811,
+    description: "Introducción al canto y acordes de guitarra tradicional en la tierra de Carlos Gardel.",
+    organizer: "Dirección de Cultura Tacuarembó",
+  },
+  {
+    id: "act-8",
+    icon: "🧶",
+    category: "RECREACIÓN",
+    title: "Paseo por la rambla y taller de tejido",
+    place: "Paseo 7 de Septiembre",
+    zone: "Artigas",
+    moment: "Entre semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Conocer gente", "Aprender"],
+    time: "Lun, 15:00 a 17:00",
+    color: "#d97706",
+    lat: -30.4000,
+    lng: -56.4667,
+    description: "Caminata accesible a orillas del río Cuareim seguida de taller de tejido artesanal en grupo.",
+    organizer: "Asociación Social Artigas",
+  },
+  {
+    id: "act-9",
+    icon: "🐟",
+    category: "RECREACIÓN",
+    title: "Pesca recreativa y picnic a orillas del Yí",
+    place: "Parque de la Hispanidad",
+    zone: "Durazno",
+    moment: "Fin de semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Conocer gente", "Moverme"],
+    time: "Sáb, 10:00 a 13:00",
+    color: "#087443",
+    lat: -33.3806,
+    lng: -56.5264,
+    description: "Jornada de integración al aire libre con actividad de pesca artesanal recreativa y almuerzo compartido.",
+    organizer: "Club Náutico Durazno",
+  },
+  {
+    id: "act-10",
+    icon: "🌿",
+    category: "NATURALEZA",
+    title: "Caminata accesible por el Cerro del Verdún",
+    place: "Parque UTE-ANTEL y Verdún",
+    zone: "Lavalleja",
+    moment: "Fin de semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Moverme"],
+    time: "Dom, 09:00 a 11:30",
+    color: "#087443",
+    lat: -34.3758,
+    lng: -55.2378,
+    description: "Sendero serrano adaptado de bajo impacto en las sierras de Minas con descansos orientados.",
+    organizer: "Sierras Saludables Lavalleja",
+  },
+  {
+    id: "act-11",
+    icon: "🎭",
+    category: "CULTURA",
+    title: "Teatro leído y expresión corporal",
+    place: "Casa de la Cultura",
+    zone: "San José",
+    moment: "Entre semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Cultura", "Conocer gente"],
+    time: "Mié, 16:30 a 18:00",
+    color: "#6941c6",
+    lat: -34.3375,
+    lng: -56.7136,
+    description: "Lectura dramatizada de guiones rioplatenses y dinámicas suaves de expresión escénica.",
+    organizer: "Teatro Macció San José",
+  },
+  {
+    id: "act-12",
     icon: "📱",
     category: "TECNOLOGÍA",
-    title: "Taller práctico de celular y trámites",
-    place: "Ibirapitá Centro",
-    zone: "Cordón",
+    title: "Taller de celular y trámites en línea",
+    place: "Biblioteca Municipal",
+    zone: "Montevideo",
     moment: "Entre semana",
     freeOnly: true,
     accessible: true,
@@ -60,193 +383,342 @@ export const ACTIVITIES_DATA: ActivityItem[] = [
     color: "#155eef",
     lat: -34.9037,
     lng: -56.1704,
-    description: "Aprendé a usar WhatsApp, trámites en línea (BPS, Redpagos), redes sociales y videollamadas con acompañamiento personalizado.",
-    organizer: "Ibirapitá & Programa Mayores Conectados",
+    description: "Aprender a usar WhatsApp, agendas digitales y realizar consultas de forma práctica.",
+    organizer: "Talleres Digitales Montevideo",
   },
   {
-    id: "act-2",
-    icon: "🎨",
-    category: "CULTURA",
-    title: "Cerámica para principiantes",
-    place: "Centro cultural barrial",
-    zone: "Parque Rodó",
+    id: "act-13",
+    icon: "🤖",
+    category: "TECNOLOGÍA",
+    title: "Taller de Inteligencia Artificial y ChatGPT",
+    place: "Centro Cultural Pocitos",
+    zone: "Montevideo",
     moment: "Entre semana",
-    freeOnly: true,
+    freeOnly: false,
     accessible: true,
     smallGroups: true,
-    interests: ["Cultura", "Aprender"],
-    time: "Jue, 15:00 a 17:00",
+    interests: ["Aprender"],
+    time: "Mar, 16:00 a 17:30",
+    color: "#155eef",
+    lat: -34.9150,
+    lng: -56.1480,
+    description: "Descubrir herramientas de IA generativa de forma sencilla para la vida diaria y entretenimiento.",
+    organizer: "Innovación Senior Pocitos",
+  },
+  {
+    id: "act-14",
+    icon: "🍷",
+    category: "CULTURA",
+    title: "Cata de vinos finos y maridaje en cava",
+    place: "Cava de Carrasco",
+    zone: "Montevideo",
+    moment: "Fin de semana",
+    freeOnly: false,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Cultura", "Conocer gente"],
+    time: "Sáb, 18:30 a 20:30",
     color: "#e83e6f",
-    lat: -34.9102,
-    lng: -56.1518,
-    description: "Espacio de creación plástica y moldeado manual en arcilla. Diseñado para ejercitar la motricidad fina y la expresión artística.",
-    organizer: "Colectivo de Arte Barrio Parque Rodó",
+    lat: -34.8870,
+    lng: -56.0580,
+    description: "Degustación guiada por sommelier de cepas nacionales acompanadas de quesos artesanales.",
+    organizer: "Club Enológico Carrasco",
   },
   {
-    id: "act-3",
-    icon: "👟",
-    category: "BIENESTAR",
-    title: "Caminata suave en la rambla",
-    place: "Plaza Trouville",
-    zone: "Pocitos",
+    id: "act-15",
+    icon: "🌱",
+    category: "NATURALEZA",
+    title: "Taller de huerta orgánica urbana y compost",
+    place: "Jardín Botánico del Prado",
+    zone: "Montevideo",
     moment: "Entre semana",
     freeOnly: true,
     accessible: true,
     smallGroups: true,
-    interests: ["Moverme", "Conocer gente"],
-    time: "Vie, 09:30 a 10:30",
+    interests: ["Aprender", "Moverme"],
+    time: "Jue, 10:00 a 12:00",
     color: "#087443",
-    lat: -34.9183,
-    lng: -56.1577,
-    description: "Recorrido de bajo impacto por la rambla de Pocitos con profesores de educación física especializados en personas mayores.",
-    organizer: "Red de Salud y Deporte Comunitario",
+    lat: -34.8610,
+    lng: -56.1980,
+    description: "Cultivo de hortalizas de estación, siembra en macetas y técnicas de compostaje en casa.",
+    organizer: "Red de Huertas Urbanas",
   },
   {
-    id: "act-4",
-    icon: "🖌️",
-    category: "CULTURA",
-    title: "Encuentro de dibujo para adultos",
-    place: "Salón de usos múltiples",
-    zone: "Ciudad Vieja",
-    moment: "Fin de semana",
-    freeOnly: true,
-    accessible: false,
-    smallGroups: true,
-    interests: ["Cultura", "Orientación"],
-    time: "Sáb, 11:00 a 13:00",
-    color: "#6941c6",
-    lat: -34.9074,
-    lng: -56.2025,
-    description: "Taller al aire libre e interior para explorar técnicas de lápiz, acuarela y bosquejo histórico urbano.",
-    organizer: "Talleres del Casco Histórico",
-  },
-  {
-    id: "act-5",
-    icon: "🎤",
-    category: "ARTE",
-    title: "Coral del barrio, ensayo abierto",
-    place: "Centro cultural Barrio Sur",
-    zone: "Barrio Sur",
+    id: "act-16",
+    icon: "🍲",
+    category: "RECREACIÓN",
+    title: "Voluntariado en olla comunitaria y cocina",
+    place: "Centro Comunitario Cordón",
+    zone: "Montevideo",
     moment: "Entre semana",
     freeOnly: true,
     accessible: true,
-    smallGroups: true,
-    interests: ["Conocer gente", "Cultura"],
-    time: "Lun, 18:00 a 20:00",
-    color: "#155eef",
-    lat: -34.9049,
-    lng: -56.1992,
-    description: "Ensayos participativos de música popular rioplatense, respiración y canto grupal. No requiere experiencia previa.",
-    organizer: "Coral Barrio Sur",
-  },
-  {
-    id: "act-6",
-    icon: "⛰️",
-    category: "BIENESTAR",
-    title: "Caminata guiada al Cerro",
-    place: "Parque del Cerro",
-    zone: "Cerro",
-    moment: "Entre semana",
-    freeOnly: true,
-    accessible: false,
     smallGroups: false,
-    interests: ["Moverme", "Conocer gente"],
-    time: "Mar, 08:30 a 09:30",
-    color: "#087443",
-    lat: -34.8914,
-    lng: -56.1923,
-    description: "Ascenso suave al mirador de la Fortaleza del Cerro combinando ejercicio aeróbico ligero e historia montevideana.",
-    organizer: "Senderismo Cerro Activo",
-  },
-  {
-    id: "act-7",
-    icon: "💻",
-    category: "APRENDER",
-    title: "Aula abierta de herramientas digitales",
-    place: "Biblioteca municipal Carrasco",
-    zone: "Carrasco",
-    moment: "Entre semana",
-    freeOnly: true,
-    accessible: true,
-    smallGroups: true,
-    interests: ["Aprender", "Orientación"],
-    time: "Mié, 17:00 a 18:30",
+    interests: ["Conocer gente"],
+    time: "Mié, 11:00 a 14:00",
     color: "#d97706",
-    lat: -34.8864,
-    lng: -56.0417,
-    description: "Resolución de dudas digitales, uso de tablets Ibirapitá, descarga de aplicaciones útiles y seguridad en internet.",
-    organizer: "Biblioteca Municipal Carrasco",
+    lat: -34.9010,
+    lng: -56.1790,
+    description: "Apoyo en la preparación y reparto de viandas solidarias de almuerzo para vecinos del barrio.",
+    organizer: "Olla Solidaria Cordón",
   },
   {
-    id: "act-8",
-    icon: "☕",
-    category: "SOCIAL",
-    title: "Mate y charla con vecinos",
-    place: "Plaza de los Treinta y Tres",
-    zone: "Centro",
-    moment: "Fin de semana",
+    id: "act-17",
+    icon: "💃",
+    category: "CULTURA",
+    title: "Taller de tango y milonga de la tarde",
+    place: "Mercado de la Abundancia",
+    zone: "Montevideo",
+    moment: "Entre semana",
     freeOnly: true,
     accessible: true,
     smallGroups: true,
-    interests: ["Conocer gente", "Orientación"],
-    time: "Vie, 16:00 a 17:30",
-    color: "#155eef",
-    lat: -34.8893,
-    lng: -56.1761,
-    description: "Espacio de integración social, lectura de diarios local, juegos de mesa y rueda de mate comunitaria.",
-    organizer: "Asociación Vecinal Centro",
+    interests: ["Cultura", "Moverme"],
+    time: "Lun, 17:00 a 18:30",
+    color: "#e83e6f",
+    lat: -34.9050,
+    lng: -56.1880,
+    description: "Pasos básicos de tango rioplatense, postura y baile guiado con música en vivo.",
+    organizer: "Milonga de la Plaza",
   },
   {
-    id: "act-9",
-    icon: "🧘",
+    id: "act-18",
+    icon: "🧘‍♀️",
     category: "BIENESTAR",
-    title: "Yoga suave y meditación guiada",
-    place: "Centro de Barrio N° 3",
-    zone: "Cordón",
-    moment: "Entre semana",
+    title: "Pilates y meditación guiada al aire libre",
+    place: "Parque Rodó (frente al lago)",
+    zone: "Montevideo",
+    moment: "Fin de semana",
     freeOnly: true,
     accessible: true,
     smallGroups: true,
     interests: ["Moverme", "Orientación"],
-    time: "Jue, 10:00 a 11:00",
+    time: "Sáb, 09:30 a 10:45",
     color: "#087443",
-    lat: -34.9015,
-    lng: -56.1750,
-    description: "Sesión adaptada en silla o mat suave para mejorar flexibilidad, aliviar tensiones y practicar la respiración profunda.",
-    organizer: "Espacio Saludable Cordón",
+    lat: -34.9140,
+    lng: -56.1660,
+    description: "Ejercicios suaves de flexibilidad, respiración y relajación en la sombra de las tipas.",
+    organizer: "Salud en el Parque",
+  },
+  {
+    id: "act-19",
+    icon: "☕",
+    category: "RECREACIÓN",
+    title: "Taller y degustación de café de especialidad",
+    place: "Café de la Costa, Malvín",
+    zone: "Montevideo",
+    moment: "Entre semana",
+    freeOnly: false,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Conocer gente", "Cultura"],
+    time: "Mié, 16:30 a 18:00",
+    color: "#d97706",
+    lat: -34.8940,
+    lng: -56.1020,
+    description: "Origen del café, filtrados artesanales y maridaje con repostería casera.",
+    organizer: "Baristas Malvín",
+  },
+  {
+    id: "act-20",
+    icon: "📚",
+    category: "APRENDER",
+    title: "Club de lectura de literatura latinoamericana",
+    place: "Biblioteca Punta Carretas",
+    zone: "Montevideo",
+    moment: "Entre semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Aprender", "Cultura"],
+    time: "Jue, 17:00 a 18:30",
+    color: "#6941c6",
+    lat: -34.9220,
+    lng: -56.1580,
+    description: "Encuentro semanal para comentar cuentos y novelas clásicas y contemporáneas.",
+    organizer: "Lectores de Punta Carretas",
+  },
+  {
+    id: "act-21",
+    icon: "🍲",
+    category: "RECREACIÓN",
+    title: "Comedor comunitario y cocina de barrio",
+    place: "Centro Barrio Cerro",
+    zone: "Montevideo",
+    moment: "Entre semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: false,
+    interests: ["Conocer gente"],
+    time: "Vie, 11:30 a 13:30",
+    color: "#d97706",
+    lat: -34.8880,
+    lng: -56.2520,
+    description: "Elaboración de meriendas comunitarias y espacio de encuentro e integración social.",
+    organizer: "Red Comunitaria del Cerro",
+  },
+  {
+    id: "act-22",
+    icon: "🌊",
+    category: "BIENESTAR",
+    title: "Yoga y caminata entre dunas al atardecer",
+    place: "Playa Solymar (Bajada 22)",
+    zone: "Canelones",
+    moment: "Fin de semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Moverme"],
+    time: "Sáb, 18:00 a 19:30",
+    color: "#087443",
+    lat: -34.8250,
+    lng: -55.9550,
+    description: "Caminata por la costa de Ciudad de la Costa seguida de ejercicios de estiramiento y relajación.",
+    organizer: "Costa Activa Canelones",
+  },
+  {
+    id: "act-23",
+    icon: "🪴",
+    category: "NATURALEZA",
+    title: "Taller de plantas medicinales y huerta nativa",
+    place: "Centro de Barrio El Pinar",
+    zone: "Canelones",
+    moment: "Entre semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Aprender"],
+    time: "Mar, 15:00 a 16:30",
+    color: "#087443",
+    lat: -34.7980,
+    lng: -55.9020,
+    description: "Reconocimiento de aromáticas, infusiones tradicionales y cultivo responsable.",
+    organizer: "Eco Pinar Canelones",
+  },
+  {
+    id: "act-24",
+    icon: "🎨",
+    category: "CULTURA",
+    title: "Pintura y acuarela frente al Águila",
+    place: "El Águila de Atlántida",
+    zone: "Canelones",
+    moment: "Fin de semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Cultura", "Aprender"],
+    time: "Dom, 15:30 a 17:30",
+    color: "#e83e6f",
+    lat: -34.7740,
+    lng: -55.7580,
+    description: "Encuentro de dibujo y pintura paisajística con técnica libre mirando el mar.",
+    organizer: "Taller de Arte Atlántida",
+  },
+  {
+    id: "act-25",
+    icon: "🍇",
+    category: "CULTURA",
+    title: "Visita guiada a viñedos y vendimia artesanal",
+    place: "Bodega Las Piedras",
+    zone: "Canelones",
+    moment: "Fin de semana",
+    freeOnly: false,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Cultura", "Conocer gente"],
+    time: "Sáb, 11:00 a 14:00",
+    color: "#e83e6f",
+    lat: -34.7290,
+    lng: -56.2160,
+    description: "Recorrido por viñedos canarios, explicación del proceso de vinificación y almuerzo tradicional.",
+    organizer: "Ruta del Vino Canelones",
+  },
+  {
+    id: "act-26",
+    icon: "🌱",
+    category: "NATURALEZA",
+    title: "Huerta comunitaria e intercambio de semillas",
+    place: "Plaza Paso Carrasco",
+    zone: "Canelones",
+    moment: "Entre semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Aprender", "Conocer gente"],
+    time: "Jue, 16:00 a 17:30",
+    color: "#087443",
+    lat: -34.8560,
+    lng: -56.0340,
+    description: "Trabajo compartido en la huerta del barrio, intercambio de platines y merienda.",
+    organizer: "Vecinos en Acción Paso Carrasco",
+  },
+  {
+    id: "act-27",
+    icon: "♟️",
+    category: "RECREACIÓN",
+    title: "Tardes de ajedrez, cartas y merienda",
+    place: "Club Social La Blanqueada",
+    zone: "Montevideo",
+    moment: "Entre semana",
+    freeOnly: true,
+    accessible: true,
+    smallGroups: true,
+    interests: ["Conocer gente"],
+    time: "Lun, 16:00 a 18:00",
+    color: "#d97706",
+    lat: -34.8850,
+    lng: -56.1550,
+    description: "Partidas amistosas de ajedrez, truco y rami con café caliente compartidos entre vecinos.",
+    organizer: "Ajedrez La Blanqueada",
   },
 ];
 
-const ZONES = ["Todas las zonas", "Cordón", "Centro", "Barrio Sur", "Ciudad Vieja", "Pocitos", "Parque Rodó", "Carrasco", "Cerro"];
+const ZONES = [
+  "Todos los departamentos",
+  "Artigas",
+  "Canelones",
+  "Colonia",
+  "Durazno",
+  "Florida",
+  "Lavalleja",
+  "Maldonado",
+  "Montevideo",
+  "Paysandú",
+  "Rivera",
+  "Rocha",
+  "Salto",
+  "San José",
+  "Soriano",
+  "Tacuarembó",
+];
 const MOMENTS = ["Cualquier momento", "Entre semana", "Fin de semana"];
 const INTEREST_OPTIONS = ["Todo", "Moverme", "Aprender", "Cultura", "Conocer gente", "Orientación"];
 
 const QUICK_QUERIES = [
-  { label: "Orientarme", value: "Orientación", query: "Necesito orientarme y saber por dónde empezar." },
-  { label: "Aprender celular", value: "Aprender", query: "Quiero aprender a usar el celular para comunicarme con mi familia." },
-  { label: "Moverme suavemente", value: "Moverme", query: "Busco una actividad suave de movimiento por la mañana cerca de casa." },
-  { label: "Conocer gente y cultura", value: "Cultura", query: "Me gustaría conocer gente del barrio y participar en talleres culturales." },
-  { label: "Participar en grupo pequeño", value: "Aprender", query: "Quiero una actividad tranquila en grupos pequeños." },
+  { label: "Aprender a usar el celular", value: "Aprender", query: "Aprender a usar el celular" },
+  { label: "Moverme suavemente", value: "Moverme", query: "Moverme suavemente" },
+  { label: "Conocer gente y cultura", value: "Cultura", query: "Conocer gente y cultura" },
+  { label: "Participar desde casa", value: "Aprender", query: "Participar desde casa" },
 ];
 
 export function ActivitiesView({ onHome }: { onHome: () => void }) {
   const [whoFor, setWhoFor] = useState<"Para mí" | "Acompaño a otra persona">("Para mí");
   const [searchText, setSearchText] = useState("");
-  const [zone, setZone] = useState("Todas las zonas");
+  const [zone, setZone] = useState("Todos los departamentos");
   const [moment, setMoment] = useState("Cualquier momento");
   const [interest, setInterest] = useState("Todo");
   const [freeOnly, setFreeOnly] = useState(false);
   const [accessible, setAccessible] = useState(false);
   const [smallGroups, setSmallGroups] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "mixed" | "map">("mixed");
-  const [selectedId, setSelectedId] = useState<string | null>("act-1");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeModal, setActiveModal] = useState<ActivityItem | null | "support">(null);
   const [sentNotice, setSentNotice] = useState(false);
 
   // Filtrado reactivo de actividades
   const filteredActivities = useMemo(() => {
     return ACTIVITIES_DATA.filter((act) => {
-      if (zone !== "Todas las zonas" && act.zone !== zone) return false;
+      if (zone !== "Todos los departamentos" && act.zone !== zone) return false;
       if (moment !== "Cualquier momento" && act.moment !== moment) return false;
       if (interest !== "Todo" && !act.interests.includes(interest)) return false;
       if (freeOnly && !act.freeOnly) return false;
@@ -271,10 +743,10 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
 
   const selectedActivity = useMemo(() => {
     if (!filteredActivities.length) return null;
-    return filteredActivities.find((a) => a.id === selectedId) || filteredActivities[0];
+    return (selectedId ? filteredActivities.find((a) => a.id === selectedId) : null) || filteredActivities[0];
   }, [filteredActivities, selectedId]);
 
-  const activeFiltersCount = (zone !== "Todas las zonas" ? 1 : 0) +
+  const activeFiltersCount = (zone !== "Todos los departamentos" ? 1 : 0) +
     (moment !== "Cualquier momento" ? 1 : 0) +
     (interest !== "Todo" ? 1 : 0) +
     (freeOnly ? 1 : 0) +
@@ -283,13 +755,14 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
     (searchText ? 1 : 0);
 
   const clearFilters = () => {
-    setZone("Todas las zonas");
+    setZone("Todos los departamentos");
     setMoment("Cualquier momento");
     setInterest("Todo");
     setFreeOnly(false);
     setAccessible(false);
     setSmallGroups(false);
     setSearchText("");
+    setSelectedId(null);
   };
 
   const handleQuickQuery = (item: (typeof QUICK_QUERIES)[0]) => {
@@ -299,77 +772,26 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
 
   return (
     <section className="activitiesSection">
-      {/* Header superior */}
-      <header className="activitiesHeader">
-        <button type="button" className="activitiesBackBtn" onClick={onHome}>
-          <ArrowLeft size={18} /> Volver al inicio
-        </button>
-        <div className="activitiesTitleGroup">
-          <div className="eyebrowActivities">
-            <Sparkles size={16} /> Módulos +Cerca · Actividades para vos
-          </div>
-          <h1>Actividades y Encuentros de Cercanía</h1>
-          <p className="lead">
-            Encontrá propuestas para aprender, moverte, participar y convivir en Montevideo y Canelones.
-          </p>
-        </div>
-      </header>
-
-      {/* Asistente de búsqueda / IA de orientación */}
-      <div className="activitiesAssistantPanel">
-        <div className="assistantBadge">
-          <Sparkles size={16} /> Búsqueda guiada en lenguaje natural
-        </div>
-        <h2>IA con fuentes y orientación humana</h2>
-        <p className="assistantLead">
-          Contanos qué actividad estás buscando, en qué horario o barrio, y qué apoyos preferís.
+      {/* Header / Hero de Actividades */}
+      <div className="heroCardActivities">
+        <h1>Encontrá actividades que tengan sentido para vos.</h1>
+        <p className="heroLead">
+          Decí qué te gustaría hacer, cuándo y qué apoyo necesitás. La herramienta organiza opciones cercanas, explica por qué aparecen y te permite continuar con una persona.
         </p>
 
-        <div className="assistantWhoGroup">
-          <span>¿Para quién buscás?</span>
-          <div className="chipRow">
-            <button
-              type="button"
-              className={`chipBtn ${whoFor === "Para mí" ? "active" : ""}`}
-              onClick={() => setWhoFor("Para mí")}
-            >
-              Para mí
-            </button>
-            <button
-              type="button"
-              className={`chipBtn ${whoFor === "Acompaño a otra persona" ? "active" : ""}`}
-              onClick={() => setWhoFor("Acompaño a otra persona")}
-            >
-              Acompaño a otra persona
-            </button>
-          </div>
-        </div>
-
-        <div className="assistantInputGroup">
-          <label htmlFor="naturalQuery">Contá qué estás buscando:</label>
-          <textarea
-            id="naturalQuery"
-            className="assistantTextarea"
+        <div className="searchBoxHero">
+          <input
+            type="text"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            placeholder="Ej.: Vivo en Cordón, me cuesta caminar distancias largas y quiero un taller gratuito de celular..."
+            placeholder="Ej.: Vivo en La Blanqueada, me cuesta caminar y quiero algo gratuito de mañana"
           />
-        </div>
-
-        <div className="assistantSuggestions">
-          <span>Sugerencias rápidas:</span>
-          <div className="chipRow">
-            {QUICK_QUERIES.map((item) => (
-              <button
-                key={item.label}
-                type="button"
-                className={`chipBtn queryChip ${interest === item.value ? "active" : ""}`}
-                onClick={() => handleQuickQuery(item)}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
+          <button type="button" className="micBtn" title="Hablar">
+            🎙️
+          </button>
+          <button type="button" className="orientBtn">
+            🔍 Orientarme
+          </button>
         </div>
       </div>
 
@@ -388,7 +810,7 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
             className={`viewBtn ${viewMode === "mixed" ? "active" : ""}`}
             onClick={() => setViewMode("mixed")}
           >
-            Vista mixta (Lista + Mapa)
+            Vista mixta
           </button>
           <button
             type="button"
@@ -398,12 +820,6 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
             Vista solo del mapa
           </button>
         </div>
-
-        {activeFiltersCount > 0 && (
-          <button type="button" className="clearFiltersBtn" onClick={clearFilters}>
-            <RotateCcw size={15} /> Limpiar filtros ({activeFiltersCount})
-          </button>
-        )}
       </div>
 
       {/* Panel principal con filtros + Lista/Mapa */}
@@ -411,11 +827,28 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
         {/* Panel lateral de Filtros Avanzados */}
         {(viewMode === "list" || viewMode === "mixed") && (
           <aside className="filtersSidebar">
-            <h3><Filter size={17} /> Filtros</h3>
+            <div className="sidebarHeaderRow">
+              <h3><Filter size={17} /> Filtros</h3>
+              <button
+                type="button"
+                className="resetFiltersSidebarBtn"
+                onClick={clearFilters}
+                title="Reiniciar todos los filtros"
+              >
+                <RotateCcw size={13} /> Reiniciar
+              </button>
+            </div>
 
             <div className="filterBlock">
-              <label htmlFor="zoneSelect">Zona / Barrio</label>
-              <select id="zoneSelect" value={zone} onChange={(e) => setZone(e.target.value)}>
+              <label htmlFor="zoneSelect">Departamento</label>
+              <select
+                id="zoneSelect"
+                value={zone}
+                onChange={(e) => {
+                  setZone(e.target.value);
+                  setSelectedId(null);
+                }}
+              >
                 {ZONES.map((z) => (
                   <option key={z} value={z}>
                     {z}
@@ -436,19 +869,14 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
             </div>
 
             <div className="filterBlock">
-              <span className="filterTitle">Interés</span>
-              <div className="interestChips">
+              <label htmlFor="interestSelect">Interés</label>
+              <select id="interestSelect" value={interest} onChange={(e) => setInterest(e.target.value)}>
                 {INTEREST_OPTIONS.map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    className={`interestChip ${interest === opt ? "active" : ""}`}
-                    onClick={() => setInterest(opt)}
-                  >
-                    {opt}
-                  </button>
+                  <option key={opt} value={opt}>
+                    {opt === "Todo" ? "Todos los intereses" : opt}
+                  </option>
                 ))}
-              </div>
+              </select>
             </div>
 
             <div className="filterBlock checkboxesBlock">
@@ -466,14 +894,6 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
                 <span>Grupos pequeños</span>
               </label>
             </div>
-
-            <div className="sidebarSupportNotice">
-              <HelpCircle size={18} />
-              <p>¿No encontrás lo que buscás? Podés solicitar acompañamiento personalizado.</p>
-              <button type="button" className="sidebarSupportBtn" onClick={() => setActiveModal("support")}>
-                Pedir acompañamiento
-              </button>
-            </div>
           </aside>
         )}
 
@@ -482,7 +902,6 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
           <div className="activitiesListContainer">
             <div className="listSummaryHeader">
               <h2>Actividades disponibles ({filteredActivities.length})</h2>
-              <span>Montevideo y Canelones</span>
             </div>
 
             {filteredActivities.length === 0 ? (
@@ -533,7 +952,7 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
                           setActiveModal(act);
                         }}
                       >
-                        Ver detalle y consultar <ChevronRight size={16} />
+                        Ver detalle <ChevronRight size={16} />
                       </button>
                     </article>
                   );
@@ -547,8 +966,7 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
         {(viewMode === "mixed" || viewMode === "map") && (
           <div className="mapPanelContainer">
             <div className="mapHeader">
-              <h3>📍 Mapa interactivo (+Cerca)</h3>
-              <small>{filteredActivities.length} actividades georreferenciadas</small>
+              <h3>📍 Mapa de Actividades</h3>
             </div>
             <div className="mapFrame">
               <ActivityMap
@@ -570,42 +988,6 @@ export function ActivitiesView({ onHome }: { onHome: () => void }) {
             )}
           </div>
         )}
-      </div>
-
-      {/* Bloque Informativo de IA Responsable & Integración Ibirapitá */}
-      <div className="activitiesInfoGrid">
-        <article className="infoCard aiResponsibility">
-          <div className="infoIcon"><UserCheck size={26} /></div>
-          <h3>Componente de IA Responsable</h3>
-          <p className="infoSubtitle">La IA orienta, no toma decisiones autónomas.</p>
-          <ol className="infoStepsList">
-            <li><strong>1. Recolecta preferencias:</strong> Procesa zona, horarios y accesibilidad.</li>
-            <li><strong>2. Ordena alternativas:</strong> Prioriza por cercanía y disponibilidad.</li>
-            <li><strong>3. Conduce al apoyo humano:</strong> Presenta los canales de contacto oficial.</li>
-          </ol>
-        </article>
-
-        <article className="infoCard ibirapitaIntegration">
-          <div className="infoIcon"><HeartHandshake size={26} /></div>
-          <h3>Integración Propuesta con Ibirapitá</h3>
-          <p className="infoSubtitle">La tecnología abre la puerta y el equipo acompaña el proceso.</p>
-          <ul className="infoCheckList">
-            <li><strong>Acceso:</strong> Desde la web, guías digitales o tablet Ibirapitá.</li>
-            <li><strong>Prueba:</strong> Se valida con usuarios reales en centros de barrio.</li>
-            <li><strong>Continuidad:</strong> Derivación directa a llamadas o talleres de cercanía.</li>
-          </ul>
-        </article>
-      </div>
-
-      {/* Banner de Acompañamiento Protegido */}
-      <div className="activitiesBannerAlert">
-        <div>
-          <strong>¿La búsqueda requiere ayuda de una persona?</strong>
-          <p>Si hay dudas o necesitás un canal guiado, podés solicitar la asistencia de nuestro equipo humano.</p>
-        </div>
-        <button type="button" onClick={() => setActiveModal("support")}>
-          Ir al canal de acompañamiento
-        </button>
       </div>
 
       {/* Modal interactivo de Detalle o Acompañamiento */}

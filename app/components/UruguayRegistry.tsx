@@ -209,12 +209,9 @@ export default function UruguayRegistry({
         <div className="personDecidesCard">
           <strong>La persona mayor decide</strong>
           <p>Usá el mapa para identificar opciones y preparar preguntas; no para reemplazar la voluntad de quien va a vivir allí.</p>
-          <button type="button" className="btnTurquoisePrimary" onClick={() => setIsGuideOpen(true)}>
+          <a href="/personas/residenciales/form" className="btnTurquoisePrimary" style={{ display: "block", textAlign: "center", textDecoration: "none" }}>
             Preparar mi elección
-          </button>
-          <button type="button" className="btnTurquoiseSecondary" onClick={() => setIsSupportOpen(true)}>
-            Continuar con apoyo humano
-          </button>
+          </a>
         </div>
       </aside>
       <div className="registryMapColumn" ref={mapColumnRef}>

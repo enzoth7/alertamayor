@@ -20,8 +20,8 @@ export default function ActivityMap({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    // Inicializar mapa centrado en Montevideo
-    const map = L.map(containerRef.current, { scrollWheelZoom: true }).setView([-34.901, -56.176], 12);
+    // Inicializar mapa centrado en Uruguay
+    const map = L.map(containerRef.current, { scrollWheelZoom: true }).setView([-32.5228, -55.7658], 7);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map);
@@ -47,42 +47,55 @@ export default function ActivityMap({
     activities.forEach((act) => {
       const isSelected = selectedId === act.id;
       const marker = L.circleMarker([act.lat, act.lng], {
-        radius: isSelected ? 11 : 7,
-        color: isSelected ? "#155eef" : "#d97706",
+        radius: isSelected ? 11 : 8,
+        color: isSelected ? "#0f172a" : "#1d4ed8",
         weight: isSelected ? 3 : 2,
-        fillColor: isSelected ? "#155eef" : "#087443",
-        fillOpacity: isSelected ? 1 : 0.85,
+        fillColor: isSelected ? "#2563eb" : "#3b82f6",
+        fillOpacity: 0.9,
       });
 
-      marker.on("click", () => {
+      const tooltipText = `${act.icon} ${act.title}`;
+      marker.bindTooltip(tooltipText, {
+        permanent: false,
+        direction: "top",
+        className: "customMapTooltip",
+        offset: [0, -10],
+      });
+
+      marker.on("mouseover", () => {
+        marker.openTooltip();
+      });
+
+      marker.on("click", (e) => {
+        L.DomEvent.stopPropagation(e);
         onSelect(act.id);
+        marker.openTooltip();
       });
 
-      const popupContent = document.createElement("div");
-      popupContent.className = "activityMapPopup";
-      popupContent.innerHTML = `
-        <strong style="color:#17365d; font-size:0.95rem; display:block; margin-bottom:3px;">${act.icon} ${act.title}</strong>
-        <span style="color:#64748b; font-size:0.8rem; display:block;">📍 ${act.place} (${act.zone})</span>
-        <span style="color:#d97706; font-size:0.8rem; font-weight:700; display:block; margin-top:2px;">⏰ ${act.time}</span>
-      `;
-      marker.bindPopup(popupContent);
+      if (isSelected) {
+        setTimeout(() => {
+          marker.openTooltip();
+        }, 50);
+      }
+
       marker.addTo(markers);
     });
 
-    if (activities.length > 0) {
+    if (activities.length > 0 && !selectedId) {
       const bounds = L.latLngBounds(activities.map(({ lat, lng }) => [lat, lng]));
-      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
+      const isNationwide = activities.length >= 20;
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: isNationwide ? 8 : 13 });
     }
   }, [activities, onSelect, selectedId]);
 
-  // Vuelo reactivo hacia la actividad seleccionada
+  // Vuelo reactivo hacia la actividad seleccionada cuando el usuario la toca
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selectedId) return;
 
     const target = activities.find((a) => a.id === selectedId);
     if (target) {
-      map.flyTo([target.lat, target.lng], 15, { duration: 1 });
+      map.flyTo([target.lat, target.lng], 14, { duration: 1 });
     }
   }, [selectedId, activities]);
 
